@@ -22,14 +22,14 @@ function PosPage() {
     setError('');
     try {
       if (activeTab === 'pos') {
-        const res = await axios.get('http://localhost:3000/api/productos');
+        const res = await axios.get('https://tito-cafe-backend.onrender.com/api/productos');
         setProductos(res.data);
       } else if (activeTab === 'pedidos') {
-        const res = await axios.get('http://localhost:3000/api/pedidos');
+        const res = await axios.get('https://tito-cafe-backend.onrender.com/api/pedidos');
         setPedidos(res.data);
       } else if (activeTab === 'historial') {
         // --- LÓGICA PARA LA NUEVA PESTAÑA ---
-        const res = await axios.get('http://localhost:3000/api/ventas/mis-ventas');
+        const res = await axios.get('https://tito-cafe-backend.onrender.com/api/ventas/mis-ventas');
         setVentasDelDia(res.data);
       }
     } catch (err) {
@@ -52,7 +52,7 @@ function PosPage() {
     if (ventaActual.length === 0) return toast.error('El ticket está vacío.');
     const ventaData = { total: totalVenta, metodo_pago: 'Efectivo', productos: ventaActual };
     try {
-      await axios.post('http://localhost:3000/api/ventas', ventaData);
+      await axios.post('https://tito-cafe-backend.onrender.com/api/ventas', ventaData);
       toast.success('¡Venta registrada con éxito!');
       limpiarVenta(); // <-- AHORA SÍ SE LIMPIARÁ EL TICKET
     } catch (err) { 
@@ -63,7 +63,7 @@ function PosPage() {
 
   const handleUpdateStatus = async (pedidoId, nuevoEstado) => {
     try {
-      await axios.put(`http://localhost:3000/api/pedidos/${pedidoId}/estado`, { estado: nuevoEstado });
+      await axios.put(`https://tito-cafe-backend.onrender.com/api/pedidos/${pedidoId}/estado`, { estado: nuevoEstado });
       fetchData();
       toast.success(`Pedido #${pedidoId} actualizado.`);
     } catch (err) { toast.error('No se pudo actualizar el estado.'); }

@@ -24,10 +24,10 @@ function AdminPage() {
         setError('');
         try {
           if (activeTab === 'productos') {
-            const res = await axios.get('http://localhost:3000/api/productos');
+            const res = await axios.get('https://tito-cafe-backend.onrender.com/api/productos');
             setProductos(res.data);
           } else if (activeTab === 'reporteGeneral') {
-            const res = await axios.get('http://localhost:3000/api/ventas/reporte');
+            const res = await axios.get('https://tito-cafe-backend.onrender.com/api/ventas/reporte');
             setReportData(res.data);
           }
         } catch (err) { 
@@ -46,7 +46,7 @@ function AdminPage() {
 
   const refreshProducts = async () => {
     try {
-      const res = await axios.get('http://localhost:3000/api/productos');
+      const res = await axios.get('https://tito-cafe-backend.onrender.com/api/productos');
       setProductos(res.data);
     } catch {
       // maneja el error si es necesario
@@ -60,9 +60,9 @@ function AdminPage() {
     const action = producto.id ? 'actualizado' : 'creado';
     try {
       if (producto.id) {
-        await axios.put(`http://localhost:3000/api/productos/${producto.id}`, producto);
+        await axios.put(`https://tito-cafe-backend.onrender.com/api/productos/${producto.id}`, producto);
       } else {
-        await axios.post('http://localhost:3000/api/productos', producto);
+        await axios.post('https://tito-cafe-backend.onrender.com/api/productos', producto);
       }
       toast.success(`Producto ${action} con éxito.`);
       refreshProducts();
@@ -75,7 +75,7 @@ function AdminPage() {
   const handleDeleteProducto = async (id) => { 
     if (window.confirm('¿Estás seguro de que quieres eliminar este producto?')) {
       try {
-        await axios.delete(`http://localhost:3000/api/productos/${id}`);
+        await axios.delete(`https://tito-cafe-backend.onrender.com/api/productos/${id}`);
         toast.success('Producto eliminado con éxito.');
         refreshProducts();
       } catch (err) {

@@ -16,7 +16,7 @@ function CheckoutForm({ total, handleSuccess }) {
 
     try {
       // 1. Pide el client_secret a nuestro backend
-      const { data: { clientSecret } } = await axios.post('http://localhost:3000/api/payment/create-payment-intent', { total });
+      const { data: { clientSecret } } = await axios.post('https://tito-cafe-backend.onrender.com/api/payment/create-payment-intent', { total });
 
       // 2. Confirma el pago con Stripe usando el client_secret
       const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {

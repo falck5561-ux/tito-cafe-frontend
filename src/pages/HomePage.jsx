@@ -13,7 +13,7 @@ function HomePage() {
   useEffect(() => {
     const fetchProductos = async () => {
       try {
-        const res = await axios.get('http://localhost:3000/api/productos');
+        const res = await axios.get('https://tito-cafe-backend.onrender.com/api/productos');
         setProductos(res.data);
       } catch (err) {
         setError('No se pudo cargar el menú.');

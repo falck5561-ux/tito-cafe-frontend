@@ -29,10 +29,10 @@ function ClientePage() {
     setError('');
     try {
       if (activeTab === 'crear') {
-        const res = await axios.get('http://localhost:3000/api/productos');
+        const res = await axios.get('https://tito-cafe-backend.onrender.com/api/productos');
         setProductos(res.data);
       } else if (activeTab === 'ver') {
-        const res = await axios.get('http://localhost:3000/api/pedidos/mis-pedidos');
+        const res = await axios.get('https://tito-cafe-backend.onrender.com/api/pedidos/mis-pedidos');
         setMisPedidos(res.data);
       }
     } catch (err) { setError('No se pudieron cargar los datos.'); } 
@@ -54,7 +54,7 @@ function ClientePage() {
     const pedidoData = { total, productos: pedidoActual };
     try {
       // Ahora sí, registramos el pedido en nuestra base de datos
-      await axios.post('http://localhost:3000/api/pedidos', pedidoData);
+      await axios.post('https://tito-cafe-backend.onrender.com/api/pedidos', pedidoData);
       toast.success('¡Pedido realizado y pagado con éxito!');
       limpiarPedido();
       setShowPaymentModal(false);

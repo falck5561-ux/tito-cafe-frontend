@@ -26,7 +26,7 @@ function ProductSalesReport() {
     }
     setLoading(true);
     try {
-      const res = await axios.get(`http://localhost:3000/api/ventas/reporte-productos`, {
+      const res = await axios.get(`https://tito-cafe-backend.onrender.com/api/ventas/reporte-productos`, {
         params: fechas,
       });
       setReporte(res.data);
