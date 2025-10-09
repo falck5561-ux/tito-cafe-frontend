@@ -26,7 +26,7 @@ function ClientePage() {
   const [clientSecret, setClientSecret] = useState('');
   const [paymentLoading, setPaymentLoading] = useState(false);
 
-  const fetchData = async () => {
+const fetchData = async () => {
     setLoading(true);
     setError('');
     try {
@@ -34,13 +34,16 @@ function ClientePage() {
         const res = await axios.get('https://tito-cafe-backend.onrender.com/api/productos');
         setProductos(res.data);
       } else if (activeTab === 'ver') {
+        // --- ¡LÍNEA CORREGIDA! ---
         const res = await axios.get('https://tito-cafe-backend.onrender.com/api/pedidos/mis-pedidos');
         setMisPedidos(res.data);
       }
-    } catch (err) { setError('No se pudieron cargar los datos.'); } 
+    } catch (err) { 
+      setError('No se pudieron cargar los datos.'); 
+      console.error("Error al cargar mis pedidos:", err); // Añadimos un log para ver el error si persiste
+    } 
     finally { setLoading(false); }
   };
-  
   useEffect(() => { fetchData(); }, [activeTab]);
   
   useEffect(() => {
