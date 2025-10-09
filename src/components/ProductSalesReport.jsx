@@ -1,4 +1,5 @@
-// Archivo: src/components/ProductSalesReport.jsx
+// Archivo: src/components/ProductSalesReport.jsx (Versión Final)
+
 import React, { useState } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -7,7 +8,6 @@ function ProductSalesReport() {
   const [reporte, setReporte] = useState([]);
   const [loading, setLoading] = useState(false);
   
-  // Obtiene el primer y último día del mes actual por defecto
   const primerDiaMes = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
   const ultimoDiaMes = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().split('T')[0];
   
@@ -26,8 +26,10 @@ function ProductSalesReport() {
     }
     setLoading(true);
     try {
-      const res = await axios.get(`https://tito-cafe-backend.onrender.com/api/ventas/reporte-productos`, {
-        params: fechas,
+      // --- ¡URL CORREGIDA! ---
+      // Ahora usamos la URL relativa gracias a la configuración global de axios.
+      const res = await axios.get(`/api/ventas/reporte-productos`, {
+        params: fechas, // axios convertirá esto a ?inicio=FECHA&fin=FECHA
       });
       setReporte(res.data);
       if (res.data.length === 0) {
