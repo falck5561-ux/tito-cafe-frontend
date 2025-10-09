@@ -11,6 +11,7 @@ import CheckoutForm from '../components/CheckoutForm';
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 function ClientePage() {
+  // ... (toda la lógica de estados y funciones que ya tenías)
   const [activeTab, setActiveTab] = useState('crear');
   const [productos, setProductos] = useState([]);
   const [pedidoActual, setPedidoActual] = useState([]);
@@ -112,6 +113,7 @@ function ClientePage() {
     }
   };
 
+
   return (
     <div>
       <ul className="nav nav-tabs mb-4">
@@ -123,9 +125,11 @@ function ClientePage() {
       {loading && <div className="text-center"><div className="spinner-border" role="status"></div></div>}
       {error && <div className="alert alert-danger">{error}</div>}
 
+      {/* Pestaña Crear Pedido */}
       {!loading && activeTab === 'crear' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="row">
-          <div className="col-md-8">
+          {/* ... (código del menú y carrito no cambia) ... */}
+           <div className="col-md-8">
             <h2>Elige tus Productos</h2>
             <div className="row g-3">{productos.map(p => (<div key={p.id} className="col-md-4 col-lg-3"><div className="card h-100 text-center shadow-sm" onClick={() => agregarProductoAPedido(p)} style={{ cursor: 'pointer' }}><div className="card-body d-flex flex-column justify-content-center"><h5 className="card-title">{p.nombre}</h5><p className="card-text text-success fw-bold">${Number(p.precio).toFixed(2)}</p></div></div></div>))}</div>
           </div>
@@ -147,8 +151,9 @@ function ClientePage() {
         </motion.div>
       )}
 
+      {/* Pestaña Mis Pedidos */}
       {!loading && activeTab === 'ver' && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <h2>Mis Pedidos</h2>
           {misPedidos.length === 0 ? <p className="text-center">No has realizado ningún pedido.</p> : (
             <div className="list-group">{misPedidos.map(p => (
@@ -162,6 +167,7 @@ function ClientePage() {
         </motion.div>
       )}
 
+      {/* Pestaña Mis Recompensas (CON DISEÑO MEJORADO) */}
       {!loading && activeTab === 'recompensas' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <h2>Mis Recompensas</h2>
@@ -171,14 +177,13 @@ function ClientePage() {
             <div className="row g-4">
               {misRecompensas.map(recompensa => (
                 <div key={recompensa.id} className="col-md-6 col-lg-4">
-                  <div className="card text-center bg-light shadow-sm" style={{ border: '2px dashed #28a745' }}>
+                  <div className="card text-center text-white bg-dark shadow-lg" style={{ border: '2px dashed #00ff7f' }}>
                     <div className="card-body">
-                      <h5 className="card-title">🎁 ¡Cupón Ganado! 🎁</h5>
+                      <h5 className="card-title" style={{ color: '#00ff7f', fontWeight: 'bold' }}>🎁 ¡Cupón Ganado! 🎁</h5>
                       <p className="card-text">{recompensa.descripcion}</p>
-                      <hr />
-                      <button className="btn btn-success">
-                        Mostrar en Tienda para Canjear
-                      </button>
+                      <hr style={{ backgroundColor: '#00ff7f' }}/>
+                      <p className="h3">ID del Cupón: {recompensa.id}</p>
+                      <p className="card-text mt-2"><small>Muéstrale este ID al empleado para canjear tu premio.</small></p>
                       <p className="card-text mt-2"><small className="text-muted">Ganado el: {new Date(recompensa.fecha_creacion).toLocaleDateString()}</small></p>
                     </div>
                   </div>
@@ -189,9 +194,10 @@ function ClientePage() {
         </motion.div>
       )}
 
+      {/* Modal de Pago */}
       {showPaymentModal && clientSecret && (
         <div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <motion.div initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="modal-dialog">
+           <motion.div initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="modal-dialog">
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">Finalizar Compra</h5>
