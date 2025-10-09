@@ -1,10 +1,11 @@
-// Archivo: src/pages/ClientePage.jsx (Versión Final con Pago Obligatorio)
+// Archivo: src/pages/ClientePage.jsx (Versión Final con Pago)
+
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 
-// Importaciones de Stripe
+// --- Importaciones de Stripe ---
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 import CheckoutForm from '../components/CheckoutForm';
@@ -21,7 +22,6 @@ function ClientePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   
-  // Nuevo estado para controlar el modal de pago
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   const fetchData = async () => {
@@ -42,23 +42,34 @@ function ClientePage() {
   useEffect(() => { fetchData(); }, [activeTab]);
   
   useEffect(() => {
-    const nuevoTotal = pedidoActual.reduce((sum, item) => sum + Number(item.precio), 0);
+    const nuevoTotal = pedidoActual.reduce((sum, item) => sum + item.cantidad * Number(item.precio), 0);
     setTotal(nuevoTotal);
   }, [pedidoActual]);
 
-  const agregarProductoAPedido = (producto) => setPedidoActual(prev => [...prev, producto]);
+  const agregarProductoAPedido = (producto) => {
+    setPedidoActual(prev => {
+      const existe = prev.find(item => item.id === producto.id);
+      if (existe) {
+        return prev.map(item => 
+          item.id === producto.id ? { ...item, cantidad: item.cantidad + 1 } : item
+        );
+      }
+      return [...prev, { ...producto, cantidad: 1 }];
+    });
+  };
+
   const limpiarPedido = () => setPedidoActual([]);
 
-  // ESTA ES LA FUNCIÓN CLAVE: Se ejecuta DESPUÉS de un pago exitoso
   const handleSuccessfulPayment = async () => {
-    const pedidoData = { total, productos: pedidoActual };
+    const productosParaEnviar = pedidoActual.map(({ id, cantidad, precio, nombre }) => ({ id, cantidad, precio, nombre }));
+    const pedidoData = { total, productos: productosParaEnviar };
+    
     try {
-      // Ahora sí, registramos el pedido en nuestra base de datos
       await axios.post('https://tito-cafe-backend.onrender.com/api/pedidos', pedidoData);
       toast.success('¡Pedido realizado y pagado con éxito!');
       limpiarPedido();
       setShowPaymentModal(false);
-      setActiveTab('ver'); // Llevamos al cliente a ver el estado de su nuevo pedido
+      setActiveTab('ver'); 
     } catch (err) {
       toast.error('El pago fue exitoso, pero hubo un error al registrar tu pedido. Contacta al soporte.');
     }
@@ -81,7 +92,7 @@ function ClientePage() {
         <li className="nav-item"><button className={`nav-link ${activeTab === 'ver' ? 'active' : ''}`} onClick={() => setActiveTab('ver')}>Mis Pedidos</button></li>
       </ul>
 
-      {loading && <div className="text-center"><div className="spinner-border" role="status"><span className="visually-hidden">Loading...</span></div></div>}
+      {loading && <div className="text-center"><div className="spinner-border" role="status"></div></div>}
       {error && <div className="alert alert-danger">{error}</div>}
 
       {!loading && activeTab === 'crear' && (
@@ -94,7 +105,7 @@ function ClientePage() {
             <div className="card shadow-sm">
               <div className="card-body">
                 <h3 className="card-title text-center">Mi Pedido</h3><hr />
-                <ul className="list-group list-group-flush">{pedidoActual.map((item, i) => (<li key={i} className="list-group-item d-flex justify-content-between"><span>{item.nombre}</span><span>${Number(item.precio).toFixed(2)}</span></li>))}</ul>
+                <ul className="list-group list-group-flush">{pedidoActual.map((item, i) => (<li key={i} className="list-group-item d-flex justify-content-between"><span>{item.cantidad}x {item.nombre}</span><span>${(item.cantidad * Number(item.precio)).toFixed(2)}</span></li>))}</ul>
                 <hr /><h4>Total: ${total.toFixed(2)}</h4>
                 <div className="d-grid gap-2 mt-3">
                   <button className="btn btn-primary" onClick={() => setShowPaymentModal(true)} disabled={pedidoActual.length === 0}>
@@ -123,6 +134,7 @@ function ClientePage() {
         </motion.div>
       )}
 
+      {/* --- MODAL DE PAGO --- */}
       {showPaymentModal && (
         <div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
           <motion.div initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="modal-dialog">
@@ -132,6 +144,7 @@ function ClientePage() {
                 <button type="button" className="btn-close" onClick={() => setShowPaymentModal(false)}></button>
               </div>
               <div className="modal-body">
+                {/* Envolvemos el formulario con el proveedor de Elements */}
                 <Elements stripe={stripePromise}>
                   <CheckoutForm total={total} handleSuccess={handleSuccessfulPayment} />
                 </Elements>
