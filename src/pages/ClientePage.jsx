@@ -1,11 +1,9 @@
-// Archivo: src/pages/ClientePage.jsx (Versión Corregida Final)
+// Archivo: src/pages/ClientePage.jsx
 
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
-
-// Importaciones de Stripe
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 import CheckoutForm from '../components/CheckoutForm';
@@ -18,32 +16,34 @@ function ClientePage() {
   const [pedidoActual, setPedidoActual] = useState([]);
   const [total, setTotal] = useState(0);
   const [misPedidos, setMisPedidos] = useState([]);
+  const [misRecompensas, setMisRecompensas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  // --- CAMBIO 1: Estado para guardar el clientSecret aquí ---
   const [clientSecret, setClientSecret] = useState('');
   const [paymentLoading, setPaymentLoading] = useState(false);
 
-const fetchData = async () => {
+  const fetchData = async () => {
     setLoading(true);
     setError('');
     try {
       if (activeTab === 'crear') {
-        const res = await axios.get('https://tito-cafe-backend.onrender.com/api/productos');
+        const res = await axios.get('/api/productos');
         setProductos(res.data);
       } else if (activeTab === 'ver') {
-        // --- ¡LÍNEA CORREGIDA! ---
-        const res = await axios.get('https://tito-cafe-backend.onrender.com/api/pedidos/mis-pedidos');
+        const res = await axios.get('/api/pedidos/mis-pedidos');
         setMisPedidos(res.data);
+      } else if (activeTab === 'recompensas') {
+        const res = await axios.get('/api/recompensas/mis-recompensas');
+        setMisRecompensas(res.data);
       }
     } catch (err) { 
       setError('No se pudieron cargar los datos.'); 
-      console.error("Error al cargar mis pedidos:", err); // Añadimos un log para ver el error si persiste
+      console.error("Error en fetchData:", err);
     } 
     finally { setLoading(false); }
   };
+  
   useEffect(() => { fetchData(); }, [activeTab]);
   
   useEffect(() => {
@@ -63,18 +63,13 @@ const fetchData = async () => {
 
   const limpiarPedido = () => setPedidoActual([]);
 
-  // --- CAMBIO 2: Nueva función para iniciar el pago ---
   const handleProcederAlPago = async () => {
     if (total <= 0) return;
     setPaymentLoading(true);
-    const token = localStorage.getItem('token');
     try {
-      const res = await axios.post('https://tito-cafe-backend.onrender.com/api/payments/create-payment-intent', 
-        { amount: total },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await axios.post('/api/payments/create-payment-intent', { amount: total });
       setClientSecret(res.data.clientSecret);
-      setShowPaymentModal(true); // Abrimos el modal solo después de tener el secret
+      setShowPaymentModal(true);
     } catch (err) {
       toast.error('No se pudo iniciar el proceso de pago.');
     } finally {
@@ -87,8 +82,17 @@ const fetchData = async () => {
     const pedidoData = { total, productos: productosParaEnviar };
     
     try {
-      await axios.post('https://tito-cafe-backend.onrender.com/api/pedidos', pedidoData);
-      toast.success('¡Pedido realizado y pagado con éxito!');
+      const res = await axios.post('/api/pedidos', pedidoData);
+      
+      if (res.data.recompensaGenerada) {
+        toast.success('¡Felicidades! Has ganado un premio. Revisa "Mis Recompensas".', {
+          duration: 6000,
+          icon: '🎁',
+        });
+      } else {
+        toast.success('¡Pedido realizado y pagado con éxito!');
+      }
+
       limpiarPedido();
       setShowPaymentModal(false);
       setClientSecret('');
@@ -111,13 +115,15 @@ const fetchData = async () => {
   return (
     <div>
       <ul className="nav nav-tabs mb-4">
-        {/* ... (código de las pestañas no cambia) ... */}
-         <li className="nav-item"><button className={`nav-link ${activeTab === 'crear' ? 'active' : ''}`} onClick={() => setActiveTab('crear')}>Hacer un Pedido</button></li>
+        <li className="nav-item"><button className={`nav-link ${activeTab === 'crear' ? 'active' : ''}`} onClick={() => setActiveTab('crear')}>Hacer un Pedido</button></li>
         <li className="nav-item"><button className={`nav-link ${activeTab === 'ver' ? 'active' : ''}`} onClick={() => setActiveTab('ver')}>Mis Pedidos</button></li>
+        <li className="nav-item"><button className={`nav-link ${activeTab === 'recompensas' ? 'active' : ''}`} onClick={() => setActiveTab('recompensas')}>Mis Recompensas</button></li>
       </ul>
 
-      {/* ... (código del loading, error, y renderizado de productos no cambia) ... */}
-       {!loading && activeTab === 'crear' && (
+      {loading && <div className="text-center"><div className="spinner-border" role="status"></div></div>}
+      {error && <div className="alert alert-danger">{error}</div>}
+
+      {!loading && activeTab === 'crear' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="row">
           <div className="col-md-8">
             <h2>Elige tus Productos</h2>
@@ -130,7 +136,6 @@ const fetchData = async () => {
                 <ul className="list-group list-group-flush">{pedidoActual.map((item, i) => (<li key={i} className="list-group-item d-flex justify-content-between"><span>{item.cantidad}x {item.nombre}</span><span>${(item.cantidad * Number(item.precio)).toFixed(2)}</span></li>))}</ul>
                 <hr /><h4>Total: ${total.toFixed(2)}</h4>
                 <div className="d-grid gap-2 mt-3">
-                  {/* --- CAMBIO 3: El botón ahora llama a la nueva función --- */}
                   <button className="btn btn-primary" onClick={handleProcederAlPago} disabled={pedidoActual.length === 0 || paymentLoading}>
                     {paymentLoading ? 'Iniciando...' : 'Proceder al Pago'}
                   </button>
@@ -142,7 +147,48 @@ const fetchData = async () => {
         </motion.div>
       )}
 
-      {/* --- CAMBIO 4: El modal ahora solo se renderiza si tenemos un clientSecret --- */}
+      {!loading && activeTab === 'ver' && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+          <h2>Mis Pedidos</h2>
+          {misPedidos.length === 0 ? <p className="text-center">No has realizado ningún pedido.</p> : (
+            <div className="list-group">{misPedidos.map(p => (
+              <div key={p.id} className="list-group-item list-group-item-action">
+                <div className="d-flex w-100 justify-content-between"><h5 className="mb-1">Pedido #{p.id}</h5><small>{new Date(p.fecha).toLocaleDateString()}</small></div>
+                <p className="mb-1">Total: ${Number(p.total).toFixed(2)}</p>
+                <small>Estado: <span className={`badge ${getStatusBadge(p.estado)}`}>{p.estado}</span></small>
+              </div>))}
+            </div>
+          )}
+        </motion.div>
+      )}
+
+      {!loading && activeTab === 'recompensas' && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+          <h2>Mis Recompensas</h2>
+          {misRecompensas.length === 0 ? (
+            <p className="text-center">Aún no tienes recompensas. ¡Sigue comprando para ganar premios!</p>
+          ) : (
+            <div className="row g-4">
+              {misRecompensas.map(recompensa => (
+                <div key={recompensa.id} className="col-md-6 col-lg-4">
+                  <div className="card text-center bg-light shadow-sm" style={{ border: '2px dashed #28a745' }}>
+                    <div className="card-body">
+                      <h5 className="card-title">🎁 ¡Cupón Ganado! 🎁</h5>
+                      <p className="card-text">{recompensa.descripcion}</p>
+                      <hr />
+                      <button className="btn btn-success">
+                        Mostrar en Tienda para Canjear
+                      </button>
+                      <p className="card-text mt-2"><small className="text-muted">Ganado el: {new Date(recompensa.fecha_creacion).toLocaleDateString()}</small></p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </motion.div>
+      )}
+
       {showPaymentModal && clientSecret && (
         <div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
           <motion.div initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="modal-dialog">

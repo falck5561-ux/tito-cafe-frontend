@@ -64,7 +64,7 @@ function HomePage() {
     if (cat.includes('postre')) return 'https://placehold.co/600x400/ffc0cb/FFF?text=Postre';
     return 'https://placehold.co/600x400/d2b48c/FFF?text=Producto';
   };
-
+  
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
       <div className="p-5 mb-5 text-center rounded-3 shadow" style={heroStyle}>
