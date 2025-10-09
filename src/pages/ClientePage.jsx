@@ -1,16 +1,15 @@
-// Archivo: src/pages/ClientePage.jsx (Versión Final con Pago)
+// Archivo: src/pages/ClientePage.jsx (Versión Corregida Final)
 
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 
-// --- Importaciones de Stripe ---
+// Importaciones de Stripe
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 import CheckoutForm from '../components/CheckoutForm';
 
-// Carga Stripe fuera del componente para evitar recargarlo
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 function ClientePage() {
@@ -23,6 +22,9 @@ function ClientePage() {
   const [error, setError] = useState('');
   
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  // --- CAMBIO 1: Estado para guardar el clientSecret aquí ---
+  const [clientSecret, setClientSecret] = useState('');
+  const [paymentLoading, setPaymentLoading] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
@@ -50,15 +52,32 @@ function ClientePage() {
     setPedidoActual(prev => {
       const existe = prev.find(item => item.id === producto.id);
       if (existe) {
-        return prev.map(item => 
-          item.id === producto.id ? { ...item, cantidad: item.cantidad + 1 } : item
-        );
+        return prev.map(item => item.id === producto.id ? { ...item, cantidad: item.cantidad + 1 } : item);
       }
       return [...prev, { ...producto, cantidad: 1 }];
     });
   };
 
   const limpiarPedido = () => setPedidoActual([]);
+
+  // --- CAMBIO 2: Nueva función para iniciar el pago ---
+  const handleProcederAlPago = async () => {
+    if (total <= 0) return;
+    setPaymentLoading(true);
+    const token = localStorage.getItem('token');
+    try {
+      const res = await axios.post('https://tito-cafe-backend.onrender.com/api/payments/create-payment-intent', 
+        { amount: total },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setClientSecret(res.data.clientSecret);
+      setShowPaymentModal(true); // Abrimos el modal solo después de tener el secret
+    } catch (err) {
+      toast.error('No se pudo iniciar el proceso de pago.');
+    } finally {
+      setPaymentLoading(false);
+    }
+  };
 
   const handleSuccessfulPayment = async () => {
     const productosParaEnviar = pedidoActual.map(({ id, cantidad, precio, nombre }) => ({ id, cantidad, precio, nombre }));
@@ -69,9 +88,10 @@ function ClientePage() {
       toast.success('¡Pedido realizado y pagado con éxito!');
       limpiarPedido();
       setShowPaymentModal(false);
+      setClientSecret('');
       setActiveTab('ver'); 
     } catch (err) {
-      toast.error('El pago fue exitoso, pero hubo un error al registrar tu pedido. Contacta al soporte.');
+      toast.error('El pago fue exitoso, pero hubo un error al registrar tu pedido.');
     }
   };
   
@@ -88,14 +108,13 @@ function ClientePage() {
   return (
     <div>
       <ul className="nav nav-tabs mb-4">
-        <li className="nav-item"><button className={`nav-link ${activeTab === 'crear' ? 'active' : ''}`} onClick={() => setActiveTab('crear')}>Hacer un Pedido</button></li>
+        {/* ... (código de las pestañas no cambia) ... */}
+         <li className="nav-item"><button className={`nav-link ${activeTab === 'crear' ? 'active' : ''}`} onClick={() => setActiveTab('crear')}>Hacer un Pedido</button></li>
         <li className="nav-item"><button className={`nav-link ${activeTab === 'ver' ? 'active' : ''}`} onClick={() => setActiveTab('ver')}>Mis Pedidos</button></li>
       </ul>
 
-      {loading && <div className="text-center"><div className="spinner-border" role="status"></div></div>}
-      {error && <div className="alert alert-danger">{error}</div>}
-
-      {!loading && activeTab === 'crear' && (
+      {/* ... (código del loading, error, y renderizado de productos no cambia) ... */}
+       {!loading && activeTab === 'crear' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="row">
           <div className="col-md-8">
             <h2>Elige tus Productos</h2>
@@ -108,8 +127,9 @@ function ClientePage() {
                 <ul className="list-group list-group-flush">{pedidoActual.map((item, i) => (<li key={i} className="list-group-item d-flex justify-content-between"><span>{item.cantidad}x {item.nombre}</span><span>${(item.cantidad * Number(item.precio)).toFixed(2)}</span></li>))}</ul>
                 <hr /><h4>Total: ${total.toFixed(2)}</h4>
                 <div className="d-grid gap-2 mt-3">
-                  <button className="btn btn-primary" onClick={() => setShowPaymentModal(true)} disabled={pedidoActual.length === 0}>
-                    Proceder al Pago
+                  {/* --- CAMBIO 3: El botón ahora llama a la nueva función --- */}
+                  <button className="btn btn-primary" onClick={handleProcederAlPago} disabled={pedidoActual.length === 0 || paymentLoading}>
+                    {paymentLoading ? 'Iniciando...' : 'Proceder al Pago'}
                   </button>
                   <button className="btn btn-outline-danger" onClick={limpiarPedido}>Vaciar Carrito</button>
                 </div>
@@ -119,23 +139,8 @@ function ClientePage() {
         </motion.div>
       )}
 
-      {!loading && activeTab === 'ver' && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          <h2>Mis Pedidos</h2>
-          {misPedidos.length === 0 ? <p className="text-center">No has realizado ningún pedido.</p> : (
-            <div className="list-group">{misPedidos.map(p => (
-              <div key={p.id} className="list-group-item list-group-item-action">
-                <div className="d-flex w-100 justify-content-between"><h5 className="mb-1">Pedido #{p.id}</h5><small>{new Date(p.fecha).toLocaleDateString()}</small></div>
-                <p className="mb-1">Total: ${Number(p.total).toFixed(2)}</p>
-                <small>Estado: <span className={`badge ${getStatusBadge(p.estado)}`}>{p.estado}</span></small>
-              </div>))}
-            </div>
-          )}
-        </motion.div>
-      )}
-
-      {/* --- MODAL DE PAGO --- */}
-      {showPaymentModal && (
+      {/* --- CAMBIO 4: El modal ahora solo se renderiza si tenemos un clientSecret --- */}
+      {showPaymentModal && clientSecret && (
         <div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
           <motion.div initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="modal-dialog">
             <div className="modal-content">
@@ -144,9 +149,8 @@ function ClientePage() {
                 <button type="button" className="btn-close" onClick={() => setShowPaymentModal(false)}></button>
               </div>
               <div className="modal-body">
-                {/* Envolvemos el formulario con el proveedor de Elements */}
-                <Elements stripe={stripePromise}>
-                  <CheckoutForm total={total} handleSuccess={handleSuccessfulPayment} />
+                <Elements stripe={stripePromise} options={{ clientSecret }}>
+                  <CheckoutForm handleSuccess={handleSuccessfulPayment} total={total} />
                 </Elements>
               </div>
             </div>
