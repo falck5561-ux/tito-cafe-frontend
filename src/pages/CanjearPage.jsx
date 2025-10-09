@@ -10,7 +10,7 @@ function CanjearPage() {
   const [loading, setLoading] = useState(false);
   const [clienteBuscado, setClienteBuscado] = useState(null);
 
-  const handleBuscarCliente = async (e) => {
+const handleBuscarCliente = async (e) => {
     e.preventDefault();
     if (!emailCliente) return toast.error('Ingresa el email del cliente.');
     
@@ -19,6 +19,7 @@ function CanjearPage() {
     setClienteBuscado(null);
     
     try {
+      // --- ¡LÍNEA CORREGIDA! ---
       const res = await axios.post('/api/users/find-by-email', { email: emailCliente });
       setRecompensas(res.data.recompensas);
       setClienteBuscado(res.data.cliente);
