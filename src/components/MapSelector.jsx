@@ -1,7 +1,7 @@
+// Archivo: src/components/MapSelector.jsx (Corregido)
+
 import React, { useCallback } from 'react';
 import { APIProvider, Map, AdvancedMarker, Pin } from '@vis.gl/react-google-maps';
-
-// Ya no necesitamos la clave aquí, se carga desde index.html
 
 const MapSelector = ({ onAddressSelect, selectedLocation }) => {
   const initialPosition = { lat: 19.83, lng: -90.53 };
@@ -11,14 +11,12 @@ const MapSelector = ({ onAddressSelect, selectedLocation }) => {
     const lng = event.detail.latLng.lng;
     
     try {
-      // Usamos el Geocoder global que carga el script en index.html
       const geocoder = new window.google.maps.Geocoder();
       const latlng = { lat, lng };
       const { results } = await geocoder.geocode({ location: latlng });
 
       if (results && results.length > 0) {
-        const text = results[0].formatted_address;
-        onAddressSelect({ lat, lng, text });
+        onAddressSelect({ lat, lng, text: results[0].formatted_address });
       } else {
         onAddressSelect({ lat, lng, text: 'Ubicación seleccionada en el mapa' });
       }
@@ -28,7 +26,6 @@ const MapSelector = ({ onAddressSelect, selectedLocation }) => {
   }, [onAddressSelect]);
 
   return (
-    // Se quita la prop "apiKey"
     <APIProvider>
       <div style={{ height: '250px', width: '100%', marginTop: '15px', border: '1px solid #ccc', borderRadius: '8px', overflow: 'hidden' }}>
         <Map
@@ -40,7 +37,8 @@ const MapSelector = ({ onAddressSelect, selectedLocation }) => {
         >
           {selectedLocation && (
             <AdvancedMarker position={{ lat: selectedLocation.lat, lng: selectedLocation.lng }}>
-              <Pin backgroundColor={"#007BFF"} borderColor={"#000"} />
+              {/* ===== ESTA ES LA LÍNEA QUE SE CORRIGIÓ ===== */}
+              <Pin background={'#007BFF'} borderColor={'#000'} />
             </AdvancedMarker>
           )}
         </Map>
