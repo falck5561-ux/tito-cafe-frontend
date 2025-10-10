@@ -1,4 +1,4 @@
-// Archivo: src/pages/ClientePage.jsx
+// Archivo: src/pages/ClientePage.jsx (con opciones de entrega)
 
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
@@ -11,11 +11,17 @@ import CheckoutForm from '../components/CheckoutForm';
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 function ClientePage() {
-  // ... (toda la lógica de estados y funciones que ya tenías)
   const [activeTab, setActiveTab] = useState('crear');
   const [productos, setProductos] = useState([]);
   const [pedidoActual, setPedidoActual] = useState([]);
-  const [total, setTotal] = useState(0);
+  
+  // --- NUEVOS ESTADOS ---
+  const [subtotal, setSubtotal] = useState(0);
+  const [tipoOrden, setTipoOrden] = useState('llevar'); // Opciones: 'llevar', 'local', 'domicilio'
+  const [direccion, setDireccion] = useState('');
+  const costoEnvio = 40.00; // Costo de envío fijo
+  // --------------------
+
   const [misPedidos, setMisPedidos] = useState([]);
   const [misRecompensas, setMisRecompensas] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -23,9 +29,12 @@ function ClientePage() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [clientSecret, setClientSecret] = useState('');
   const [paymentLoading, setPaymentLoading] = useState(false);
+  
+  const totalFinal = tipoOrden === 'domicilio' ? subtotal + costoEnvio : subtotal;
 
   const fetchData = async () => {
-    setLoading(true);
+    // ... (esta función no cambia)
+     setLoading(true);
     setError('');
     try {
       if (activeTab === 'crear') {
@@ -48,12 +57,13 @@ function ClientePage() {
   useEffect(() => { fetchData(); }, [activeTab]);
   
   useEffect(() => {
-    const nuevoTotal = pedidoActual.reduce((sum, item) => sum + item.cantidad * Number(item.precio), 0);
-    setTotal(nuevoTotal);
+    const nuevoSubtotal = pedidoActual.reduce((sum, item) => sum + item.cantidad * Number(item.precio), 0);
+    setSubtotal(nuevoSubtotal);
   }, [pedidoActual]);
 
   const agregarProductoAPedido = (producto) => {
-    setPedidoActual(prev => {
+    // ... (esta función no cambia)
+     setPedidoActual(prev => {
       const existe = prev.find(item => item.id === producto.id);
       if (existe) {
         return prev.map(item => item.id === producto.id ? { ...item, cantidad: item.cantidad + 1 } : item);
@@ -65,10 +75,14 @@ function ClientePage() {
   const limpiarPedido = () => setPedidoActual([]);
 
   const handleProcederAlPago = async () => {
-    if (total <= 0) return;
+    if (totalFinal <= 0) return;
+    if (tipoOrden === 'domicilio' && direccion.trim() === '') {
+        return toast.error('Por favor, ingresa tu dirección de entrega.');
+    }
+
     setPaymentLoading(true);
     try {
-      const res = await axios.post('/api/payments/create-payment-intent', { amount: total });
+      const res = await axios.post('/api/payments/create-payment-intent', { amount: totalFinal });
       setClientSecret(res.data.clientSecret);
       setShowPaymentModal(true);
     } catch (err) {
@@ -80,31 +94,36 @@ function ClientePage() {
 
   const handleSuccessfulPayment = async () => {
     const productosParaEnviar = pedidoActual.map(({ id, cantidad, precio, nombre }) => ({ id, cantidad, precio, nombre }));
-    const pedidoData = { total, productos: productosParaEnviar };
+    const pedidoData = { 
+      total: totalFinal, 
+      productos: productosParaEnviar,
+      tipo_orden: tipoOrden,
+      direccion_entrega: tipoOrden === 'domicilio' ? direccion : null,
+      costo_envio: tipoOrden === 'domicilio' ? costoEnvio : 0
+    };
     
     try {
       const res = await axios.post('/api/pedidos', pedidoData);
       
       if (res.data.recompensaGenerada) {
-        toast.success('¡Felicidades! Has ganado un premio. Revisa "Mis Recompensas".', {
-          duration: 6000,
-          icon: '🎁',
-        });
+        toast.success('¡Felicidades! Ganaste un premio. Revisa "Mis Recompensas".', { duration: 6000, icon: '🎁' });
       } else {
         toast.success('¡Pedido realizado y pagado con éxito!');
       }
 
       limpiarPedido();
+      setDireccion('');
       setShowPaymentModal(false);
       setClientSecret('');
       setActiveTab('ver'); 
     } catch (err) {
-      toast.error('El pago fue exitoso, pero hubo un error al registrar tu pedido.');
+      toast.error('Hubo un error al registrar tu pedido. Contacta al soporte.');
     }
   };
   
   const getStatusBadge = (estado) => {
-    switch (estado) {
+    // ... (esta función no cambia)
+     switch (estado) {
       case 'Pendiente': return 'bg-warning text-dark';
       case 'En Preparación': return 'bg-info text-dark';
       case 'Listo para Recoger': return 'bg-success';
@@ -113,11 +132,11 @@ function ClientePage() {
     }
   };
 
-
   return (
     <div>
       <ul className="nav nav-tabs mb-4">
-        <li className="nav-item"><button className={`nav-link ${activeTab === 'crear' ? 'active' : ''}`} onClick={() => setActiveTab('crear')}>Hacer un Pedido</button></li>
+        {/* ... (las pestañas no cambian) ... */}
+         <li className="nav-item"><button className={`nav-link ${activeTab === 'crear' ? 'active' : ''}`} onClick={() => setActiveTab('crear')}>Hacer un Pedido</button></li>
         <li className="nav-item"><button className={`nav-link ${activeTab === 'ver' ? 'active' : ''}`} onClick={() => setActiveTab('ver')}>Mis Pedidos</button></li>
         <li className="nav-item"><button className={`nav-link ${activeTab === 'recompensas' ? 'active' : ''}`} onClick={() => setActiveTab('recompensas')}>Mis Recompensas</button></li>
       </ul>
@@ -125,20 +144,53 @@ function ClientePage() {
       {loading && <div className="text-center"><div className="spinner-border" role="status"></div></div>}
       {error && <div className="alert alert-danger">{error}</div>}
 
-      {/* Pestaña Crear Pedido */}
       {!loading && activeTab === 'crear' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="row">
-          {/* ... (código del menú y carrito no cambia) ... */}
-           <div className="col-md-8">
-            <h2>Elige tus Productos</h2>
+          <div className="col-md-8">
+            {/* ... (el menú de productos no cambia) ... */}
+              <h2>Elige tus Productos</h2>
             <div className="row g-3">{productos.map(p => (<div key={p.id} className="col-md-4 col-lg-3"><div className="card h-100 text-center shadow-sm" onClick={() => agregarProductoAPedido(p)} style={{ cursor: 'pointer' }}><div className="card-body d-flex flex-column justify-content-center"><h5 className="card-title">{p.nombre}</h5><p className="card-text text-success fw-bold">${Number(p.precio).toFixed(2)}</p></div></div></div>))}</div>
           </div>
+
           <div className="col-md-4">
             <div className="card shadow-sm">
               <div className="card-body">
-                <h3 className="card-title text-center">Mi Pedido</h3><hr />
+                <h3 className="card-title text-center">Mi Pedido</h3>
+                <hr />
                 <ul className="list-group list-group-flush">{pedidoActual.map((item, i) => (<li key={i} className="list-group-item d-flex justify-content-between"><span>{item.cantidad}x {item.nombre}</span><span>${(item.cantidad * Number(item.precio)).toFixed(2)}</span></li>))}</ul>
-                <hr /><h4>Total: ${total.toFixed(2)}</h4>
+                <hr />
+
+                {/* --- SECCIÓN DE TIPO DE ORDEN --- */}
+                <h5>Elige una opción:</h5>
+                <div className="form-check">
+                  <input className="form-check-input" type="radio" name="tipoOrden" id="llevar" value="llevar" checked={tipoOrden === 'llevar'} onChange={(e) => setTipoOrden(e.target.value)} />
+                  <label className="form-check-label" htmlFor="llevar">Para Llevar</label>
+                </div>
+                <div className="form-check">
+                  <input className="form-check-input" type="radio" name="tipoOrden" id="local" value="local" checked={tipoOrden === 'local'} onChange={(e) => setTipoOrden(e.target.value)} />
+                  <label className="form-check-label" htmlFor="local">Para Comer Aquí</label>
+                </div>
+                <div className="form-check">
+                  <input className="form-check-input" type="radio" name="tipoOrden" id="domicilio" value="domicilio" checked={tipoOrden === 'domicilio'} onChange={(e) => setTipoOrden(e.target.value)} />
+                  <label className="form-check-label" htmlFor="domicilio">Entrega a Domicilio</label>
+                </div>
+
+                {/* --- CAMPO DE DIRECCIÓN (CONDICIONAL) --- */}
+                {tipoOrden === 'domicilio' && (
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-3">
+                    <label htmlFor="direccion" className="form-label">Dirección de Entrega:</label>
+                    <textarea className="form-control" id="direccion" rows="2" value={direccion} onChange={(e) => setDireccion(e.target.value)} placeholder="Calle, número, colonia, referencias..."></textarea>
+                  </motion.div>
+                )}
+
+                <hr />
+                {/* --- CÁLCULO DE TOTALES --- */}
+                <p className="d-flex justify-content-between">Subtotal: <span>${subtotal.toFixed(2)}</span></p>
+                {tipoOrden === 'domicilio' && (
+                  <p className="d-flex justify-content-between">Costo de Envío: <span>${costoEnvio.toFixed(2)}</span></p>
+                )}
+                <h4>Total: ${totalFinal.toFixed(2)}</h4>
+
                 <div className="d-grid gap-2 mt-3">
                   <button className="btn btn-primary" onClick={handleProcederAlPago} disabled={pedidoActual.length === 0 || paymentLoading}>
                     {paymentLoading ? 'Iniciando...' : 'Proceder al Pago'}
@@ -151,9 +203,9 @@ function ClientePage() {
         </motion.div>
       )}
 
-      {/* Pestaña Mis Pedidos */}
-      {!loading && activeTab === 'ver' && (
-         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+       {/* ... (el resto de tu JSX para las otras pestañas y el modal no cambia) ... */}
+        {!loading && activeTab === 'ver' && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <h2>Mis Pedidos</h2>
           {misPedidos.length === 0 ? <p className="text-center">No has realizado ningún pedido.</p> : (
             <div className="list-group">{misPedidos.map(p => (
@@ -166,9 +218,7 @@ function ClientePage() {
           )}
         </motion.div>
       )}
-
-      {/* Pestaña Mis Recompensas (CON DISEÑO MEJORADO) */}
-      {!loading && activeTab === 'recompensas' && (
+       {!loading && activeTab === 'recompensas' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <h2>Mis Recompensas</h2>
           {misRecompensas.length === 0 ? (
@@ -193,11 +243,9 @@ function ClientePage() {
           )}
         </motion.div>
       )}
-
-      {/* Modal de Pago */}
       {showPaymentModal && clientSecret && (
         <div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
-           <motion.div initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="modal-dialog">
+          <motion.div initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="modal-dialog">
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">Finalizar Compra</h5>
@@ -205,7 +253,7 @@ function ClientePage() {
               </div>
               <div className="modal-body">
                 <Elements stripe={stripePromise} options={{ clientSecret }}>
-                  <CheckoutForm handleSuccess={handleSuccessfulPayment} total={total} />
+                  <CheckoutForm handleSuccess={handleSuccessfulPayment} total={totalFinal} />
                 </Elements>
               </div>
             </div>
