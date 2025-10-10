@@ -1,43 +1,33 @@
-// Archivo: src/pages/HomePage.jsx (Versión Final con Botón Inteligente)
-import React, { useState, useEffect, useContext } from 'react'; // <-- 1. IMPORTAMOS useContext
+// Archivo: src/pages/HomePage.jsx (Versión Final con Logo Corregido)
+
+import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import logo from '../assets/logo.png'; 
-import AuthContext from '../context/AuthContext'; // <-- 2. IMPORTAMOS EL CONTEXTO DE AUTENTICACIÓN
+// --- La importación del logo se ha eliminado ---
+import AuthContext from '../context/AuthContext';
 
 function HomePage() {
   const [productos, setProductos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  
-  // --- 3. OBTENEMOS EL USUARIO DEL CONTEXTO ---
   const { user } = useContext(AuthContext);
 
-  // --- 4. LÓGICA PARA DECIDIR A DÓNDE IR ---
-  // Esta función determina la URL correcta basada en el rol del usuario.
   const getPedidoUrl = () => {
     if (!user) {
-      return "/login"; // Si no hay usuario, va al login
+      return "/login";
     }
     switch (user.rol) {
-      case 'Cliente':
-        return "/cliente";
-      case 'Jefe':
-      case 'Admin': // Puedes añadir 'Admin' si tienes ese rol
-        return "/admin";
-      case 'Empleado':
-        return "/pos";
-      default:
-        return "/login"; // Como fallback, si el rol no se reconoce
+      case 'Cliente': return "/cliente";
+      case 'Jefe': return "/admin";
+      case 'Empleado': return "/pos";
+      default: return "/login";
     }
   };
-
 
   useEffect(() => {
     const fetchProductos = async () => {
       try {
-        // Usamos la URL relativa gracias a la configuración global de axios
         const res = await axios.get('/api/productos');
         setProductos(res.data);
       } catch (err) {
@@ -64,12 +54,13 @@ function HomePage() {
     if (cat.includes('postre')) return 'https://placehold.co/600x400/ffc0cb/FFF?text=Postre';
     return 'https://placehold.co/600x400/d2b48c/FFF?text=Producto';
   };
-  
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
       <div className="p-5 mb-5 text-center rounded-3 shadow" style={heroStyle}>
+        {/* --- LA RUTA DE LA IMAGEN AHORA ES DIRECTA --- */}
         <motion.img 
-          src={logo} 
+          src="/logo.png" 
           alt="Tito Café Logo"
           className="hero-logo mb-4" 
           initial={{ y: -50, opacity: 0 }}
@@ -79,14 +70,13 @@ function HomePage() {
         <h1 className="display-4 fw-bold">El Sabor de la Tradición en cada Taza</h1>
         <p className="fs-4">Descubre nuestra selección de cafés de especialidad, postres artesanales y un ambiente único.</p>
         
-        {/* --- 5. EL BOTÓN AHORA USA LA URL DINÁMICA --- */}
         <Link to={getPedidoUrl()} className="btn btn-primary btn-lg mt-3" type="button">
           Haz tu Pedido
         </Link>
       </div>
 
       <h2 className="text-center mb-4">Nuestro Menú</h2>
-      {loading && <div className="text-center"><div className="spinner-border" role="status"><span className="visually-hidden">Cargando...</span></div></div>}
+      {loading && <div className="text-center"><div className="spinner-border" role="status"></div></div>}
       {error && <div className="alert alert-danger">{error}</div>}
       
       <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
