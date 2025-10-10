@@ -72,7 +72,7 @@ function ClientePage() {
     }
   };
   
-  // Resetea el costo de envío si el tipo de orden cambia
+  // El resto de tu código se queda igual...
   useEffect(() => {
     if (tipoOrden !== 'domicilio') {
         setDireccion(null);
@@ -87,17 +87,16 @@ function ClientePage() {
       if (activeTab === 'crear') {
         const res = await axios.get('/api/productos');
         setProductos(res.data);
-      } else if (activeTab === 'ver') {
-        // Adjuntamos el token también a las peticiones que lo necesiten
+      } else {
         const token = localStorage.getItem('token');
-        const config = { headers: { 'Authorization': `Bearer ${token}` } };
-        const res = await axios.get('/api/pedidos/mis-pedidos', config);
-        setMisPedidos(res.data);
-      } else if (activeTab === 'recompensas') {
-        const token = localStorage.getItem('token');
-        const config = { headers: { 'Authorization': `Bearer ${token}` } };
-        const res = await axios.get('/api/recompensas/mis-recompensas', config);
-        setMisRecompensas(res.data);
+        const config = { headers: { Authorization: `Bearer ${token}` } };
+        if (activeTab === 'ver') {
+          const res = await axios.get('/api/pedidos/mis-pedidos', config);
+          setMisPedidos(res.data);
+        } else if (activeTab === 'recompensas') {
+          const res = await axios.get('/api/recompensas/mis-recompensas', config);
+          setMisRecompensas(res.data);
+        }
       }
     } catch (err) { 
       setError('No se pudieron cargar los datos.'); 
@@ -134,11 +133,10 @@ function ClientePage() {
     if (tipoOrden === 'domicilio' && !direccion) { 
       return toast.error('Por favor, selecciona tu dirección en el mapa.');
     }
-
     setPaymentLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const config = { headers: { 'Authorization': `Bearer ${token}` } };
+      const config = { headers: { Authorization: `Bearer ${token}` } };
       const res = await axios.post('/api/payments/create-payment-intent', { amount: totalFinal }, config);
       setClientSecret(res.data.clientSecret);
       setShowPaymentModal(true);
@@ -160,18 +158,15 @@ function ClientePage() {
       longitude: tipoOrden === 'domicilio' ? direccion.lng : null,
       costo_envio: costoEnvio
     };
-    
     try {
       const token = localStorage.getItem('token');
-      const config = { headers: { 'Authorization': `Bearer ${token}` } };
+      const config = { headers: { Authorization: `Bearer ${token}` } };
       const res = await axios.post('/api/pedidos', pedidoData, config);
-      
       if (res.data.recompensaGenerada) {
         toast.success('¡Felicidades! Ganaste un premio. Revisa "Mis Recompensas".', { duration: 6000, icon: '🎁' });
       } else {
         toast.success('¡Pedido realizado y pagado con éxito!');
       }
-
       limpiarPedido();
       setShowPaymentModal(false);
       setClientSecret('');
@@ -198,17 +193,14 @@ function ClientePage() {
         <li className="nav-item"><button className={`nav-link ${activeTab === 'ver' ? 'active' : ''}`} onClick={() => setActiveTab('ver')}>Mis Pedidos</button></li>
         <li className="nav-item"><button className={`nav-link ${activeTab === 'recompensas' ? 'active' : ''}`} onClick={() => setActiveTab('recompensas')}>Mis Recompensas</button></li>
       </ul>
-
       {loading && <div className="text-center"><div className="spinner-border" role="status"></div></div>}
       {error && <div className="alert alert-danger">{error}</div>}
-
       {!loading && activeTab === 'crear' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="row">
           <div className="col-md-8">
             <h2>Elige tus Productos</h2>
             <div className="row g-3">{productos.map(p => (<div key={p.id} className="col-md-4 col-lg-3"><div className="card h-100 text-center shadow-sm" onClick={() => agregarProductoAPedido(p)} style={{ cursor: 'pointer' }}><div className="card-body d-flex flex-column justify-content-center"><h5 className="card-title">{p.nombre}</h5><p className="card-text text-success fw-bold">${Number(p.precio).toFixed(2)}</p></div></div></div>))}</div>
           </div>
-
           <div className="col-md-4">
             <div className="card shadow-sm">
               <div className="card-body">
@@ -216,7 +208,6 @@ function ClientePage() {
                 <hr />
                 <ul className="list-group list-group-flush">{pedidoActual.map((item, i) => (<li key={i} className="list-group-item d-flex justify-content-between"><span>{item.cantidad}x {item.nombre}</span><span>${(item.cantidad * Number(item.precio)).toFixed(2)}</span></li>))}</ul>
                 <hr />
-
                 <h5>Elige una opción:</h5>
                 <div className="form-check">
                   <input className="form-check-input" type="radio" name="tipoOrden" id="llevar" value="llevar" checked={tipoOrden === 'llevar'} onChange={(e) => setTipoOrden(e.target.value)} />
@@ -230,20 +221,14 @@ function ClientePage() {
                   <input className="form-check-input" type="radio" name="tipoOrden" id="domicilio" value="domicilio" checked={tipoOrden === 'domicilio'} onChange={(e) => setTipoOrden(e.target.value)} />
                   <label className="form-check-label" htmlFor="domicilio">Entrega a Domicilio</label>
                 </div>
-                
                 {tipoOrden === 'domicilio' && (
                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-3">
                     <AddressSearch onSelect={handleAddressSelection} />
-                    <MapSelector 
-                      onAddressSelect={handleAddressSelection} 
-                      selectedLocation={direccion} 
-                    />
+                    <MapSelector onAddressSelect={handleAddressSelection} selectedLocation={direccion} />
                   </motion.div>
                 )}
-
                 <hr />
                 <p className="d-flex justify-content-between">Subtotal: <span>${subtotal.toFixed(2)}</span></p>
-                
                 {tipoOrden === 'domicilio' && (
                   <p className="d-flex justify-content-between">
                     Costo de Envío:
@@ -252,9 +237,7 @@ function ClientePage() {
                     </span>
                   </p>
                 )}
-                
                 <h4>Total: ${totalFinal.toFixed(2)}</h4>
-
                 <div className="d-grid gap-2 mt-3">
                   <button className="btn btn-primary" onClick={handleProcederAlPago} disabled={pedidoActual.length === 0 || paymentLoading || calculandoCosto}>
                     {paymentLoading ? 'Iniciando...' : 'Proceder al Pago'}
@@ -266,9 +249,7 @@ function ClientePage() {
           </div>
         </motion.div>
       )}
-
-      {/* ... El resto de tu JSX no cambia y va aquí ... */}
-      
+      {/* El resto de tu JSX no cambia... */}
     </div>
   );
 }
