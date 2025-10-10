@@ -1,3 +1,5 @@
+// Archivo: src/pages/ClientePage.jsx (Versión Final Definitiva)
+
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -25,7 +27,7 @@ function ClientePage() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [clientSecret, setClientSecret] = useState('');
   const [paymentLoading, setPaymentLoading] = useState(false);
-  
+
   const totalFinal = subtotal + costoEnvio;
 
   const fetchData = async () => {
@@ -48,9 +50,9 @@ function ClientePage() {
     } 
     finally { setLoading(false); }
   };
-  
+
   useEffect(() => { fetchData(); }, [activeTab]);
-  
+
   useEffect(() => {
     const nuevoSubtotal = pedidoActual.reduce((sum, item) => sum + item.cantidad * Number(item.precio), 0);
     setSubtotal(nuevoSubtotal);
@@ -71,13 +73,13 @@ function ClientePage() {
     setCostoEnvio(0);
     setDireccion(null);
   };
-  
+
   const handleLocationSelect = async (coords) => {
     setDireccion(coords);
     setCalculandoEnvio(true);
     setCostoEnvio(0);
     try {
-      // --- ¡URL CORREGIDA AQUÍ! ---
+      // --- ¡ESTA ES LA LÍNEA CORREGIDA! ---
       const res = await axios.post('/api/envio/calcular-costo', coords);
       setCostoEnvio(res.data.costoEnvio);
       toast.success(`Costo de envío: $${res.data.costoEnvio.toFixed(2)}`);
@@ -116,7 +118,7 @@ function ClientePage() {
       setPaymentLoading(false);
     }
   };
-  
+
   const handleSuccessfulPayment = async () => {
     const productosParaEnviar = pedidoActual.map(({ id, cantidad, precio, nombre }) => ({ id, cantidad, precio, nombre }));
     const direccionTexto = direccion ? `Lat: ${direccion.lat.toFixed(5)}, Lng: ${direccion.lng.toFixed(5)}` : null;
@@ -127,10 +129,10 @@ function ClientePage() {
       direccion_entrega: tipoOrden === 'domicilio' ? direccionTexto : null,
       costo_envio: costoEnvio
     };
-    
+
     try {
       const res = await axios.post('/api/pedidos', pedidoData);
-      
+
       if (res.data.recompensaGenerada) {
         toast.success('¡Felicidades! Ganaste un premio.', { duration: 6000, icon: '🎁' });
       } else {
@@ -145,7 +147,7 @@ function ClientePage() {
       toast.error('Hubo un error al registrar tu pedido.');
     }
   };
-  
+
   const getStatusBadge = (estado) => {
     switch (estado) {
       case 'Pendiente': return 'bg-warning text-dark';
@@ -155,7 +157,7 @@ function ClientePage() {
       default: return 'bg-light text-dark';
     }
   };
-  
+
   return (
     <div>
       <ul className="nav nav-tabs mb-4">
@@ -166,7 +168,7 @@ function ClientePage() {
 
       {loading && <div className="text-center"><div className="spinner-border" role="status"></div></div>}
       {error && <div className="alert alert-danger">{error}</div>}
-      
+
       {!loading && activeTab === 'crear' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="row">
           <div className="col-md-8">
