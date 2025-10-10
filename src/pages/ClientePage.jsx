@@ -1,4 +1,4 @@
-// Archivo: src/pages/ClientePage.jsx (con opciones de entrega)
+// Archivo: src/pages/ClientePage.jsx (con integración de Google Maps)
 
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 import CheckoutForm from '../components/CheckoutForm';
+import MapSelector from '../components/MapSelector'; // <-- CAMBIO: Se importa el nuevo componente de mapa
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
@@ -15,12 +16,12 @@ function ClientePage() {
   const [productos, setProductos] = useState([]);
   const [pedidoActual, setPedidoActual] = useState([]);
   
-  // --- NUEVOS ESTADOS ---
+  // --- ESTADOS MODIFICADOS ---
   const [subtotal, setSubtotal] = useState(0);
   const [tipoOrden, setTipoOrden] = useState('llevar'); // Opciones: 'llevar', 'local', 'domicilio'
-  const [direccion, setDireccion] = useState('');
-  const costoEnvio = 40.00; // Costo de envío fijo
-  // --------------------
+  const [direccion, setDireccion] = useState(null); // <-- CAMBIO: Ahora es null, guardará un objeto { lat, lng, text }
+  const costoEnvio = 40.00; 
+  // -------------------------
 
   const [misPedidos, setMisPedidos] = useState([]);
   const [misRecompensas, setMisRecompensas] = useState([]);
@@ -33,8 +34,7 @@ function ClientePage() {
   const totalFinal = tipoOrden === 'domicilio' ? subtotal + costoEnvio : subtotal;
 
   const fetchData = async () => {
-    // ... (esta función no cambia)
-     setLoading(true);
+    setLoading(true);
     setError('');
     try {
       if (activeTab === 'crear') {
@@ -62,8 +62,7 @@ function ClientePage() {
   }, [pedidoActual]);
 
   const agregarProductoAPedido = (producto) => {
-    // ... (esta función no cambia)
-     setPedidoActual(prev => {
+    setPedidoActual(prev => {
       const existe = prev.find(item => item.id === producto.id);
       if (existe) {
         return prev.map(item => item.id === producto.id ? { ...item, cantidad: item.cantidad + 1 } : item);
@@ -76,8 +75,10 @@ function ClientePage() {
 
   const handleProcederAlPago = async () => {
     if (totalFinal <= 0) return;
-    if (tipoOrden === 'domicilio' && direccion.trim() === '') {
-        return toast.error('Por favor, ingresa tu dirección de entrega.');
+    
+    // <-- CAMBIO: Se actualiza la validación de la dirección
+    if (tipoOrden === 'domicilio' && !direccion) { 
+      return toast.error('Por favor, selecciona tu dirección en el mapa.');
     }
 
     setPaymentLoading(true);
@@ -94,11 +95,15 @@ function ClientePage() {
 
   const handleSuccessfulPayment = async () => {
     const productosParaEnviar = pedidoActual.map(({ id, cantidad, precio, nombre }) => ({ id, cantidad, precio, nombre }));
+    
+    // <-- CAMBIO: Se actualiza el objeto que se envía al backend con las coordenadas
     const pedidoData = { 
       total: totalFinal, 
       productos: productosParaEnviar,
       tipo_orden: tipoOrden,
-      direccion_entrega: tipoOrden === 'domicilio' ? direccion : null,
+      direccion_entrega: tipoOrden === 'domicilio' ? direccion.text : null,
+      latitude: tipoOrden === 'domicilio' ? direccion.lat : null,
+      longitude: tipoOrden === 'domicilio' ? direccion.lng : null,
       costo_envio: tipoOrden === 'domicilio' ? costoEnvio : 0
     };
     
@@ -112,7 +117,7 @@ function ClientePage() {
       }
 
       limpiarPedido();
-      setDireccion('');
+      setDireccion(null); // <-- CAMBIO: Se limpia el estado de la dirección a null
       setShowPaymentModal(false);
       setClientSecret('');
       setActiveTab('ver'); 
@@ -122,8 +127,7 @@ function ClientePage() {
   };
   
   const getStatusBadge = (estado) => {
-    // ... (esta función no cambia)
-     switch (estado) {
+    switch (estado) {
       case 'Pendiente': return 'bg-warning text-dark';
       case 'En Preparación': return 'bg-info text-dark';
       case 'Listo para Recoger': return 'bg-success';
@@ -135,8 +139,7 @@ function ClientePage() {
   return (
     <div>
       <ul className="nav nav-tabs mb-4">
-        {/* ... (las pestañas no cambian) ... */}
-         <li className="nav-item"><button className={`nav-link ${activeTab === 'crear' ? 'active' : ''}`} onClick={() => setActiveTab('crear')}>Hacer un Pedido</button></li>
+        <li className="nav-item"><button className={`nav-link ${activeTab === 'crear' ? 'active' : ''}`} onClick={() => setActiveTab('crear')}>Hacer un Pedido</button></li>
         <li className="nav-item"><button className={`nav-link ${activeTab === 'ver' ? 'active' : ''}`} onClick={() => setActiveTab('ver')}>Mis Pedidos</button></li>
         <li className="nav-item"><button className={`nav-link ${activeTab === 'recompensas' ? 'active' : ''}`} onClick={() => setActiveTab('recompensas')}>Mis Recompensas</button></li>
       </ul>
@@ -147,8 +150,7 @@ function ClientePage() {
       {!loading && activeTab === 'crear' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="row">
           <div className="col-md-8">
-            {/* ... (el menú de productos no cambia) ... */}
-              <h2>Elige tus Productos</h2>
+            <h2>Elige tus Productos</h2>
             <div className="row g-3">{productos.map(p => (<div key={p.id} className="col-md-4 col-lg-3"><div className="card h-100 text-center shadow-sm" onClick={() => agregarProductoAPedido(p)} style={{ cursor: 'pointer' }}><div className="card-body d-flex flex-column justify-content-center"><h5 className="card-title">{p.nombre}</h5><p className="card-text text-success fw-bold">${Number(p.precio).toFixed(2)}</p></div></div></div>))}</div>
           </div>
 
@@ -160,7 +162,6 @@ function ClientePage() {
                 <ul className="list-group list-group-flush">{pedidoActual.map((item, i) => (<li key={i} className="list-group-item d-flex justify-content-between"><span>{item.cantidad}x {item.nombre}</span><span>${(item.cantidad * Number(item.precio)).toFixed(2)}</span></li>))}</ul>
                 <hr />
 
-                {/* --- SECCIÓN DE TIPO DE ORDEN --- */}
                 <h5>Elige una opción:</h5>
                 <div className="form-check">
                   <input className="form-check-input" type="radio" name="tipoOrden" id="llevar" value="llevar" checked={tipoOrden === 'llevar'} onChange={(e) => setTipoOrden(e.target.value)} />
@@ -174,17 +175,15 @@ function ClientePage() {
                   <input className="form-check-input" type="radio" name="tipoOrden" id="domicilio" value="domicilio" checked={tipoOrden === 'domicilio'} onChange={(e) => setTipoOrden(e.target.value)} />
                   <label className="form-check-label" htmlFor="domicilio">Entrega a Domicilio</label>
                 </div>
-
-                {/* --- CAMPO DE DIRECCIÓN (CONDICIONAL) --- */}
+                
+                {/* <-- CAMBIO: Se reemplaza el textarea por el componente MapSelector --> */}
                 {tipoOrden === 'domicilio' && (
                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-3">
-                    <label htmlFor="direccion" className="form-label">Dirección de Entrega:</label>
-                    <textarea className="form-control" id="direccion" rows="2" value={direccion} onChange={(e) => setDireccion(e.target.value)} placeholder="Calle, número, colonia, referencias..."></textarea>
+                    <MapSelector onAddressSelect={setDireccion} />
                   </motion.div>
                 )}
 
                 <hr />
-                {/* --- CÁLCULO DE TOTALES --- */}
                 <p className="d-flex justify-content-between">Subtotal: <span>${subtotal.toFixed(2)}</span></p>
                 {tipoOrden === 'domicilio' && (
                   <p className="d-flex justify-content-between">Costo de Envío: <span>${costoEnvio.toFixed(2)}</span></p>
@@ -203,8 +202,8 @@ function ClientePage() {
         </motion.div>
       )}
 
-       {/* ... (el resto de tu JSX para las otras pestañas y el modal no cambia) ... */}
-        {!loading && activeTab === 'ver' && (
+      {/* ... (el resto del JSX para las otras pestañas y el modal no cambia) ... */}
+      {!loading && activeTab === 'ver' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <h2>Mis Pedidos</h2>
           {misPedidos.length === 0 ? <p className="text-center">No has realizado ningún pedido.</p> : (
@@ -218,7 +217,7 @@ function ClientePage() {
           )}
         </motion.div>
       )}
-       {!loading && activeTab === 'recompensas' && (
+      {!loading && activeTab === 'recompensas' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <h2>Mis Recompensas</h2>
           {misRecompensas.length === 0 ? (
