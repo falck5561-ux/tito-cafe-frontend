@@ -1,5 +1,4 @@
-// Archivo: src/pages/ClientePage.jsx (CORREGIDO con autenticación para el cálculo de costo)
-
+// Archivo: src/pages/ClientePage.jsx (con costo de envío dinámico)
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -8,7 +7,6 @@ import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 import CheckoutForm from '../components/CheckoutForm';
 import MapSelector from '../components/MapSelector';
-import AddressSearch from '../components/AddressSearch';
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
@@ -16,13 +14,11 @@ function ClientePage() {
   const [activeTab, setActiveTab] = useState('crear');
   const [productos, setProductos] = useState([]);
   const [pedidoActual, setPedidoActual] = useState([]);
-  
   const [subtotal, setSubtotal] = useState(0);
   const [tipoOrden, setTipoOrden] = useState('llevar');
-  const [direccion, setDireccion] = useState(null); 
+  const [direccion, setDireccion] = useState(null);
   const [costoEnvio, setCostoEnvio] = useState(0);
-  const [calculandoCosto, setCalculandoCosto] = useState(false);
-
+  const [calculandoEnvio, setCalculandoEnvio] = useState(false);
   const [misPedidos, setMisPedidos] = useState([]);
   const [misRecompensas, setMisRecompensas] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -30,55 +26,8 @@ function ClientePage() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [clientSecret, setClientSecret] = useState('');
   const [paymentLoading, setPaymentLoading] = useState(false);
-  
+
   const totalFinal = subtotal + costoEnvio;
-
-  // ===== ESTA ES LA FUNCIÓN QUE SE CORRIGIÓ =====
-  const handleAddressSelection = async (selected) => {
-    setDireccion(selected);
-    setCalculandoCosto(true);
-    
-    try {
-      // 1. Obtenemos el token guardado en el navegador (localStorage)
-      const token = localStorage.getItem('token');
-      if (!token) {
-        toast.error("Tu sesión ha expirado. Por favor, inicia sesión de nuevo.");
-        setCalculandoCosto(false);
-        return;
-      }
-
-      // 2. Creamos las cabeceras de autenticación para enviar el token
-      const config = {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      };
-
-      // 3. Enviamos la petición CON las cabeceras de autenticación
-      const res = await axios.post('/api/pedidos/calculate-delivery-cost', { 
-        lat: selected.lat, 
-        lng: selected.lng 
-      }, config); // <-- Se añade 'config' a la petición
-
-      setCostoEnvio(res.data.deliveryCost);
-      toast.success(`Costo de envío: $${res.data.deliveryCost.toFixed(2)}`);
-
-    } catch (error) {
-      toast.error("Ubicación fuera del área de entrega o error de servidor.");
-      setCostoEnvio(0);
-      setDireccion(null);
-    } finally {
-      setCalculandoCosto(false);
-    }
-  };
-  
-  // El resto de tu código se queda igual...
-  useEffect(() => {
-    if (tipoOrden !== 'domicilio') {
-        setDireccion(null);
-        setCostoEnvio(0);
-    }
-  }, [tipoOrden]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -87,16 +36,12 @@ function ClientePage() {
       if (activeTab === 'crear') {
         const res = await axios.get('/api/productos');
         setProductos(res.data);
-      } else {
-        const token = localStorage.getItem('token');
-        const config = { headers: { Authorization: `Bearer ${token}` } };
-        if (activeTab === 'ver') {
-          const res = await axios.get('/api/pedidos/mis-pedidos', config);
-          setMisPedidos(res.data);
-        } else if (activeTab === 'recompensas') {
-          const res = await axios.get('/api/recompensas/mis-recompensas', config);
-          setMisRecompensas(res.data);
-        }
+      } else if (activeTab === 'ver') {
+        const res = await axios.get('/api/pedidos/mis-pedidos');
+        setMisPedidos(res.data);
+      } else if (activeTab === 'recompensas') {
+        const res = await axios.get('/api/recompensas/mis-recompensas');
+        setMisRecompensas(res.data);
       }
     } catch (err) { 
       setError('No se pudieron cargar los datos.'); 
@@ -104,9 +49,9 @@ function ClientePage() {
     } 
     finally { setLoading(false); }
   };
-  
+
   useEffect(() => { fetchData(); }, [activeTab]);
-  
+
   useEffect(() => {
     const nuevoSubtotal = pedidoActual.reduce((sum, item) => sum + item.cantidad * Number(item.precio), 0);
     setSubtotal(nuevoSubtotal);
@@ -124,20 +69,45 @@ function ClientePage() {
 
   const limpiarPedido = () => {
     setPedidoActual([]);
-    setDireccion(null);
     setCostoEnvio(0);
+    setDireccion(null);
   };
+
+  const handleLocationSelect = async (coords) => {
+    setDireccion(coords);
+    setCalculandoEnvio(true);
+    setCostoEnvio(0);
+    try {
+      const res = await axios.post('/api/envio/calcular-costo', coords);
+      setCostoEnvio(res.data.costoEnvio);
+      toast.success(`Costo de envío: $${res.data.costoEnvio.toFixed(2)}`);
+    } catch (err) {
+      toast.error(err.response?.data?.msg || 'No se pudo calcular el costo de envío.');
+      setDireccion(null);
+    } finally {
+      setCalculandoEnvio(false);
+    }
+  };
+
+  useEffect(() => {
+    if (tipoOrden !== 'domicilio') {
+      setCostoEnvio(0);
+      setDireccion(null);
+    }
+  }, [tipoOrden]);
 
   const handleProcederAlPago = async () => {
     if (totalFinal <= 0) return;
-    if (tipoOrden === 'domicilio' && !direccion) { 
-      return toast.error('Por favor, selecciona tu dirección en el mapa.');
+    if (tipoOrden === 'domicilio' && !direccion) {
+        return toast.error('Por favor, selecciona tu ubicación en el mapa.');
     }
+    if (calculandoEnvio) {
+        return toast.error('Espera a que termine el cálculo del envío.');
+    }
+
     setPaymentLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-      const res = await axios.post('/api/payments/create-payment-intent', { amount: totalFinal }, config);
+      const res = await axios.post('/api/payments/create-payment-intent', { amount: totalFinal });
       setClientSecret(res.data.clientSecret);
       setShowPaymentModal(true);
     } catch (err) {
@@ -149,33 +119,33 @@ function ClientePage() {
 
   const handleSuccessfulPayment = async () => {
     const productosParaEnviar = pedidoActual.map(({ id, cantidad, precio, nombre }) => ({ id, cantidad, precio, nombre }));
+    const direccionTexto = direccion ? `Lat: ${direccion.lat}, Lng: ${direccion.lng}` : null;
     const pedidoData = { 
       total: totalFinal, 
       productos: productosParaEnviar,
       tipo_orden: tipoOrden,
-      direccion_entrega: tipoOrden === 'domicilio' ? direccion.text : null,
-      latitude: tipoOrden === 'domicilio' ? direccion.lat : null,
-      longitude: tipoOrden === 'domicilio' ? direccion.lng : null,
+      direccion_entrega: tipoOrden === 'domicilio' ? direccionTexto : null,
       costo_envio: costoEnvio
     };
+
     try {
-      const token = localStorage.getItem('token');
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-      const res = await axios.post('/api/pedidos', pedidoData, config);
+      const res = await axios.post('/api/pedidos', pedidoData);
+
       if (res.data.recompensaGenerada) {
-        toast.success('¡Felicidades! Ganaste un premio. Revisa "Mis Recompensas".', { duration: 6000, icon: '🎁' });
+        toast.success('¡Felicidades! Ganaste un premio.', { duration: 6000, icon: '🎁' });
       } else {
         toast.success('¡Pedido realizado y pagado con éxito!');
       }
+
       limpiarPedido();
       setShowPaymentModal(false);
       setClientSecret('');
       setActiveTab('ver'); 
     } catch (err) {
-      toast.error('Hubo un error al registrar tu pedido. Contacta al soporte.');
+      toast.error('Hubo un error al registrar tu pedido.');
     }
   };
-  
+
   const getStatusBadge = (estado) => {
     switch (estado) {
       case 'Pendiente': return 'bg-warning text-dark';
@@ -193,8 +163,10 @@ function ClientePage() {
         <li className="nav-item"><button className={`nav-link ${activeTab === 'ver' ? 'active' : ''}`} onClick={() => setActiveTab('ver')}>Mis Pedidos</button></li>
         <li className="nav-item"><button className={`nav-link ${activeTab === 'recompensas' ? 'active' : ''}`} onClick={() => setActiveTab('recompensas')}>Mis Recompensas</button></li>
       </ul>
+
       {loading && <div className="text-center"><div className="spinner-border" role="status"></div></div>}
       {error && <div className="alert alert-danger">{error}</div>}
+
       {!loading && activeTab === 'crear' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="row">
           <div className="col-md-8">
@@ -221,25 +193,24 @@ function ClientePage() {
                   <input className="form-check-input" type="radio" name="tipoOrden" id="domicilio" value="domicilio" checked={tipoOrden === 'domicilio'} onChange={(e) => setTipoOrden(e.target.value)} />
                   <label className="form-check-label" htmlFor="domicilio">Entrega a Domicilio</label>
                 </div>
+
                 {tipoOrden === 'domicilio' && (
                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-3">
-                    <AddressSearch onSelect={handleAddressSelection} />
-                    <MapSelector onAddressSelect={handleAddressSelection} selectedLocation={direccion} />
+                    <label className="form-label">Dirección de Entrega:</label>
+                    <MapSelector onLocationSelect={handleLocationSelect} />
                   </motion.div>
                 )}
                 <hr />
                 <p className="d-flex justify-content-between">Subtotal: <span>${subtotal.toFixed(2)}</span></p>
                 {tipoOrden === 'domicilio' && (
-                  <p className="d-flex justify-content-between">
-                    Costo de Envío:
-                    <span>
-                      {calculandoCosto ? <div className="spinner-border spinner-border-sm"></div> : `$${costoEnvio.toFixed(2)}`}
-                    </span>
-                  </p>
+                  <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="d-flex justify-content-between">
+                    Costo de Envío: 
+                    {calculandoEnvio ? <span className="spinner-border spinner-border-sm"></span> : <span>${costoEnvio.toFixed(2)}</span>}
+                  </motion.p>
                 )}
                 <h4>Total: ${totalFinal.toFixed(2)}</h4>
                 <div className="d-grid gap-2 mt-3">
-                  <button className="btn btn-primary" onClick={handleProcederAlPago} disabled={pedidoActual.length === 0 || paymentLoading || calculandoCosto}>
+                  <button className="btn btn-primary" onClick={handleProcederAlPago} disabled={pedidoActual.length === 0 || paymentLoading || calculandoEnvio}>
                     {paymentLoading ? 'Iniciando...' : 'Proceder al Pago'}
                   </button>
                   <button className="btn btn-outline-danger" onClick={limpiarPedido}>Vaciar Carrito</button>
@@ -249,7 +220,65 @@ function ClientePage() {
           </div>
         </motion.div>
       )}
-      {/* El resto de tu JSX no cambia... */}
+
+      {!loading && activeTab === 'ver' && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+          <h2>Mis Pedidos</h2>
+          {misPedidos.length === 0 ? <p className="text-center">No has realizado ningún pedido.</p> : (
+            <div className="list-group">{misPedidos.map(p => (
+              <div key={p.id} className="list-group-item list-group-item-action">
+                <div className="d-flex w-100 justify-content-between"><h5 className="mb-1">Pedido #{p.id} ({p.tipo_orden})</h5><small>{new Date(p.fecha).toLocaleDateString()}</small></div>
+                <p className="mb-1">Total: ${Number(p.total).toFixed(2)}</p>
+                <small>Estado: <span className={`badge ${getStatusBadge(p.estado)}`}>{p.estado}</span></small>
+              </div>))}
+            </div>
+          )}
+        </motion.div>
+      )}
+
+      {!loading && activeTab === 'recompensas' && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+          <h2>Mis Recompensas</h2>
+          {misRecompensas.length === 0 ? (
+            <p className="text-center">Aún no tienes recompensas.</p>
+          ) : (
+            <div className="row g-4">
+              {misRecompensas.map(recompensa => (
+                <div key={recompensa.id} className="col-md-6 col-lg-4">
+                  <div className="card text-center text-white bg-dark shadow-lg" style={{ border: '2px dashed #00ff7f' }}>
+                    <div className="card-body">
+                      <h5 className="card-title" style={{ color: '#00ff7f', fontWeight: 'bold' }}>🎁 ¡Cupón Ganado! 🎁</h5>
+                      <p className="card-text">{recompensa.descripcion}</p>
+                      <hr style={{ backgroundColor: '#00ff7f' }}/>
+                      <p className="h3">ID del Cupón: {recompensa.id}</p>
+                      <p className="card-text mt-2"><small>Muéstrale este ID al empleado para canjear tu premio.</small></p>
+                      <p className="card-text mt-2"><small className="text-muted">Ganado el: {new Date(recompensa.fecha_creacion).toLocaleDateString()}</small></p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </motion.div>
+      )}
+
+      {showPaymentModal && clientSecret && (
+        <div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <motion.div initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Finalizar Compra</h5>
+                <button type="button" className="btn-close" onClick={() => setShowPaymentModal(false)}></button>
+              </div>
+              <div className="modal-body">
+                <Elements stripe={stripePromise} options={{ clientSecret }}>
+                  <CheckoutForm handleSuccess={handleSuccessfulPayment} total={totalFinal} />
+                </Elements>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }
