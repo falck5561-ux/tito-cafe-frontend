@@ -6,16 +6,15 @@
     <title>Tito Café</title>
 
     <!-- 
-      Este es el código que se adapta. Le dice a cada dispositivo qué ícono usar:
-      - apple-touch-icon: Para iPhones y iPads.
-      - favicon-32x32: Para pestañas de navegador en pantallas normales.
-      - favicon-16x16: Para pestañas en pantallas de alta densidad.
-      - site.webmanifest: Para dispositivos Android.
+      Este es el código que le da las proporciones al navegador.
+      Le estamos diciendo que use el MISMO archivo para todos los tamaños.
+      El navegador lo encogerá, y es posible que aún se vea un poco borroso,
+      pero esta es la forma de hacerlo directamente en el código.
     -->
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-    <link rel="manifest" href="/site.webmanifest">
+    <link rel="icon" href="/favicon.png" sizes="any" type="image/png">
+    <link rel="icon" href="/favicon.png" sizes="16x16" type="image/png">
+    <link rel="icon" href="/favicon.png" sizes="32x32" type="image/png">
+    <link rel="apple-touch-icon" href="/favicon.png">
 
   </head>
   <body>
@@ -23,3 +22,4 @@
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
+
