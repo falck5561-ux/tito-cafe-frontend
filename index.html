@@ -14,10 +14,17 @@
 
     <!-- Meta opcional para PWA o mejor soporte en móviles -->
     <meta name="theme-color" content="#ffffff">
+
+    <!-- LÍNEA CRÍTICA: Carga la API de Google Maps con la librería "Places" y tu clave -->
+    <script 
+      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAo891fwBffQw6GcvScywdxNsbkxlOQ52Q&libraries=places" 
+      async 
+      defer
+    ></script>
+
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
-  
