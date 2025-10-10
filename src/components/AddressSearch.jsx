@@ -1,7 +1,7 @@
+// Archivo: src/components/AddressSearch.jsx (Versión sin @reach/combobox)
+
 import React from 'react';
 import usePlacesAutocomplete, { getGeocode, getLatLng } from 'use-places-autocomplete';
-import { Combobox, ComboboxInput, ComboboxPopover, ComboboxList, ComboboxOption } from '@reach/combobox';
-import '@reach/combobox/styles.css';
 
 const AddressSearch = ({ onSelect }) => {
   const {
@@ -12,8 +12,8 @@ const AddressSearch = ({ onSelect }) => {
     clearSuggestions,
   } = usePlacesAutocomplete({
     requestOptions: {
-      location: { lat: () => 19.83, lng: () => -90.53 }, // Centra la búsqueda cerca de Campeche
-      radius: 100 * 1000, // 100km
+      location: { lat: () => 19.83, lng: () => -90.53 },
+      radius: 100 * 1000,
       componentRestrictions: { country: 'mx' },
     },
     debounce: 300,
@@ -32,25 +32,30 @@ const AddressSearch = ({ onSelect }) => {
   };
 
   return (
-    <div className="mb-3">
-        <label className="form-label">Busca tu dirección:</label>
-        <Combobox onSelect={handleSelect}>
-          <ComboboxInput
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            disabled={!ready}
-            className="form-control"
-            placeholder="Ej: Calle 10, Colonia Centro..."
-          />
-          <ComboboxPopover>
-            <ComboboxList>
-              {status === "OK" &&
-                data.map(({ place_id, description }) => (
-                  <ComboboxOption key={place_id} value={description} />
-                ))}
-            </ComboboxList>
-          </ComboboxPopover>
-        </Combobox>
+    <div className="mb-3" style={{ position: 'relative' }}>
+      <label className="form-label">Busca tu dirección:</label>
+      <input
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        disabled={!ready}
+        className="form-control"
+        placeholder="Ej: Calle 10, Colonia Centro..."
+      />
+      {/* Lista de sugerencias */}
+      {status === "OK" && (
+        <ul className="list-group" style={{ position: 'absolute', zIndex: 1000, width: '100%' }}>
+          {data.map(({ place_id, description }) => (
+            <li 
+              key={place_id} 
+              onClick={() => handleSelect(description)}
+              className="list-group-item list-group-item-action"
+              style={{ cursor: 'pointer' }}
+            >
+              {description}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 };
