@@ -1,4 +1,4 @@
-// Archivo: src/pages/ClientePage.jsx (con Búsqueda, Mapa y Costo Dinámico)
+// Archivo: src/pages/ClientePage.jsx (CORREGIDO con autenticación para el cálculo de costo)
 
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
@@ -8,7 +8,7 @@ import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 import CheckoutForm from '../components/CheckoutForm';
 import MapSelector from '../components/MapSelector';
-import AddressSearch from '../components/AddressSearch'; // <-- Se importa el buscador
+import AddressSearch from '../components/AddressSearch';
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
@@ -17,12 +17,11 @@ function ClientePage() {
   const [productos, setProductos] = useState([]);
   const [pedidoActual, setPedidoActual] = useState([]);
   
-  // --- ESTADOS MODIFICADOS ---
   const [subtotal, setSubtotal] = useState(0);
   const [tipoOrden, setTipoOrden] = useState('llevar');
   const [direccion, setDireccion] = useState(null); 
-  const [costoEnvio, setCostoEnvio] = useState(0); // <-- CAMBIO: Inicia en 0, será dinámico
-  const [calculandoCosto, setCalculandoCosto] = useState(false); // <-- NUEVO: Para el spinner
+  const [costoEnvio, setCostoEnvio] = useState(0);
+  const [calculandoCosto, setCalculandoCosto] = useState(false);
 
   const [misPedidos, setMisPedidos] = useState([]);
   const [misRecompensas, setMisRecompensas] = useState([]);
@@ -32,25 +31,42 @@ function ClientePage() {
   const [clientSecret, setClientSecret] = useState('');
   const [paymentLoading, setPaymentLoading] = useState(false);
   
-  const totalFinal = subtotal + costoEnvio; // <-- CAMBIO: Cálculo simplificado
+  const totalFinal = subtotal + costoEnvio;
 
-  // <-- NUEVA FUNCIÓN: Se ejecuta al seleccionar una dirección -->
+  // ===== ESTA ES LA FUNCIÓN QUE SE CORRIGIÓ =====
   const handleAddressSelection = async (selected) => {
-    setDireccion(selected); // Actualiza la dirección con el objeto {lat, lng, text}
+    setDireccion(selected);
     setCalculandoCosto(true);
     
     try {
-      // Esta ruta la crearás en tu backend después
+      // 1. Obtenemos el token guardado en el navegador (localStorage)
+      const token = localStorage.getItem('token');
+      if (!token) {
+        toast.error("Tu sesión ha expirado. Por favor, inicia sesión de nuevo.");
+        setCalculandoCosto(false);
+        return;
+      }
+
+      // 2. Creamos las cabeceras de autenticación para enviar el token
+      const config = {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      };
+
+      // 3. Enviamos la petición CON las cabeceras de autenticación
       const res = await axios.post('/api/pedidos/calculate-delivery-cost', { 
         lat: selected.lat, 
         lng: selected.lng 
-      });
+      }, config); // <-- Se añade 'config' a la petición
+
       setCostoEnvio(res.data.deliveryCost);
       toast.success(`Costo de envío: $${res.data.deliveryCost.toFixed(2)}`);
+
     } catch (error) {
-      toast.error("Ubicación fuera del área de entrega.");
+      toast.error("Ubicación fuera del área de entrega o error de servidor.");
       setCostoEnvio(0);
-      setDireccion(null); // Resetea la dirección si hay error en el cálculo
+      setDireccion(null);
     } finally {
       setCalculandoCosto(false);
     }
@@ -72,10 +88,15 @@ function ClientePage() {
         const res = await axios.get('/api/productos');
         setProductos(res.data);
       } else if (activeTab === 'ver') {
-        const res = await axios.get('/api/pedidos/mis-pedidos');
+        // Adjuntamos el token también a las peticiones que lo necesiten
+        const token = localStorage.getItem('token');
+        const config = { headers: { 'Authorization': `Bearer ${token}` } };
+        const res = await axios.get('/api/pedidos/mis-pedidos', config);
         setMisPedidos(res.data);
       } else if (activeTab === 'recompensas') {
-        const res = await axios.get('/api/recompensas/mis-recompensas');
+        const token = localStorage.getItem('token');
+        const config = { headers: { 'Authorization': `Bearer ${token}` } };
+        const res = await axios.get('/api/recompensas/mis-recompensas', config);
         setMisRecompensas(res.data);
       }
     } catch (err) { 
@@ -116,7 +137,9 @@ function ClientePage() {
 
     setPaymentLoading(true);
     try {
-      const res = await axios.post('/api/payments/create-payment-intent', { amount: totalFinal });
+      const token = localStorage.getItem('token');
+      const config = { headers: { 'Authorization': `Bearer ${token}` } };
+      const res = await axios.post('/api/payments/create-payment-intent', { amount: totalFinal }, config);
       setClientSecret(res.data.clientSecret);
       setShowPaymentModal(true);
     } catch (err) {
@@ -139,7 +162,9 @@ function ClientePage() {
     };
     
     try {
-      const res = await axios.post('/api/pedidos', pedidoData);
+      const token = localStorage.getItem('token');
+      const config = { headers: { 'Authorization': `Bearer ${token}` } };
+      const res = await axios.post('/api/pedidos', pedidoData, config);
       
       if (res.data.recompensaGenerada) {
         toast.success('¡Felicidades! Ganaste un premio. Revisa "Mis Recompensas".', { duration: 6000, icon: '🎁' });
@@ -242,7 +267,8 @@ function ClientePage() {
         </motion.div>
       )}
 
-      {/* ... (el resto del JSX no cambia) ... */}
+      {/* ... El resto de tu JSX no cambia y va aquí ... */}
+      
     </div>
   );
 }
