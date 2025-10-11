@@ -8,7 +8,6 @@ import CheckoutForm from '../components/CheckoutForm';
 import MapSelector from '../components/MapSelector';
 
 // --- CONFIGURACIÓN GLOBAL DE AXIOS ---
-// Ya que AuthContext maneja el token, solo definimos la URL base aquí
 axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'https://tito-cafe-backend.onrender.com';
 // ------------------------------------
 
@@ -16,7 +15,7 @@ const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 function ClientePage() {
   const [activeTab, setActiveTab] = useState('crear');
-  const [ordenExpandida, setOrdenExpandida] = useState(null); // <-- 1. ESTADO AÑADIDO
+  const [ordenExpandida, setOrdenExpandida] = useState(null);
   const [productos, setProductos] = useState([]);
   const [pedidoActual, setPedidoActual] = useState([]);
   const [subtotal, setSubtotal] = useState(0);
@@ -128,7 +127,6 @@ function ClientePage() {
   
   const getStatusBadge = (estado) => { switch (estado) { case 'Pendiente': return 'bg-warning text-dark'; case 'En Preparacion': return 'bg-info text-dark'; case 'Listo para Recoger': return 'bg-success text-white'; case 'Completado': return 'bg-secondary text-white'; case 'En Camino': return 'bg-primary text-white'; default: return 'bg-light text-dark'; } };
 
-  // <-- 2. FUNCIÓN AÑADIDA -->
   const handleToggleDetalle = (pedidoId) => {
     setOrdenExpandida(ordenExpandida === pedidoId ? null : pedidoId);
   };
@@ -148,7 +146,8 @@ function ClientePage() {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="row">
           <div className="col-md-8">
             <h2>Elige tus Productos</h2>
-            <div className="row g-3">{productos.map(p => (<div key={p.id} className="col-md-4 col-lg-3"><div className="card h-100 text-center shadow-sm" onClick={() => agregarProductoAPedido(p)} style={{ cursor: 'pointer' }}><div className="card-body d-flex flex-column justify-content-center"><h5 className="card-title">{p.nombre}</h5><p className="card-text text-success fw-bold">${Number(p.precio).toFixed(2)}</p></div></div></div>))}</div>
+            {/* CORRECCIÓN 1: Se añade ?.map */}
+            <div className="row g-3">{productos?.map(p => (<div key={p.id} className="col-md-4 col-lg-3"><div className="card h-100 text-center shadow-sm" onClick={() => agregarProductoAPedido(p)} style={{ cursor: 'pointer' }}><div className="card-body d-flex flex-column justify-content-center"><h5 className="card-title">{p.nombre}</h5><p className="card-text text-success fw-bold">${Number(p.precio).toFixed(2)}</p></div></div></div>))}</div>
           </div>
           <div className="col-md-4">
             <div className="card shadow-sm">
@@ -192,11 +191,10 @@ function ClientePage() {
         </motion.div>
       )}
 
-      {/* */}
       {!loading && activeTab === 'ver' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <h2>Mis Pedidos</h2>
-          {misPedidos.length === 0 ? <p className="text-center">No has realizado ningún pedido.</p> : (
+          {misPedidos?.length === 0 ? <p className="text-center">No has realizado ningún pedido.</p> : (
             <div className="table-responsive">
               <table className="table table-hover">
                 <thead>
@@ -205,9 +203,9 @@ function ClientePage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {misPedidos.map(p => (
+                  {/* CORRECCIÓN 2: Se añade ?.map */}
+                  {misPedidos?.map(p => (
                     <React.Fragment key={p.id}>
-                      {/* Fila principal del pedido (se le añade el onClick) */}
                       <tr 
                         style={{ cursor: 'pointer' }} 
                         onClick={() => handleToggleDetalle(p.id)}
@@ -218,8 +216,6 @@ function ClientePage() {
                         <td><span className={`badge ${getStatusBadge(p.estado)}`}>{p.estado}</span></td>
                         <td className="text-end">${Number(p.total).toFixed(2)}</td>
                       </tr>
-
-                      {/* Fila del detalle (solo se muestra si ordenExpandida es igual al ID de este pedido) */}
                       {ordenExpandida === p.id && (
                         <tr>
                           <td colSpan="5">
@@ -231,7 +227,7 @@ function ClientePage() {
                             >
                               <h6 className="fw-bold">Detalle del Pedido #{p.id}</h6>
                               <ul className="list-unstyled mb-0">
-                                {p.productos.map(producto => (
+                                {p.productos?.map(producto => (
                                   <li key={`${p.id}-${producto.nombre}`} className="d-flex justify-content-between">
                                     <span>{producto.cantidad}x {producto.nombre}</span>
                                     <span>${(producto.cantidad * Number(producto.precio)).toFixed(2)}</span>
@@ -260,9 +256,10 @@ function ClientePage() {
       {!loading && activeTab === 'recompensas' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <h2>Mis Recompensas</h2>
-          {misRecompensas.length === 0 ? (<p className="text-center">Aún no tienes recompensas.</p>) : (
+          {misRecompensas?.length === 0 ? (<p className="text-center">Aún no tienes recompensas.</p>) : (
             <div className="row g-4">
-              {misRecompensas.map(recompensa => (
+              {/* CORRECCIÓN 3: Se añade ?.map */}
+              {misRecompensas?.map(recompensa => (
                 <div key={recompensa.id} className="col-md-6 col-lg-4">
                   <div className="recompensa-card">
                     <h5 className="card-title" style={{ fontWeight: 'bold' }}>🎁 ¡Cupón Ganado! 🎁</h5>
