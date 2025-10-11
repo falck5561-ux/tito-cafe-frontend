@@ -8,6 +8,7 @@ import CheckoutForm from '../components/CheckoutForm';
 import MapSelector from '../components/MapSelector';
 
 // --- CONFIGURACIÓN GLOBAL DE AXIOS ---
+// (Mantenemos tu configuración original, es una buena práctica)
 const token = localStorage.getItem('token');
 if (token) {
   axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
@@ -67,11 +68,14 @@ function ClientePage() {
       setLoading(true);
       setError('');
       try {
+        // --- CAMBIO 1: SE ASEGURA DE ENVIAR EL TOKEN EN CADA PETICIÓN ---
+        const config = { headers: { 'Authorization': `Bearer ${token}` } };
+        
         if (activeTab === 'ver') {
-          const res = await axios.get('/api/pedidos/mis-pedidos');
+          const res = await axios.get('/api/pedidos/mis-pedidos', config);
           setMisPedidos(res.data);
         } else if (activeTab === 'recompensas') {
-          const res = await axios.get('/api/recompensas/mis-recompensas');
+          const res = await axios.get('/api/recompensas/mis-recompensas', config);
           setMisRecompensas(res.data);
         }
       } catch (err) {
@@ -164,49 +168,50 @@ function ClientePage() {
 
       {!loading && activeTab === 'crear' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="row">
+          {/* ... Tu JSX para crear pedido se mantiene igual ... */}
           <div className="col-md-8">
-            <h2>Elige tus Productos</h2>
-            <div className="row g-3">{productos.map(p => (<div key={p.id} className="col-md-4 col-lg-3"><div className="card h-100 text-center shadow-sm" onClick={() => agregarProductoAPedido(p)} style={{ cursor: 'pointer' }}><div className="card-body d-flex flex-column justify-content-center"><h5 className="card-title">{p.nombre}</h5><p className="card-text text-success fw-bold">${Number(p.precio).toFixed(2)}</p></div></div></div>))}</div>
-          </div>
-          <div className="col-md-4">
-            <div className="card shadow-sm">
-              <div className="card-body">
-                <h3 className="card-title text-center">Mi Pedido</h3>
-                <hr />
-                <ul className="list-group list-group-flush">{pedidoActual.map((item, i) => (<li key={i} className="list-group-item d-flex justify-content-between"><span>{item.cantidad}x {item.nombre}</span><span>${(item.cantidad * Number(item.precio)).toFixed(2)}</span></li>))}</ul>
-                <hr />
-                <h5>Elige una opción:</h5>
-                <div className="form-check"><input className="form-check-input" type="radio" name="tipoOrden" id="llevar" value="llevar" checked={tipoOrden === 'llevar'} onChange={(e) => setTipoOrden(e.target.value)} /><label className="form-check-label" htmlFor="llevar">Para Recoger</label></div>
-                <div className="form-check"><input className="form-check-input" type="radio" name="tipoOrden" id="local" value="local" checked={tipoOrden === 'local'} onChange={(e) => setTipoOrden(e.target.value)} /><label className="form-check-label" htmlFor="local">Para Comer Aquí</label></div>
-                <div className="form-check"><input className="form-check-input" type="radio" name="tipoOrden" id="domicilio" value="domicilio" checked={tipoOrden === 'domicilio'} onChange={(e) => setTipoOrden(e.target.value)} /><label className="form-check-label" htmlFor="domicilio">Entrega a Domicilio</label></div>
-                {tipoOrden === 'domicilio' && (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-3">
-                    {direccionGuardada && (<button className="btn btn-outline-info w-100 mb-3" onClick={usarDireccionGuardada}>Usar mi dirección guardada</button>)}
-                    <label className="form-label">Dirección de Entrega:</label>
-                    <MapSelector onLocationSelect={handleLocationSelect} initialAddress={direccion} />
-                    <div className="mt-3">
-                      <label htmlFor="referencia" className="form-label">Referencia (opcional):</label>
-                      <input type="text" id="referencia" className="form-control" value={referencia} onChange={(e) => setReferencia(e.target.value)} placeholder="Ej: Casa azul, portón negro"/>
-                    </div>
-                  </motion.div>
-                )}
-                {tipoOrden === 'domicilio' && direccion && (
-                  <div className="form-check mt-3">
-                    <input className="form-check-input" type="checkbox" id="guardarDireccion" checked={guardarDireccion} onChange={(e) => setGuardarDireccion(e.target.checked)} />
-                    <label className="form-check-label" htmlFor="guardarDireccion">Guardar/Actualizar dirección y referencia para futuras compras</label>
-                  </div>
-                )}
-                <hr />
-                <p className="d-flex justify-content-between">Subtotal: <span>${subtotal.toFixed(2)}</span></p>
-                {tipoOrden === 'domicilio' && (<motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="d-flex justify-content-between">Costo de Envío: {calculandoEnvio ? <span className="spinner-border spinner-border-sm"></span> : <span>${costoEnvio.toFixed(2)}</span>}</motion.p>)}
-                <h4>Total: ${totalFinal.toFixed(2)}</h4>
-                <div className="d-grid gap-2 mt-3">
-                  <button className="btn btn-primary" onClick={handleProcederAlPago} disabled={pedidoActual.length === 0 || paymentLoading || calculandoEnvio}>{paymentLoading ? 'Iniciando...' : 'Proceder al Pago'}</button>
-                  <button className="btn btn-outline-danger" onClick={limpiarPedido}>Vaciar Carrito</button>
-                </div>
-              </div>
-            </div>
-          </div>
+            <h2>Elige tus Productos</h2>
+            <div className="row g-3">{productos.map(p => (<div key={p.id} className="col-md-4 col-lg-3"><div className="card h-100 text-center shadow-sm" onClick={() => agregarProductoAPedido(p)} style={{ cursor: 'pointer' }}><div className="card-body d-flex flex-column justify-content-center"><h5 className="card-title">{p.nombre}</h5><p className="card-text text-success fw-bold">${Number(p.precio).toFixed(2)}</p></div></div></div>))}</div>
+          </div>
+          <div className="col-md-4">
+            <div className="card shadow-sm">
+              <div className="card-body">
+                <h3 className="card-title text-center">Mi Pedido</h3>
+                <hr />
+                <ul className="list-group list-group-flush">{pedidoActual.map((item, i) => (<li key={i} className="list-group-item d-flex justify-content-between"><span>{item.cantidad}x {item.nombre}</span><span>${(item.cantidad * Number(item.precio)).toFixed(2)}</span></li>))}</ul>
+                <hr />
+                <h5>Elige una opción:</h5>
+                <div className="form-check"><input className="form-check-input" type="radio" name="tipoOrden" id="llevar" value="llevar" checked={tipoOrden === 'llevar'} onChange={(e) => setTipoOrden(e.target.value)} /><label className="form-check-label" htmlFor="llevar">Para Recoger</label></div>
+                <div className="form-check"><input className="form-check-input" type="radio" name="tipoOrden" id="local" value="local" checked={tipoOrden === 'local'} onChange={(e) => setTipoOrden(e.target.value)} /><label className="form-check-label" htmlFor="local">Para Comer Aquí</label></div>
+                <div className="form-check"><input className="form-check-input" type="radio" name="tipoOrden" id="domicilio" value="domicilio" checked={tipoOrden === 'domicilio'} onChange={(e) => setTipoOrden(e.target.value)} /><label className="form-check-label" htmlFor="domicilio">Entrega a Domicilio</label></div>
+                {tipoOrden === 'domicilio' && (
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-3">
+                    {direccionGuardada && (<button className="btn btn-outline-info w-100 mb-3" onClick={usarDireccionGuardada}>Usar mi dirección guardada</button>)}
+                    <label className="form-label">Dirección de Entrega:</label>
+                    <MapSelector onLocationSelect={handleLocationSelect} initialAddress={direccion} />
+                    <div className="mt-3">
+                      <label htmlFor="referencia" className="form-label">Referencia (opcional):</label>
+                      <input type="text" id="referencia" className="form-control" value={referencia} onChange={(e) => setReferencia(e.target.value)} placeholder="Ej: Casa azul, portón negro"/>
+                    </div>
+                  </motion.div>
+                )}
+                {tipoOrden === 'domicilio' && direccion && (
+                  <div className="form-check mt-3">
+                    <input className="form-check-input" type="checkbox" id="guardarDireccion" checked={guardarDireccion} onChange={(e) => setGuardarDireccion(e.target.checked)} />
+                    <label className="form-check-label" htmlFor="guardarDireccion">Guardar/Actualizar dirección y referencia para futuras compras</label>
+                  </div>
+                )}
+                <hr />
+                <p className="d-flex justify-content-between">Subtotal: <span>${subtotal.toFixed(2)}</span></p>
+                {tipoOrden === 'domicilio' && (<motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="d-flex justify-content-between">Costo de Envío: {calculandoEnvio ? <span className="spinner-border spinner-border-sm"></span> : <span>${costoEnvio.toFixed(2)}</span>}</motion.p>)}
+                <h4>Total: ${totalFinal.toFixed(2)}</h4>
+                <div className="d-grid gap-2 mt-3">
+                  <button className="btn btn-primary" onClick={handleProcederAlPago} disabled={pedidoActual.length === 0 || paymentLoading || calculandoEnvio}>{paymentLoading ? 'Iniciando...' : 'Proceder al Pago'}</button>
+                  <button className="btn btn-outline-danger" onClick={limpiarPedido}>Vaciar Carrito</button>
+                </div>
+              </div>
+            </div>
+          </div>
         </motion.div>
       )}
 
@@ -214,17 +219,23 @@ function ClientePage() {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <h2>Mis Pedidos</h2>
           {misPedidos.length === 0 ? <p className="text-center">No has realizado ningún pedido.</p> : (
-            <div className="list-group">
-              {misPedidos.map(p => (
-                <div key={p.id} className="list-group-item list-group-item-action">
-                  <div className="d-flex w-100 justify-content-between">
-                    <h5 className="mb-1">Pedido #{p.id} ({p.tipo_orden})</h5>
-                    <small>{new Date(p.fecha).toLocaleDateString()}</small>
-                  </div>
-                  <p className="mb-1">Total: ${Number(p.total).toFixed(2)}</p>
-                  <small>Estado: <span className={`badge ${getStatusBadge(p.estado)}`}>{p.estado}</span></small>
-                </div>
-              ))}
+            <div className="table-responsive">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>ID</th><th>Fecha</th><th>Tipo</th><th>Estado</th><th className="text-end">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {misPedidos.map(p => (
+                    <tr key={p.id}>
+                      <td>#{p.id}</td><td>{new Date(p.fecha).toLocaleString('es-MX')}</td>
+                      <td>{p.tipo_orden}</td><td><span className={`badge ${getStatusBadge(p.estado)}`}>{p.estado}</span></td>
+                      <td className="text-end">${Number(p.total).toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </motion.div>
@@ -237,15 +248,16 @@ function ClientePage() {
             <div className="row g-4">
               {misRecompensas.map(recompensa => (
                 <div key={recompensa.id} className="col-md-6 col-lg-4">
-                  <div className="card text-center text-white bg-dark shadow-lg" style={{ border: '2px dashed #00ff7f' }}>
-                    <div className="card-body">
-                      <h5 className="card-title" style={{ color: '#00ff7f', fontWeight: 'bold' }}>🎁 ¡Cupón Ganado! 🎁</h5>
-                      <p className="card-text">{recompensa.descripcion}</p>
-                      <hr style={{ backgroundColor: '#00ff7f' }} />
-                      <p className="h3">ID del Cupón: {recompensa.id}</p>
-                      <p className="card-text mt-2"><small>Muéstrale este ID al empleado para canjear tu premio.</small></p>
-                      <p className="card-text mt-2"><small className="text-muted">Ganado el: {new Date(recompensa.fecha_creacion).toLocaleDateString()}</small></p>
+                  {/* --- CAMBIO 2: SE APLICA LA CLASE CORRECTA A LA TARJETA --- */}
+                  <div className="recompensa-card">
+                    <h5 className="card-title" style={{ fontWeight: 'bold' }}>🎁 ¡Cupón Ganado! 🎁</h5>
+                    <p className="card-text">{recompensa.descripcion}</p>
+                    <hr/>
+                    <div className="id-cupon">
+                      <p className="h3 mb-0">ID del Cupón: {recompensa.id}</p>
                     </div>
+                    <p className="card-text mt-2"><small>Muéstrale este ID al empleado para canjear tu premio.</small></p>
+                    <p className="card-text mt-2"><small className="text-muted">Ganado el: {new Date(recompensa.fecha_creacion).toLocaleDateString()}</small></p>
                   </div>
                 </div>
               ))}
