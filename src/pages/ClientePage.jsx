@@ -1,4 +1,4 @@
-// Archivo: src/pages/ClientePage.jsx (Versión Final Definitiva)
+// Archivo: src/pages/ClientePage.jsx (Versión Final Completa y Corregida)
 
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
@@ -8,6 +8,16 @@ import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 import CheckoutForm from '../components/CheckoutForm';
 import MapSelector from '../components/MapSelector';
+
+// --- Configuración de Axios ---
+// Esto asegura que cada petición al backend incluya el token de autenticación.
+const token = localStorage.getItem('token');
+if (token) {
+  axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+}
+// Define la URL base de tu API para no repetirla.
+axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'https://tito-cafe-backend.onrender.com';
+// -----------------------------
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
@@ -34,20 +44,21 @@ function ClientePage() {
     setLoading(true);
     setError('');
     try {
-      if (activeTab === 'crear') {
-        const res = await axios.get('/api/productos');
-        setProductos(res.data);
-      } else if (activeTab === 'ver') {
-        const res = await axios.get('/api/pedidos/mis-pedidos');
-        setMisPedidos(res.data);
-      } else if (activeTab === 'recompensas') {
-        const res = await axios.get('/api/recompensas/mis-recompensas');
-        setMisRecompensas(res.data);
+      let endpoint = '';
+      if (activeTab === 'crear') endpoint = '/api/productos';
+      else if (activeTab === 'ver') endpoint = '/api/pedidos/mis-pedidos';
+      else if (activeTab === 'recompensas') endpoint = '/api/recompensas/mis-recompensas';
+
+      if (endpoint) {
+        const res = await axios.get(endpoint);
+        if (activeTab === 'crear') setProductos(res.data);
+        else if (activeTab === 'ver') setMisPedidos(res.data);
+        else if (activeTab === 'recompensas') setMisRecompensas(res.data);
       }
-    } catch (err) { 
-      setError('No se pudieron cargar los datos.'); 
+    } catch (err) {
+      setError('No se pudieron cargar los datos.');
       console.error("Error en fetchData:", err);
-    } 
+    }
     finally { setLoading(false); }
   };
 
@@ -74,15 +85,14 @@ function ClientePage() {
     setDireccion(null);
   };
 
-  const handleLocationSelect = async (coords) => {
-    setDireccion(coords);
+  const handleLocationSelect = async (location) => {
+    setDireccion(location);
     setCalculandoEnvio(true);
     setCostoEnvio(0);
     try {
-      // --- ¡ESTA ES LA LÍNEA CORREGIDA! ---
-      const res = await axios.post('/api/envio/calcular-costo', coords);
-      setCostoEnvio(res.data.costoEnvio);
-      toast.success(`Costo de envío: $${res.data.costoEnvio.toFixed(2)}`);
+      const res = await axios.post('/api/pedidos/calculate-delivery-cost', { lat: location.lat, lng: location.lng });
+      setCostoEnvio(res.data.deliveryCost);
+      toast.success(`Costo de envío: $${res.data.deliveryCost.toFixed(2)}`);
     } catch (err) {
       toast.error(err.response?.data?.msg || 'No se pudo calcular el costo de envío.');
       setDireccion(null);
@@ -101,10 +111,10 @@ function ClientePage() {
   const handleProcederAlPago = async () => {
     if (totalFinal <= 0) return;
     if (tipoOrden === 'domicilio' && !direccion) {
-        return toast.error('Por favor, selecciona tu ubicación en el mapa.');
+      return toast.error('Por favor, selecciona tu ubicación en el mapa.');
     }
     if (calculandoEnvio) {
-        return toast.error('Espera a que termine el cálculo del envío.');
+      return toast.error('Espera a que termine el cálculo del envío.');
     }
 
     setPaymentLoading(true);
@@ -121,14 +131,19 @@ function ClientePage() {
 
   const handleSuccessfulPayment = async () => {
     const productosParaEnviar = pedidoActual.map(({ id, cantidad, precio, nombre }) => ({ id, cantidad, precio, nombre }));
-    const direccionTexto = direccion ? `Lat: ${direccion.lat.toFixed(5)}, Lng: ${direccion.lng.toFixed(5)}` : null;
-    const pedidoData = { 
-      total: totalFinal, 
+
+    // ===== INICIO DE LA CORRECCIÓN =====
+    const pedidoData = {
+      total: totalFinal,
       productos: productosParaEnviar,
       tipo_orden: tipoOrden,
-      direccion_entrega: tipoOrden === 'domicilio' ? direccionTexto : null,
-      costo_envio: costoEnvio
+      costo_envio: costoEnvio,
+      // Se añaden los campos latitude y longitude que el backend necesita
+      direccion_entrega: tipoOrden === 'domicilio' ? direccion?.description : null,
+      latitude: tipoOrden === 'domicilio' ? direccion?.lat : null,
+      longitude: tipoOrden === 'domicilio' ? direccion?.lng : null
     };
+    // ===== FIN DE LA CORRECCIÓN =====
 
     try {
       const res = await axios.post('/api/pedidos', pedidoData);
@@ -142,18 +157,20 @@ function ClientePage() {
       limpiarPedido();
       setShowPaymentModal(false);
       setClientSecret('');
-      setActiveTab('ver'); 
+      setActiveTab('ver');
     } catch (err) {
-      toast.error('Hubo un error al registrar tu pedido.');
+      console.error("Error al registrar el pedido:", err.response?.data || err.message);
+      toast.error(err.response?.data?.msg || 'Hubo un error al registrar tu pedido.');
     }
   };
 
   const getStatusBadge = (estado) => {
     switch (estado) {
       case 'Pendiente': return 'bg-warning text-dark';
-      case 'En Preparación': return 'bg-info text-dark';
-      case 'Listo para Recoger': return 'bg-success';
-      case 'Completado': return 'bg-secondary';
+      case 'En Preparacion': return 'bg-info text-dark';
+      case 'Listo para Recoger': return 'bg-success text-white';
+      case 'Completado': return 'bg-secondary text-white';
+      case 'En Camino': return 'bg-primary text-white';
       default: return 'bg-light text-dark';
     }
   };
@@ -206,7 +223,7 @@ function ClientePage() {
                 <p className="d-flex justify-content-between">Subtotal: <span>${subtotal.toFixed(2)}</span></p>
                 {tipoOrden === 'domicilio' && (
                   <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="d-flex justify-content-between">
-                    Costo de Envío: 
+                    Costo de Envío:
                     {calculandoEnvio ? <span className="spinner-border spinner-border-sm"></span> : <span>${costoEnvio.toFixed(2)}</span>}
                   </motion.p>
                 )}
@@ -251,7 +268,7 @@ function ClientePage() {
                     <div className="card-body">
                       <h5 className="card-title" style={{ color: '#00ff7f', fontWeight: 'bold' }}>🎁 ¡Cupón Ganado! 🎁</h5>
                       <p className="card-text">{recompensa.descripcion}</p>
-                      <hr style={{ backgroundColor: '#00ff7f' }}/>
+                      <hr style={{ backgroundColor: '#00ff7f' }} />
                       <p className="h3">ID del Cupón: {recompensa.id}</p>
                       <p className="card-text mt-2"><small>Muéstrale este ID al empleado para canjear tu premio.</small></p>
                       <p className="card-text mt-2"><small className="text-muted">Ganado el: {new Date(recompensa.fecha_creacion).toLocaleDateString()}</small></p>
