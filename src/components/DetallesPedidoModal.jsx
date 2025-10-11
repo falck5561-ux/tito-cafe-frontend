@@ -4,7 +4,6 @@ function DetallesPedidoModal({ pedido, onClose }) {
   if (!pedido) return null;
 
   return (
-    // Se reemplaza style por className para que App.css lo controle
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
@@ -15,8 +14,9 @@ function DetallesPedidoModal({ pedido, onClose }) {
         <div className="modal-body">
           <h6>Productos:</h6>
           <ul className="list-group list-group-flush mb-3">
-            {pedido.productos?.map((producto, index) => (
-              <li key={index} className="list-group-item d-flex justify-content-between align-items-center">
+            {/* MEJORA: Usar un ID único para el 'key' si es posible */}
+            {pedido.productos?.map((producto) => (
+              <li key={producto.id || producto.nombre} className="list-group-item d-flex justify-content-between align-items-center">
                 <span>
                   <strong>{producto.cantidad}x</strong> {producto.nombre}
                 </span>
@@ -34,6 +34,7 @@ function DetallesPedidoModal({ pedido, onClose }) {
               <p className="mb-1"><strong>Dirección:</strong> {pedido.direccion_entrega}</p>
               {pedido.referencia && <p className="mb-1"><strong>Referencia:</strong> {pedido.referencia}</p>}
               
+              {/* CORRECCIÓN: URL correcta para Google Maps */}
               <a 
                 href={`https://www.google.com/maps/search/?api=1&query=${pedido.latitude},${pedido.longitude}`}
                 target="_blank" 

@@ -16,6 +16,7 @@ const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 function ClientePage() {
   const [activeTab, setActiveTab] = useState('crear');
+  const [ordenExpandida, setOrdenExpandida] = useState(null); // <-- 1. ESTADO AÑADIDO
   const [productos, setProductos] = useState([]);
   const [pedidoActual, setPedidoActual] = useState([]);
   const [subtotal, setSubtotal] = useState(0);
@@ -41,8 +42,6 @@ function ClientePage() {
       setLoading(true);
       setError('');
       try {
-        // --- CÓDIGO SIMPLIFICADO ---
-        // AuthContext se encarga de poner el header del token automáticamente
         const [productosRes, direccionRes] = await Promise.all([
           axios.get('/api/productos'),
           axios.get('/api/usuarios/mi-direccion')
@@ -68,8 +67,6 @@ function ClientePage() {
       setLoading(true);
       setError('');
       try {
-        // --- CÓDIGO SIMPLIFICADO ---
-        // AuthContext se encarga de poner el header del token automáticamente
         if (activeTab === 'ver') {
           const res = await axios.get('/api/pedidos/mis-pedidos');
           setMisPedidos(res.data);
@@ -101,9 +98,7 @@ function ClientePage() {
   const agregarProductoAPedido = (producto) => { setPedidoActual(prev => { const existe = prev.find(item => item.id === producto.id); if (existe) { return prev.map(item => item.id === producto.id ? { ...item, cantidad: item.cantidad + 1 } : item); } return [...prev, { ...producto, cantidad: 1 }]; }); };
   const limpiarPedido = () => { setPedidoActual([]); setCostoEnvio(0); setDireccion(null); setGuardarDireccion(false); setReferencia(''); };
   const handleLocationSelect = async (location) => { setDireccion(location); setCalculandoEnvio(true); setCostoEnvio(0); try { const res = await axios.post('/api/pedidos/calculate-delivery-cost', { lat: location.lat, lng: location.lng }); setCostoEnvio(res.data.deliveryCost); toast.success(`Costo de envío: $${res.data.deliveryCost.toFixed(2)}`); } catch (err) { toast.error(err.response?.data?.msg || 'No se pudo calcular el costo de envío.'); setDireccion(null); } finally { setCalculandoEnvio(false); } };
-  
   const usarDireccionGuardada = () => { if (direccionGuardada) { handleLocationSelect(direccionGuardada); if (direccionGuardada.referencia) { setReferencia(direccionGuardada.referencia); } toast.success('Usando dirección guardada.'); } };
-  
   const handleProcederAlPago = async () => { if (totalFinal <= 0) return; if (tipoOrden === 'domicilio' && !direccion) { return toast.error('Por favor, selecciona o escribe tu ubicación.'); } if (calculandoEnvio) { return toast.error('Espera a que termine el cálculo del envío.'); } setPaymentLoading(true); try { const res = await axios.post('/api/payments/create-payment-intent', { amount: totalFinal }); setClientSecret(res.data.clientSecret); setShowPaymentModal(true); } catch (err) { toast.error('No se pudo iniciar el proceso de pago.'); } finally { setPaymentLoading(false); } };
   
   const handleSuccessfulPayment = async () => {
@@ -132,6 +127,11 @@ function ClientePage() {
   };
   
   const getStatusBadge = (estado) => { switch (estado) { case 'Pendiente': return 'bg-warning text-dark'; case 'En Preparacion': return 'bg-info text-dark'; case 'Listo para Recoger': return 'bg-success text-white'; case 'Completado': return 'bg-secondary text-white'; case 'En Camino': return 'bg-primary text-white'; default: return 'bg-light text-dark'; } };
+
+  // <-- 2. FUNCIÓN AÑADIDA -->
+  const handleToggleDetalle = (pedidoId) => {
+    setOrdenExpandida(ordenExpandida === pedidoId ? null : pedidoId);
+  };
 
   return (
     <div>
@@ -192,12 +192,13 @@ function ClientePage() {
         </motion.div>
       )}
 
+      {/* */}
       {!loading && activeTab === 'ver' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <h2>Mis Pedidos</h2>
           {misPedidos.length === 0 ? <p className="text-center">No has realizado ningún pedido.</p> : (
             <div className="table-responsive">
-              <table className="table">
+              <table className="table table-hover">
                 <thead>
                   <tr>
                     <th>ID</th><th>Fecha</th><th>Tipo</th><th>Estado</th><th className="text-end">Total</th>
@@ -205,11 +206,49 @@ function ClientePage() {
                 </thead>
                 <tbody>
                   {misPedidos.map(p => (
-                    <tr key={p.id}>
-                      <td>#{p.id}</td><td>{new Date(p.fecha).toLocaleString('es-MX')}</td>
-                      <td>{p.tipo_orden}</td><td><span className={`badge ${getStatusBadge(p.estado)}`}>{p.estado}</span></td>
-                      <td className="text-end">${Number(p.total).toFixed(2)}</td>
-                    </tr>
+                    <React.Fragment key={p.id}>
+                      {/* Fila principal del pedido (se le añade el onClick) */}
+                      <tr 
+                        style={{ cursor: 'pointer' }} 
+                        onClick={() => handleToggleDetalle(p.id)}
+                      >
+                        <td>#{p.id}</td>
+                        <td>{new Date(p.fecha).toLocaleString('es-MX')}</td>
+                        <td>{p.tipo_orden}</td>
+                        <td><span className={`badge ${getStatusBadge(p.estado)}`}>{p.estado}</span></td>
+                        <td className="text-end">${Number(p.total).toFixed(2)}</td>
+                      </tr>
+
+                      {/* Fila del detalle (solo se muestra si ordenExpandida es igual al ID de este pedido) */}
+                      {ordenExpandida === p.id && (
+                        <tr>
+                          <td colSpan="5">
+                            <motion.div 
+                              className="p-3 bg-light"
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: 'auto' }}
+                              transition={{ duration: 0.3 }}
+                            >
+                              <h6 className="fw-bold">Detalle del Pedido #{p.id}</h6>
+                              <ul className="list-unstyled mb-0">
+                                {p.productos.map(producto => (
+                                  <li key={`${p.id}-${producto.nombre}`} className="d-flex justify-content-between">
+                                    <span>{producto.cantidad}x {producto.nombre}</span>
+                                    <span>${(producto.cantidad * Number(producto.precio)).toFixed(2)}</span>
+                                  </li>
+                                ))}
+                                {p.costo_envio > 0 && (
+                                  <li className="d-flex justify-content-between mt-2 pt-2 border-top">
+                                    <span className="fw-bold">Costo de Envío</span>
+                                    <span className="fw-bold">${Number(p.costo_envio).toFixed(2)}</span>
+                                  </li>
+                                )}
+                              </ul>
+                            </motion.div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
                   ))}
                 </tbody>
               </table>
