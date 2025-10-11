@@ -13,33 +13,29 @@ export const AuthProvider = ({ children }) => {
       try {
         const decodedUser = jwtDecode(token);
         setUser(decodedUser.user);
-        // --- CAMBIO 1: Usar el header 'Authorization' estándar ---
-        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        // --- CAMBIO: Volvemos a usar 'x-auth-token' como lo espera tu backend ---
+        axios.defaults.headers.common['x-auth-token'] = token;
       } catch (error) {
         console.error("Token inválido:", error);
         logout();
       }
     } else {
       setUser(null);
-      delete axios.defaults.headers.common['Authorization'];
+      delete axios.defaults.headers.common['x-auth-token'];
     }
   }, [token]);
 
   const login = async (email, password) => {
     try {
-      // --- CAMBIO 2: Corregir la URL de 'auth' a 'usuarios' ---
       const res = await axios.post('https://tito-cafe-backend.onrender.com/api/usuarios/login', {
         email,
         password,
       });
-      
       const newToken = res.data.token;
       localStorage.setItem('token', newToken);
       setToken(newToken);
-      
       const decodedUser = jwtDecode(newToken);
       return decodedUser.user;
-
     } catch (error) {
       console.error('Error en el login:', error.response?.data?.msg || 'Error de conexión');
       logout();
@@ -49,13 +45,11 @@ export const AuthProvider = ({ children }) => {
   
   const register = async (nombre, email, password) => {
     try {
-      // --- CAMBIO 3: Corregir la URL de 'users' a 'usuarios' ---
       const res = await axios.post('https://tito-cafe-backend.onrender.com/api/usuarios/register', {
         nombre,
         email,
         password,
       });
-      
       const newToken = res.data.token;
       localStorage.setItem('token', newToken);
       setToken(newToken);

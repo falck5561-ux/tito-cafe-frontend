@@ -8,6 +8,7 @@ import CheckoutForm from '../components/CheckoutForm';
 import MapSelector from '../components/MapSelector';
 
 // --- CONFIGURACIÓN GLOBAL DE AXIOS ---
+// Ya que AuthContext maneja el token, solo definimos la URL base aquí
 axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'https://tito-cafe-backend.onrender.com';
 // ------------------------------------
 
@@ -40,23 +41,12 @@ function ClientePage() {
       setLoading(true);
       setError('');
       try {
-        // --- CAMBIO AQUÍ: OBTENER TOKEN Y CREAR CONFIGURACIÓN ---
-        const token = localStorage.getItem('token');
-        if (!token) {
-          setError('Sesión no válida. Por favor, inicia sesión de nuevo.');
-          setLoading(false);
-          return;
-        }
-        const config = { headers: { 'Authorization': `Bearer ${token}` } };
-        // -------------------------------------------------------------
-
-        // --- CAMBIO AQUÍ: AÑADIR 'config' A LAS LLAMADAS ---
+        // --- CÓDIGO SIMPLIFICADO ---
+        // AuthContext se encarga de poner el header del token automáticamente
         const [productosRes, direccionRes] = await Promise.all([
-          axios.get('/api/productos', config), // Se añade config
-          axios.get('/api/usuarios/mi-direccion', config) // Se añade config
+          axios.get('/api/productos'),
+          axios.get('/api/usuarios/mi-direccion')
         ]);
-        // -------------------------------------------------------
-
         setProductos(productosRes.data);
         if (direccionRes.data) {
           setDireccionGuardada(direccionRes.data);
@@ -78,13 +68,13 @@ function ClientePage() {
       setLoading(true);
       setError('');
       try {
-        const config = { headers: { 'Authorization': `Bearer ${token}` } };
-        
+        // --- CÓDIGO SIMPLIFICADO ---
+        // AuthContext se encarga de poner el header del token automáticamente
         if (activeTab === 'ver') {
-          const res = await axios.get('/api/pedidos/mis-pedidos', config);
+          const res = await axios.get('/api/pedidos/mis-pedidos');
           setMisPedidos(res.data);
         } else if (activeTab === 'recompensas') {
-          const res = await axios.get('/api/recompensas/mis-recompensas', config);
+          const res = await axios.get('/api/recompensas/mis-recompensas');
           setMisRecompensas(res.data);
         }
       } catch (err) {
