@@ -1,5 +1,3 @@
-// Archivo: src/pages/ClientePage.jsx (Versión Final Completa y Corregida)
-
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -9,7 +7,7 @@ import { Elements } from '@stripe/react-stripe-js';
 import CheckoutForm from '../components/CheckoutForm';
 import MapSelector from '../components/MapSelector';
 
-// --- Configuración de Axios ---
+// --- INICIO DE LA CORRECCIÓN ---
 // Esto asegura que cada petición al backend incluya el token de autenticación.
 const token = localStorage.getItem('token');
 if (token) {
@@ -17,7 +15,7 @@ if (token) {
 }
 // Define la URL base de tu API para no repetirla.
 axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'https://tito-cafe-backend.onrender.com';
-// -----------------------------
+// --- FIN DE LA CORRECCIÓN ---
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
@@ -131,19 +129,16 @@ function ClientePage() {
 
   const handleSuccessfulPayment = async () => {
     const productosParaEnviar = pedidoActual.map(({ id, cantidad, precio, nombre }) => ({ id, cantidad, precio, nombre }));
-
-    // ===== INICIO DE LA CORRECCIÓN =====
-    const pedidoData = {
-      total: totalFinal,
+    
+    const pedidoData = { 
+      total: totalFinal, 
       productos: productosParaEnviar,
       tipo_orden: tipoOrden,
       costo_envio: costoEnvio,
-      // Se añaden los campos latitude y longitude que el backend necesita
       direccion_entrega: tipoOrden === 'domicilio' ? direccion?.description : null,
       latitude: tipoOrden === 'domicilio' ? direccion?.lat : null,
       longitude: tipoOrden === 'domicilio' ? direccion?.lng : null
     };
-    // ===== FIN DE LA CORRECCIÓN =====
 
     try {
       const res = await axios.post('/api/pedidos', pedidoData);
@@ -157,7 +152,7 @@ function ClientePage() {
       limpiarPedido();
       setShowPaymentModal(false);
       setClientSecret('');
-      setActiveTab('ver');
+      setActiveTab('ver'); 
     } catch (err) {
       console.error("Error al registrar el pedido:", err.response?.data || err.message);
       toast.error(err.response?.data?.msg || 'Hubo un error al registrar tu pedido.');
