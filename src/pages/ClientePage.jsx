@@ -40,7 +40,6 @@ function ClientePage() {
 
   const totalFinal = subtotal + costoEnvio;
 
-  // Carga datos que solo se necesitan una vez al inicio
   useEffect(() => {
     const fetchInitialData = async () => {
       setLoading(true);
@@ -50,10 +49,13 @@ function ClientePage() {
           axios.get('/api/productos'),
           
           // =============================================================
-          // ¡ESTA ES LA LÍNEA CRÍTICA QUE SE CORRIGIÓ!
-          // La URL correcta debe ser '/api/usuarios/mi-direccion'.
+          // =============================================================
+          //   ¡ESTA ES LA LÍNEA CRÍTICA QUE HA SIDO CORREGIDA!
+          //   La URL correcta es '/api/usuarios/mi-direccion'
           axios.get('/api/usuarios/mi-direccion')
           // =============================================================
+          // =============================================================
+
         ]);
         
         setProductos(productosRes.data);
@@ -70,11 +72,9 @@ function ClientePage() {
     fetchInitialData();
   }, []);
 
-  // Carga datos que dependen de la pestaña activa
   useEffect(() => {
     const fetchTabData = async () => {
       if (activeTab === 'crear' || !token) return;
-
       setLoading(true);
       setError('');
       try {
