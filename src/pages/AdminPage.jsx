@@ -1,11 +1,10 @@
-// Archivo: src/pages/AdminPage.jsx (Versión Final Corregida)
-
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import ProductModal from '../components/ProductModal';
 import SalesReportChart from '../components/SalesReportChart';
 import ProductSalesReport from '../components/ProductSalesReport';
+import DetallesPedidoModal from '../components/DetallesPedidoModal';
 
 // --- CONFIGURACIÓN CENTRALIZADA DE AXIOS ---
 axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'https://tito-cafe-backend.onrender.com';
@@ -25,8 +24,10 @@ function AdminPage() {
   
   const [showProductModal, setShowProductModal] = useState(false);
   const [productoActual, setProductoActual] = useState(null);
-  const [showAddressModal, setShowAddressModal] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState(null);
+
+  // Estados para el modal de detalles del pedido
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedOrderDetails, setSelectedOrderDetails] = useState(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -85,28 +86,26 @@ function AdminPage() {
     }
   };
   
-  // === FUNCIÓN CORREGIDA ===
   const handleUpdateStatus = async (pedidoId, nuevoEstado) => {
     try {
-      // Se usa el método PUT y la URL correcta que espera tu backend.
       await axios.put(`/api/pedidos/${pedidoId}/estado`, { estado: nuevoEstado });
-      
       toast.success(`Pedido #${pedidoId} actualizado a "${nuevoEstado}"`);
-      fetchData(); // Recarga la lista de pedidos
+      fetchData();
     } catch (err) {
       toast.error('No se pudo actualizar el estado del pedido.');
       console.error("Error al actualizar estado:", err.response);
     }
   };
 
-  const handleShowAddress = (pedido) => {
-    setSelectedOrder(pedido);
-    setShowAddressModal(true);
+  // Funciones para abrir y cerrar el modal de detalles
+  const handleShowDetails = (pedido) => {
+    setSelectedOrderDetails(pedido);
+    setShowDetailsModal(true);
   };
   
-  const handleCloseAddressModal = () => {
-    setShowAddressModal(false);
-    setSelectedOrder(null);
+  const handleCloseDetailsModal = () => {
+    setShowDetailsModal(false);
+    setSelectedOrderDetails(null);
   };
 
   return (
@@ -125,8 +124,8 @@ function AdminPage() {
         <div>
           <h1 className="mb-4">Gestión de Pedidos en Línea</h1>
           <div className="table-responsive">
-            <table className="table table-hover align-middle">
-              <thead className="table-dark">
+            <table className="table table-dark table-hover align-middle">
+              <thead>
                 <tr><th>ID</th><th>Cliente</th><th>Fecha</th><th>Total</th><th>Tipo</th><th>Estado</th><th>Acciones</th></tr>
               </thead>
               <tbody>
@@ -139,7 +138,7 @@ function AdminPage() {
                     <td><span className={`badge ${pedido.tipo_orden === 'domicilio' ? 'bg-info text-dark' : 'bg-secondary'}`}>{pedido.tipo_orden.charAt(0).toUpperCase() + pedido.tipo_orden.slice(1)}</span></td>
                     <td>{pedido.estado}</td>
                     <td>
-                      {pedido.tipo_orden === 'domicilio' && (<button className="btn btn-sm btn-outline-primary me-2" onClick={() => handleShowAddress(pedido)}>Ver Dirección</button>)}
+                      <button className="btn btn-sm btn-info me-2" onClick={() => handleShowDetails(pedido)}>Ver Pedido</button>
                       <button className="btn btn-sm btn-warning me-2" onClick={() => handleUpdateStatus(pedido.id, 'En Preparacion')}>Preparar</button>
                       <button className="btn btn-sm btn-success me-2" onClick={() => handleUpdateStatus(pedido.id, 'Completado')}>Completado</button>
                     </td>
@@ -158,45 +157,41 @@ function AdminPage() {
             <button className="btn btn-primary" onClick={() => handleOpenProductModal()}>Añadir Nuevo Producto</button>
           </div>
           <div className="table-responsive">
-             <table className="table table-hover align-middle">
-               <thead className="table-dark">
-                 <tr><th>ID</th><th>Nombre</th><th>Precio</th><th>Stock</th><th>Categoría</th><th>Acciones</th></tr>
-               </thead>
-               <tbody>
-                 {productos.map((p) => (
-                   <tr key={p.id}>
-                     <td>{p.id}</td><td>{p.nombre}</td><td>${Number(p.precio).toFixed(2)}</td><td>{p.stock}</td><td>{p.categoria}</td>
-                     <td>
-                       <button className="btn btn-sm btn-outline-warning me-2" onClick={() => handleOpenProductModal(p)}>Editar</button>
-                       <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteProducto(p.id)}>Eliminar</button>
-                     </td>
-                   </tr>
-                 ))}
-               </tbody>
-             </table>
+            <table className="table table-hover align-middle">
+              <thead className="table-dark">
+                <tr><th>ID</th><th>Nombre</th><th>Precio</th><th>Stock</th><th>Categoría</th><th>Acciones</th></tr>
+              </thead>
+              <tbody>
+                {productos.map((p) => (
+                  <tr key={p.id}>
+                    <td>{p.id}</td><td>{p.nombre}</td><td>${Number(p.precio).toFixed(2)}</td><td>{p.stock}</td><td>{p.categoria}</td>
+                    <td>
+                      <button className="btn btn-sm btn-outline-warning me-2" onClick={() => handleOpenProductModal(p)}>Editar</button>
+                      <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteProducto(p.id)}>Eliminar</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
-
+      
       {!loading && !error && activeTab === 'reporteGeneral' && (
         <div>
           {reportData.length > 0 ? <SalesReportChart reportData={reportData} /> : <p className="text-center">No hay datos de ventas para mostrar.</p>}
         </div>
       )}
+
       {activeTab === 'reporteProductos' && <ProductSalesReport />}
       
       <ProductModal show={showProductModal} handleClose={handleCloseProductModal} handleSave={handleSaveProducto} productoActual={productoActual} />
 
-      {showAddressModal && selectedOrder && (
-        <div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
-              <div className="modal-header"><h5 className="modal-title">Dirección de Entrega - Pedido #{selectedOrder.id}</h5><button type="button" className="btn-close" onClick={handleCloseAddressModal}></button></div>
-              <div className="modal-body"><p><strong>Cliente:</strong> {selectedOrder.nombre_cliente}</p><p><strong>Dirección:</strong> {selectedOrder.direccion_entrega}</p></div>
-              <div className="modal-footer"><a href={`https://www.google.com/maps/search/?api=1&query=${selectedOrder.latitude},${selectedOrder.longitude}`} target="_blank" rel="noopener noreferrer" className="btn btn-success w-100">Abrir en Google Maps</a></div>
-            </div>
-          </div>
-        </div>
+      {showDetailsModal && (
+        <DetallesPedidoModal
+          pedido={selectedOrderDetails}
+          onClose={handleCloseDetailsModal}
+        />
       )}
     </div>
   );
