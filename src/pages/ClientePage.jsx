@@ -8,11 +8,6 @@ import CheckoutForm from '../components/CheckoutForm';
 import MapSelector from '../components/MapSelector';
 
 // --- CONFIGURACIÓN GLOBAL DE AXIOS ---
-// (Mantenemos tu configuración original, es una buena práctica)
-const token = localStorage.getItem('token');
-if (token) {
-  axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-}
 axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'https://tito-cafe-backend.onrender.com';
 // ------------------------------------
 
@@ -45,10 +40,23 @@ function ClientePage() {
       setLoading(true);
       setError('');
       try {
+        // --- CAMBIO AQUÍ: OBTENER TOKEN Y CREAR CONFIGURACIÓN ---
+        const token = localStorage.getItem('token');
+        if (!token) {
+          setError('Sesión no válida. Por favor, inicia sesión de nuevo.');
+          setLoading(false);
+          return;
+        }
+        const config = { headers: { 'Authorization': `Bearer ${token}` } };
+        // -------------------------------------------------------------
+
+        // --- CAMBIO AQUÍ: AÑADIR 'config' A LAS LLAMADAS ---
         const [productosRes, direccionRes] = await Promise.all([
-          axios.get('/api/productos'),
-          axios.get('/api/usuarios/mi-direccion')
+          axios.get('/api/productos', config), // Se añade config
+          axios.get('/api/usuarios/mi-direccion', config) // Se añade config
         ]);
+        // -------------------------------------------------------
+
         setProductos(productosRes.data);
         if (direccionRes.data) {
           setDireccionGuardada(direccionRes.data);
@@ -64,11 +72,12 @@ function ClientePage() {
 
   useEffect(() => {
     const fetchTabData = async () => {
+      const token = localStorage.getItem('token');
       if (activeTab === 'crear' || !token) return;
+      
       setLoading(true);
       setError('');
       try {
-        // --- CAMBIO 1: SE ASEGURA DE ENVIAR EL TOKEN EN CADA PETICIÓN ---
         const config = { headers: { 'Authorization': `Bearer ${token}` } };
         
         if (activeTab === 'ver') {
@@ -103,15 +112,7 @@ function ClientePage() {
   const limpiarPedido = () => { setPedidoActual([]); setCostoEnvio(0); setDireccion(null); setGuardarDireccion(false); setReferencia(''); };
   const handleLocationSelect = async (location) => { setDireccion(location); setCalculandoEnvio(true); setCostoEnvio(0); try { const res = await axios.post('/api/pedidos/calculate-delivery-cost', { lat: location.lat, lng: location.lng }); setCostoEnvio(res.data.deliveryCost); toast.success(`Costo de envío: $${res.data.deliveryCost.toFixed(2)}`); } catch (err) { toast.error(err.response?.data?.msg || 'No se pudo calcular el costo de envío.'); setDireccion(null); } finally { setCalculandoEnvio(false); } };
   
-  const usarDireccionGuardada = () => {
-    if (direccionGuardada) {
-      handleLocationSelect(direccionGuardada);
-      if (direccionGuardada.referencia) {
-        setReferencia(direccionGuardada.referencia);
-      }
-      toast.success('Usando dirección guardada.');
-    }
-  };
+  const usarDireccionGuardada = () => { if (direccionGuardada) { handleLocationSelect(direccionGuardada); if (direccionGuardada.referencia) { setReferencia(direccionGuardada.referencia); } toast.success('Usando dirección guardada.'); } };
   
   const handleProcederAlPago = async () => { if (totalFinal <= 0) return; if (tipoOrden === 'domicilio' && !direccion) { return toast.error('Por favor, selecciona o escribe tu ubicación.'); } if (calculandoEnvio) { return toast.error('Espera a que termine el cálculo del envío.'); } setPaymentLoading(true); try { const res = await axios.post('/api/payments/create-payment-intent', { amount: totalFinal }); setClientSecret(res.data.clientSecret); setShowPaymentModal(true); } catch (err) { toast.error('No se pudo iniciar el proceso de pago.'); } finally { setPaymentLoading(false); } };
   
@@ -127,23 +128,10 @@ function ClientePage() {
       }
     }
     const productosParaEnviar = pedidoActual.map(({ id, cantidad, precio, nombre }) => ({ id, cantidad, precio: Number(precio), nombre }));
-    const pedidoData = { 
-      total: totalFinal, 
-      productos: productosParaEnviar, 
-      tipo_orden: tipoOrden, 
-      costo_envio: costoEnvio, 
-      direccion_entrega: tipoOrden === 'domicilio' ? direccion?.description : null, 
-      latitude: tipoOrden === 'domicilio' ? direccion?.lat : null, 
-      longitude: tipoOrden === 'domicilio' ? direccion?.lng : null,
-      referencia: tipoOrden === 'domicilio' ? referencia : null
-    };
+    const pedidoData = { total: totalFinal, productos: productosParaEnviar, tipo_orden: tipoOrden, costo_envio: costoEnvio, direccion_entrega: tipoOrden === 'domicilio' ? direccion?.description : null, latitude: tipoOrden === 'domicilio' ? direccion?.lat : null, longitude: tipoOrden === 'domicilio' ? direccion?.lng : null, referencia: tipoOrden === 'domicilio' ? referencia : null };
     try {
       const res = await axios.post('/api/pedidos', pedidoData);
-      if (res.data.recompensaGenerada) {
-        toast.success('¡Felicidades! Ganaste un premio.', { duration: 6000, icon: '🎁' });
-      } else {
-        toast.success('¡Pedido realizado y pagado con éxito!');
-      }
+      if (res.data.recompensaGenerada) { toast.success('¡Felicidades! Ganaste un premio.', { duration: 6000, icon: '🎁' }); } else { toast.success('¡Pedido realizado y pagado con éxito!'); }
       limpiarPedido();
       setShowPaymentModal(false);
       setClientSecret('');
@@ -168,50 +156,49 @@ function ClientePage() {
 
       {!loading && activeTab === 'crear' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="row">
-          {/* ... Tu JSX para crear pedido se mantiene igual ... */}
           <div className="col-md-8">
-            <h2>Elige tus Productos</h2>
-            <div className="row g-3">{productos.map(p => (<div key={p.id} className="col-md-4 col-lg-3"><div className="card h-100 text-center shadow-sm" onClick={() => agregarProductoAPedido(p)} style={{ cursor: 'pointer' }}><div className="card-body d-flex flex-column justify-content-center"><h5 className="card-title">{p.nombre}</h5><p className="card-text text-success fw-bold">${Number(p.precio).toFixed(2)}</p></div></div></div>))}</div>
-          </div>
-          <div className="col-md-4">
-            <div className="card shadow-sm">
-              <div className="card-body">
-                <h3 className="card-title text-center">Mi Pedido</h3>
-                <hr />
-                <ul className="list-group list-group-flush">{pedidoActual.map((item, i) => (<li key={i} className="list-group-item d-flex justify-content-between"><span>{item.cantidad}x {item.nombre}</span><span>${(item.cantidad * Number(item.precio)).toFixed(2)}</span></li>))}</ul>
-                <hr />
-                <h5>Elige una opción:</h5>
-                <div className="form-check"><input className="form-check-input" type="radio" name="tipoOrden" id="llevar" value="llevar" checked={tipoOrden === 'llevar'} onChange={(e) => setTipoOrden(e.target.value)} /><label className="form-check-label" htmlFor="llevar">Para Recoger</label></div>
-                <div className="form-check"><input className="form-check-input" type="radio" name="tipoOrden" id="local" value="local" checked={tipoOrden === 'local'} onChange={(e) => setTipoOrden(e.target.value)} /><label className="form-check-label" htmlFor="local">Para Comer Aquí</label></div>
-                <div className="form-check"><input className="form-check-input" type="radio" name="tipoOrden" id="domicilio" value="domicilio" checked={tipoOrden === 'domicilio'} onChange={(e) => setTipoOrden(e.target.value)} /><label className="form-check-label" htmlFor="domicilio">Entrega a Domicilio</label></div>
-                {tipoOrden === 'domicilio' && (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-3">
-                    {direccionGuardada && (<button className="btn btn-outline-info w-100 mb-3" onClick={usarDireccionGuardada}>Usar mi dirección guardada</button>)}
-                    <label className="form-label">Dirección de Entrega:</label>
-                    <MapSelector onLocationSelect={handleLocationSelect} initialAddress={direccion} />
-                    <div className="mt-3">
-                      <label htmlFor="referencia" className="form-label">Referencia (opcional):</label>
-                      <input type="text" id="referencia" className="form-control" value={referencia} onChange={(e) => setReferencia(e.target.value)} placeholder="Ej: Casa azul, portón negro"/>
-                    </div>
-                  </motion.div>
-                )}
-                {tipoOrden === 'domicilio' && direccion && (
-                  <div className="form-check mt-3">
-                    <input className="form-check-input" type="checkbox" id="guardarDireccion" checked={guardarDireccion} onChange={(e) => setGuardarDireccion(e.target.checked)} />
-                    <label className="form-check-label" htmlFor="guardarDireccion">Guardar/Actualizar dirección y referencia para futuras compras</label>
-                  </div>
-                )}
-                <hr />
-                <p className="d-flex justify-content-between">Subtotal: <span>${subtotal.toFixed(2)}</span></p>
-                {tipoOrden === 'domicilio' && (<motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="d-flex justify-content-between">Costo de Envío: {calculandoEnvio ? <span className="spinner-border spinner-border-sm"></span> : <span>${costoEnvio.toFixed(2)}</span>}</motion.p>)}
-                <h4>Total: ${totalFinal.toFixed(2)}</h4>
-                <div className="d-grid gap-2 mt-3">
-                  <button className="btn btn-primary" onClick={handleProcederAlPago} disabled={pedidoActual.length === 0 || paymentLoading || calculandoEnvio}>{paymentLoading ? 'Iniciando...' : 'Proceder al Pago'}</button>
-                  <button className="btn btn-outline-danger" onClick={limpiarPedido}>Vaciar Carrito</button>
-                </div>
-              </div>
-            </div>
-          </div>
+            <h2>Elige tus Productos</h2>
+            <div className="row g-3">{productos.map(p => (<div key={p.id} className="col-md-4 col-lg-3"><div className="card h-100 text-center shadow-sm" onClick={() => agregarProductoAPedido(p)} style={{ cursor: 'pointer' }}><div className="card-body d-flex flex-column justify-content-center"><h5 className="card-title">{p.nombre}</h5><p className="card-text text-success fw-bold">${Number(p.precio).toFixed(2)}</p></div></div></div>))}</div>
+          </div>
+          <div className="col-md-4">
+            <div className="card shadow-sm">
+              <div className="card-body">
+                <h3 className="card-title text-center">Mi Pedido</h3>
+                <hr />
+                <ul className="list-group list-group-flush">{pedidoActual.map((item, i) => (<li key={i} className="list-group-item d-flex justify-content-between"><span>{item.cantidad}x {item.nombre}</span><span>${(item.cantidad * Number(item.precio)).toFixed(2)}</span></li>))}</ul>
+                <hr />
+                <h5>Elige una opción:</h5>
+                <div className="form-check"><input className="form-check-input" type="radio" name="tipoOrden" id="llevar" value="llevar" checked={tipoOrden === 'llevar'} onChange={(e) => setTipoOrden(e.target.value)} /><label className="form-check-label" htmlFor="llevar">Para Recoger</label></div>
+                <div className="form-check"><input className="form-check-input" type="radio" name="tipoOrden" id="local" value="local" checked={tipoOrden === 'local'} onChange={(e) => setTipoOrden(e.target.value)} /><label className="form-check-label" htmlFor="local">Para Comer Aquí</label></div>
+                <div className="form-check"><input className="form-check-input" type="radio" name="tipoOrden" id="domicilio" value="domicilio" checked={tipoOrden === 'domicilio'} onChange={(e) => setTipoOrden(e.target.value)} /><label className="form-check-label" htmlFor="domicilio">Entrega a Domicilio</label></div>
+                {tipoOrden === 'domicilio' && (
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-3">
+                    {direccionGuardada && (<button className="btn btn-outline-info w-100 mb-3" onClick={usarDireccionGuardada}>Usar mi dirección guardada</button>)}
+                    <label className="form-label">Dirección de Entrega:</label>
+                    <MapSelector onLocationSelect={handleLocationSelect} initialAddress={direccion} />
+                    <div className="mt-3">
+                      <label htmlFor="referencia" className="form-label">Referencia (opcional):</label>
+                      <input type="text" id="referencia" className="form-control" value={referencia} onChange={(e) => setReferencia(e.target.value)} placeholder="Ej: Casa azul, portón negro"/>
+                    </div>
+                  </motion.div>
+                )}
+                {tipoOrden === 'domicilio' && direccion && (
+                  <div className="form-check mt-3">
+                    <input className="form-check-input" type="checkbox" id="guardarDireccion" checked={guardarDireccion} onChange={(e) => setGuardarDireccion(e.target.checked)} />
+                    <label className="form-check-label" htmlFor="guardarDireccion">Guardar/Actualizar dirección y referencia para futuras compras</label>
+                  </div>
+                )}
+                <hr />
+                <p className="d-flex justify-content-between">Subtotal: <span>${subtotal.toFixed(2)}</span></p>
+                {tipoOrden === 'domicilio' && (<motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="d-flex justify-content-between">Costo de Envío: {calculandoEnvio ? <span className="spinner-border spinner-border-sm"></span> : <span>${costoEnvio.toFixed(2)}</span>}</motion.p>)}
+                <h4>Total: ${totalFinal.toFixed(2)}</h4>
+                <div className="d-grid gap-2 mt-3">
+                  <button className="btn btn-primary" onClick={handleProcederAlPago} disabled={pedidoActual.length === 0 || paymentLoading || calculandoEnvio}>{paymentLoading ? 'Iniciando...' : 'Proceder al Pago'}</button>
+                  <button className="btn btn-outline-danger" onClick={limpiarPedido}>Vaciar Carrito</button>
+                </div>
+              </div>
+            </div>
+          </div>
         </motion.div>
       )}
 
@@ -248,7 +235,6 @@ function ClientePage() {
             <div className="row g-4">
               {misRecompensas.map(recompensa => (
                 <div key={recompensa.id} className="col-md-6 col-lg-4">
-                  {/* --- CAMBIO 2: SE APLICA LA CLASE CORRECTA A LA TARJETA --- */}
                   <div className="recompensa-card">
                     <h5 className="card-title" style={{ fontWeight: 'bold' }}>🎁 ¡Cupón Ganado! 🎁</h5>
                     <p className="card-text">{recompensa.descripcion}</p>
