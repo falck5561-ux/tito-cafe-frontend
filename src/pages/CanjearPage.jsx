@@ -17,7 +17,6 @@ function CanjearPage() {
     setClienteBuscado(null);
     
     try {
-      // 1. Obtener el token de autenticación del localStorage
       const token = localStorage.getItem('token');
       if (!token) {
         toast.error('Sesión no válida. Por favor, inicia sesión de nuevo.');
@@ -27,14 +26,12 @@ function CanjearPage() {
 
       const apiUrl = `${import.meta.env.VITE_API_URL}/api/usuarios/find-by-email`;
       
-      // 2. Crear la configuración con el header de autorización
       const config = {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       };
 
-      // 3. Enviar la solicitud POST con el cuerpo y la configuración
       const res = await axios.post(apiUrl, { email: emailCliente }, config);
       
       setRecompensas(res.data.recompensas);
@@ -60,7 +57,6 @@ function CanjearPage() {
     }
     
     try {
-      // 1. Obtener el token también para esta acción protegida
       const token = localStorage.getItem('token');
       if (!token) {
         toast.error('Sesión no válida. Por favor, inicia sesión de nuevo.');
@@ -69,15 +65,12 @@ function CanjearPage() {
 
       const apiUrl = `${import.meta.env.VITE_API_URL}/api/recompensas/${recompensaId}/utilizar`;
       
-      // 2. Crear la configuración con el header
       const config = {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       };
       
-      // 3. Enviar la solicitud PUT con la configuración
-      // (Se envía 'null' como segundo argumento porque no hay cuerpo de datos)
       await axios.put(apiUrl, null, config);
       
       toast.success(`¡Cupón #${recompensaId} canjeado con éxito!`);
@@ -112,24 +105,34 @@ function CanjearPage() {
       {clienteBuscado && (
         <div>
           <h3>Cupones de: {clienteBuscado.nombre}</h3>
+          
+          {/* === SECCIÓN MODIFICADA === */}
           {recompensas.length > 0 ? (
-            <div className="list-group">
+            <div className="row"> {/* Usamos un 'row' para alinear las tarjetas */}
               {recompensas.map(r => (
-                <div key={r.id} className="list-group-item d-flex justify-content-between align-items-center">
-                  <div>
-                    <h5 className="mb-1">Cupón #{r.id}</h5>
+                <div key={r.id} className="col-md-6 col-lg-4 mb-4">
+                  {/* Aquí usamos nuestra clase personalizada "recompensa-card" */}
+                  <div className="recompensa-card">
+                    <h5 className="mb-1" style={{ fontWeight: 'bold' }}>🎁 ¡Cupón Ganado! 🎁</h5>
                     <p className="mb-1">{r.descripcion}</p>
-                    <small>Ganado el: {new Date(r.fecha_creacion).toLocaleDateString()}</small>
+                    <hr/>
+                    <div className="id-cupon">
+                      <p className="h3 mb-0">ID del Cupón: {r.id}</p>
+                    </div>
+                    <small className="d-block mt-2">Ganado el: {new Date(r.fecha_creacion).toLocaleDateString()}</small>
+                    <small className="d-block mt-1">Muéstrale este ID al empleado para canjear tu premio.</small>
+                    <button className="btn btn-success mt-3" onClick={() => handleCanjear(r.id)}>
+                      Marcar como Canjeado
+                    </button>
                   </div>
-                  <button className="btn btn-success" onClick={() => handleCanjear(r.id)}>
-                    Marcar como Canjeado
-                  </button>
                 </div>
               ))}
             </div>
           ) : (
-            <p>Este cliente ya no tiene cupones pendientes de canjear.</p>
+            <p>Este cliente no tiene cupones pendientes de canjear.</p>
           )}
+          {/* === FIN DE LA SECCIÓN MODIFICADA === */}
+
         </div>
       )}
     </div>
