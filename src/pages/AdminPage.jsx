@@ -1,4 +1,4 @@
-// Archivo: src/pages/AdminPage.jsx (Versión con Gestión de Pedidos en Línea)
+// Archivo: src/pages/AdminPage.jsx (Versión Final Corregida)
 
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
@@ -16,21 +16,18 @@ if (token) {
 // ---------------------------------------------
 
 function AdminPage() {
-  // --- Estados del Componente ---
-  const [activeTab, setActiveTab] = useState('pedidosEnLinea'); // Inicia en la nueva pestaña
+  const [activeTab, setActiveTab] = useState('pedidosEnLinea');
   const [productos, setProductos] = useState([]);
-  const [pedidos, setPedidos] = useState([]); // <-- NUEVO: Estado para pedidos en línea
+  const [pedidos, setPedidos] = useState([]);
   const [reportData, setReportData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
-  // Estados para modales
   const [showProductModal, setShowProductModal] = useState(false);
   const [productoActual, setProductoActual] = useState(null);
-  const [showAddressModal, setShowAddressModal] = useState(false); // <-- NUEVO
-  const [selectedOrder, setSelectedOrder] = useState(null); // <-- NUEVO
+  const [showAddressModal, setShowAddressModal] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState(null);
 
-  // --- Lógica de Carga de Datos ---
   const fetchData = async () => {
     setLoading(true);
     setError('');
@@ -41,7 +38,7 @@ function AdminPage() {
       } else if (activeTab === 'reporteGeneral') {
         const res = await axios.get('/api/ventas/reporte');
         setReportData(res.data);
-      } else if (activeTab === 'pedidosEnLinea') { // <-- NUEVO: Carga de pedidos
+      } else if (activeTab === 'pedidosEnLinea') {
         const res = await axios.get('/api/pedidos');
         setPedidos(res.data);
       }
@@ -57,7 +54,6 @@ function AdminPage() {
     fetchData();
   }, [activeTab]);
 
-  // --- Handlers de Productos ---
   const handleOpenProductModal = (producto = null) => { setProductoActual(producto); setShowProductModal(true); };
   const handleCloseProductModal = () => { setShowProductModal(false); setProductoActual(null); };
   
@@ -70,7 +66,7 @@ function AdminPage() {
         await axios.post('/api/productos', producto);
       }
       toast.success(`Producto ${action} con éxito.`);
-      fetchData(); // Refresca los datos de la pestaña actual
+      fetchData();
       handleCloseProductModal();
     } catch (err) {
       toast.error(`No se pudo guardar el producto.`);
@@ -89,14 +85,17 @@ function AdminPage() {
     }
   };
   
-  // --- NUEVO: Handlers de Pedidos y Modal de Dirección ---
+  // === FUNCIÓN CORREGIDA ===
   const handleUpdateStatus = async (pedidoId, nuevoEstado) => {
     try {
-      await axios.patch(`/api/pedidos/${pedidoId}/estado`, { estado: nuevoEstado });
+      // Se usa el método PUT y la URL correcta que espera tu backend.
+      await axios.put(`/api/pedidos/${pedidoId}/estado`, { estado: nuevoEstado });
+      
       toast.success(`Pedido #${pedidoId} actualizado a "${nuevoEstado}"`);
       fetchData(); // Recarga la lista de pedidos
     } catch (err) {
       toast.error('No se pudo actualizar el estado del pedido.');
+      console.error("Error al actualizar estado:", err.response);
     }
   };
 
@@ -110,54 +109,25 @@ function AdminPage() {
     setSelectedOrder(null);
   };
 
-  // --- JSX del Componente ---
   return (
     <div>
       <ul className="nav nav-tabs mb-4">
-        {/* Pestaña de Pedidos en Línea */}
-        <li className="nav-item">
-          <button className={`nav-link ${activeTab === 'pedidosEnLinea' ? 'active' : ''}`} onClick={() => setActiveTab('pedidosEnLinea')}>
-            Pedidos en Línea
-          </button>
-        </li>
-        {/* Pestaña de Gestión de Productos */}
-        <li className="nav-item">
-          <button className={`nav-link ${activeTab === 'productos' ? 'active' : ''}`} onClick={() => setActiveTab('productos')}>
-            Gestión de Productos
-          </button>
-        </li>
-        {/* Pestañas de Reportes */}
-        <li className="nav-item">
-          <button className={`nav-link ${activeTab === 'reporteGeneral' ? 'active' : ''}`} onClick={() => setActiveTab('reporteGeneral')}>
-            Reporte General
-          </button>
-        </li>
-        <li className="nav-item">
-          <button className={`nav-link ${activeTab === 'reporteProductos' ? 'active' : ''}`} onClick={() => setActiveTab('reporteProductos')}>
-            Reporte por Producto
-          </button>
-        </li>
+        <li className="nav-item"><button className={`nav-link ${activeTab === 'pedidosEnLinea' ? 'active' : ''}`} onClick={() => setActiveTab('pedidosEnLinea')}>Pedidos en Línea</button></li>
+        <li className="nav-item"><button className={`nav-link ${activeTab === 'productos' ? 'active' : ''}`} onClick={() => setActiveTab('productos')}>Gestión de Productos</button></li>
+        <li className="nav-item"><button className={`nav-link ${activeTab === 'reporteGeneral' ? 'active' : ''}`} onClick={() => setActiveTab('reporteGeneral')}>Reporte General</button></li>
+        <li className="nav-item"><button className={`nav-link ${activeTab === 'reporteProductos' ? 'active' : ''}`} onClick={() => setActiveTab('reporteProductos')}>Reporte por Producto</button></li>
       </ul>
 
-      {loading && <div className="text-center"><div className="spinner-border" role="status"><span className="visually-hidden">Loading...</span></div></div>}
+      {loading && <div className="text-center"><div className="spinner-border" role="status"></div></div>}
       {error && <div className="alert alert-danger">{error}</div>}
 
-      {/* --- NUEVO: Vista de Pedidos en Línea --- */}
       {!loading && !error && activeTab === 'pedidosEnLinea' && (
         <div>
           <h1 className="mb-4">Gestión de Pedidos en Línea</h1>
           <div className="table-responsive">
             <table className="table table-hover align-middle">
               <thead className="table-dark">
-                <tr>
-                  <th>ID</th>
-                  <th>Cliente</th>
-                  <th>Fecha</th>
-                  <th>Total</th>
-                  <th>Tipo</th>
-                  <th>Estado</th>
-                  <th>Acciones</th>
-                </tr>
+                <tr><th>ID</th><th>Cliente</th><th>Fecha</th><th>Total</th><th>Tipo</th><th>Estado</th><th>Acciones</th></tr>
               </thead>
               <tbody>
                 {pedidos.map((pedido) => (
@@ -166,24 +136,12 @@ function AdminPage() {
                     <td>{pedido.nombre_cliente}</td>
                     <td>{new Date(pedido.fecha).toLocaleString()}</td>
                     <td>${Number(pedido.total).toFixed(2)}</td>
-                    <td>
-                      <span className={`badge ${pedido.tipo_orden === 'domicilio' ? 'bg-info text-dark' : 'bg-secondary'}`}>
-                        {pedido.tipo_orden.charAt(0).toUpperCase() + pedido.tipo_orden.slice(1)}
-                      </span>
-                    </td>
+                    <td><span className={`badge ${pedido.tipo_orden === 'domicilio' ? 'bg-info text-dark' : 'bg-secondary'}`}>{pedido.tipo_orden.charAt(0).toUpperCase() + pedido.tipo_orden.slice(1)}</span></td>
                     <td>{pedido.estado}</td>
                     <td>
-                      {pedido.tipo_orden === 'domicilio' && (
-                        <button className="btn btn-sm btn-outline-primary me-2" onClick={() => handleShowAddress(pedido)}>
-                          Ver Dirección
-                        </button>
-                      )}
-                      <button className="btn btn-sm btn-warning me-2" onClick={() => handleUpdateStatus(pedido.id, 'En Preparacion')}>
-                        Preparar
-                      </button>
-                      <button className="btn btn-sm btn-success me-2" onClick={() => handleUpdateStatus(pedido.id, 'Completado')}>
-                        Completado
-                      </button>
+                      {pedido.tipo_orden === 'domicilio' && (<button className="btn btn-sm btn-outline-primary me-2" onClick={() => handleShowAddress(pedido)}>Ver Dirección</button>)}
+                      <button className="btn btn-sm btn-warning me-2" onClick={() => handleUpdateStatus(pedido.id, 'En Preparacion')}>Preparar</button>
+                      <button className="btn btn-sm btn-success me-2" onClick={() => handleUpdateStatus(pedido.id, 'Completado')}>Completado</button>
                     </td>
                   </tr>
                 ))}
@@ -193,7 +151,6 @@ function AdminPage() {
         </div>
       )}
 
-      {/* Vista de Gestión de Productos */}
       {!loading && !error && activeTab === 'productos' && (
         <div>
           <div className="d-flex justify-content-between align-items-center mb-4">
@@ -201,7 +158,6 @@ function AdminPage() {
             <button className="btn btn-primary" onClick={() => handleOpenProductModal()}>Añadir Nuevo Producto</button>
           </div>
           <div className="table-responsive">
-             {/* ... tu tabla de productos se queda igual ... */}
              <table className="table table-hover align-middle">
                <thead className="table-dark">
                  <tr><th>ID</th><th>Nombre</th><th>Precio</th><th>Stock</th><th>Categoría</th><th>Acciones</th></tr>
@@ -222,7 +178,6 @@ function AdminPage() {
         </div>
       )}
 
-      {/* Vistas de Reportes */}
       {!loading && !error && activeTab === 'reporteGeneral' && (
         <div>
           {reportData.length > 0 ? <SalesReportChart reportData={reportData} /> : <p className="text-center">No hay datos de ventas para mostrar.</p>}
@@ -230,32 +185,15 @@ function AdminPage() {
       )}
       {activeTab === 'reporteProductos' && <ProductSalesReport />}
       
-      {/* Modales */}
       <ProductModal show={showProductModal} handleClose={handleCloseProductModal} handleSave={handleSaveProducto} productoActual={productoActual} />
 
-      {/* --- NUEVO: Modal para mostrar dirección --- */}
       {showAddressModal && selectedOrder && (
         <div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Dirección de Entrega - Pedido #{selectedOrder.id}</h5>
-                <button type="button" className="btn-close" onClick={handleCloseAddressModal}></button>
-              </div>
-              <div className="modal-body">
-                <p><strong>Cliente:</strong> {selectedOrder.nombre_cliente}</p>
-                <p><strong>Dirección:</strong> {selectedOrder.direccion_entrega}</p>
-              </div>
-              <div className="modal-footer">
-                <a 
-                  href={`https://www.google.com/maps?q=${selectedOrder.latitude},${selectedOrder.longitude}`} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="btn btn-success w-100"
-                >
-                  Abrir en Google Maps
-                </a>
-              </div>
+              <div className="modal-header"><h5 className="modal-title">Dirección de Entrega - Pedido #{selectedOrder.id}</h5><button type="button" className="btn-close" onClick={handleCloseAddressModal}></button></div>
+              <div className="modal-body"><p><strong>Cliente:</strong> {selectedOrder.nombre_cliente}</p><p><strong>Dirección:</strong> {selectedOrder.direccion_entrega}</p></div>
+              <div className="modal-footer"><a href={`https://www.google.com/maps/search/?api=1&query=${selectedOrder.latitude},${selectedOrder.longitude}`} target="_blank" rel="noopener noreferrer" className="btn btn-success w-100">Abrir en Google Maps</a></div>
             </div>
           </div>
         </div>
