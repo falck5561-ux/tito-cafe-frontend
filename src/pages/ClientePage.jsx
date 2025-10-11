@@ -1,3 +1,5 @@
+// Archivo: src/pages/ClientePage.jsx (Código Corregido y Completo)
+
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -8,8 +10,6 @@ import CheckoutForm from '../components/CheckoutForm';
 import MapSelector from '../components/MapSelector';
 
 // --- CONFIGURACIÓN GLOBAL DE AXIOS ---
-// Esto asegura que cada petición al backend incluya el token de autenticación
-// y apunte a la URL correcta del servidor.
 const token = localStorage.getItem('token');
 if (token) {
   axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
@@ -130,9 +130,16 @@ function ClientePage() {
   };
 
   const handleSuccessfulPayment = async () => {
-    const productosParaEnviar = pedidoActual.map(({ id, cantidad, precio, nombre }) => ({ id, cantidad, precio, nombre }));
+    // ==================================================================
+    // AQUÍ ESTÁ LA CORRECCIÓN APLICADA
+    // ==================================================================
+    const productosParaEnviar = pedidoActual.map(({ id, cantidad, precio, nombre }) => ({
+      id,
+      cantidad,
+      precio: Number(precio), // <-- ÚNICO CAMBIO: Se convierte el precio a número
+      nombre
+    }));
     
-    // --- ESTA ES LA PARTE CORREGIDA Y CLAVE ---
     const pedidoData = { 
       total: totalFinal, 
       productos: productosParaEnviar,
@@ -142,7 +149,7 @@ function ClientePage() {
       latitude: tipoOrden === 'domicilio' ? direccion?.lat : null,
       longitude: tipoOrden === 'domicilio' ? direccion?.lng : null
     };
-    // ------------------------------------------
+    // ==================================================================
 
     try {
       const res = await axios.post('/api/pedidos', pedidoData);
