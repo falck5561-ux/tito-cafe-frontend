@@ -7,19 +7,20 @@ import { Elements } from '@stripe/react-stripe-js';
 import CheckoutForm from '../components/CheckoutForm';
 import MapSelector from '../components/MapSelector';
 
-// --- INICIO DE LA CORRECCIÓN ---
-// Esto asegura que cada petición al backend incluya el token de autenticación.
+// --- CONFIGURACIÓN GLOBAL DE AXIOS ---
+// Esto asegura que cada petición al backend incluya el token de autenticación
+// y apunte a la URL correcta del servidor.
 const token = localStorage.getItem('token');
 if (token) {
   axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 }
-// Define la URL base de tu API para no repetirla.
 axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'https://tito-cafe-backend.onrender.com';
-// --- FIN DE LA CORRECCIÓN ---
+// ------------------------------------
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 function ClientePage() {
+  // --- Estados del Componente ---
   const [activeTab, setActiveTab] = useState('crear');
   const [productos, setProductos] = useState([]);
   const [pedidoActual, setPedidoActual] = useState([]);
@@ -38,6 +39,7 @@ function ClientePage() {
 
   const totalFinal = subtotal + costoEnvio;
 
+  // --- Efectos y Lógica ---
   const fetchData = async () => {
     setLoading(true);
     setError('');
@@ -66,6 +68,13 @@ function ClientePage() {
     const nuevoSubtotal = pedidoActual.reduce((sum, item) => sum + item.cantidad * Number(item.precio), 0);
     setSubtotal(nuevoSubtotal);
   }, [pedidoActual]);
+
+  useEffect(() => {
+    if (tipoOrden !== 'domicilio') {
+      setCostoEnvio(0);
+      setDireccion(null);
+    }
+  }, [tipoOrden]);
 
   const agregarProductoAPedido = (producto) => {
     setPedidoActual(prev => {
@@ -99,13 +108,6 @@ function ClientePage() {
     }
   };
 
-  useEffect(() => {
-    if (tipoOrden !== 'domicilio') {
-      setCostoEnvio(0);
-      setDireccion(null);
-    }
-  }, [tipoOrden]);
-
   const handleProcederAlPago = async () => {
     if (totalFinal <= 0) return;
     if (tipoOrden === 'domicilio' && !direccion) {
@@ -130,6 +132,7 @@ function ClientePage() {
   const handleSuccessfulPayment = async () => {
     const productosParaEnviar = pedidoActual.map(({ id, cantidad, precio, nombre }) => ({ id, cantidad, precio, nombre }));
     
+    // --- ESTA ES LA PARTE CORREGIDA Y CLAVE ---
     const pedidoData = { 
       total: totalFinal, 
       productos: productosParaEnviar,
@@ -139,6 +142,7 @@ function ClientePage() {
       latitude: tipoOrden === 'domicilio' ? direccion?.lat : null,
       longitude: tipoOrden === 'domicilio' ? direccion?.lng : null
     };
+    // ------------------------------------------
 
     try {
       const res = await axios.post('/api/pedidos', pedidoData);
@@ -170,6 +174,7 @@ function ClientePage() {
     }
   };
 
+  // --- JSX (VISTA DEL COMPONENTE) ---
   return (
     <div>
       <ul className="nav nav-tabs mb-4">
