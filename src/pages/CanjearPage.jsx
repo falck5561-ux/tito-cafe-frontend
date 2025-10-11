@@ -1,4 +1,4 @@
-// Archivo: src/pages/CanjearPage.jsx
+// Archivo: src/pages/CanjearPage.jsx (Código Completo y Corregido)
 
 import React, { useState } from 'react';
 import axios from 'axios';
@@ -10,7 +10,7 @@ function CanjearPage() {
   const [loading, setLoading] = useState(false);
   const [clienteBuscado, setClienteBuscado] = useState(null);
 
-const handleBuscarCliente = async (e) => {
+  const handleBuscarCliente = async (e) => {
     e.preventDefault();
     if (!emailCliente) return toast.error('Ingresa el email del cliente.');
     
@@ -19,15 +19,18 @@ const handleBuscarCliente = async (e) => {
     setClienteBuscado(null);
     
     try {
-      // --- ¡LÍNEA CORREGIDA! ---
-      const res = await axios.post('/api/users/find-by-email', { email: emailCliente });
+      // URL construida con la variable de entorno para funcionar en producción
+      const apiUrl = `${import.meta.env.VITE_API_URL}/api/usuarios/find-by-email`;
+      const res = await axios.post(apiUrl, { email: emailCliente });
+      
       setRecompensas(res.data.recompensas);
       setClienteBuscado(res.data.cliente);
+
       if (res.data.recompensas.length === 0) {
         toast.success('El cliente no tiene recompensas pendientes.');
       }
     } catch (err) {
-      toast.error(err.response?.data?.msg || 'Cliente no encontrado o sin recompensas.');
+      toast.error(err.response?.data?.msg || 'Cliente no encontrado.');
     } finally {
       setLoading(false);
     }
@@ -39,9 +42,12 @@ const handleBuscarCliente = async (e) => {
     }
     
     try {
-      await axios.put(`/api/recompensas/${recompensaId}/utilizar`);
+      // También se debe usar la URL completa para esta llamada
+      const apiUrl = `${import.meta.env.VITE_API_URL}/api/recompensas/${recompensaId}/utilizar`;
+      await axios.put(apiUrl);
+      
       toast.success(`¡Cupón #${recompensaId} canjeado con éxito!`);
-      // Limpiamos los resultados después de canjear
+      // Actualiza la lista de recompensas en la pantalla
       setRecompensas(recompensas.filter(r => r.id !== recompensaId));
     } catch (err) {
       toast.error('No se pudo canjear el cupón.');
