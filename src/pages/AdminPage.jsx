@@ -1,103 +1,137 @@
-// Archivo: src/pages/AdminPage.jsx (Versión Final con 3 Pestañas)
+// Archivo: src/pages/AdminPage.jsx (Versión con Gestión de Pedidos en Línea)
+
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import ProductModal from '../components/ProductModal';
 import SalesReportChart from '../components/SalesReportChart';
-import ProductSalesReport from '../components/ProductSalesReport'; // <-- 1. Importa el nuevo reporte
+import ProductSalesReport from '../components/ProductSalesReport';
+
+// --- CONFIGURACIÓN CENTRALIZADA DE AXIOS ---
+axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'https://tito-cafe-backend.onrender.com';
+const token = localStorage.getItem('token');
+if (token) {
+  axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+}
+// ---------------------------------------------
 
 function AdminPage() {
-  // Cambia el nombre de la pestaña de reportes para evitar confusión
-  const [activeTab, setActiveTab] = useState('productos'); // 'productos', 'reporteGeneral', 'reporteProductos'
+  // --- Estados del Componente ---
+  const [activeTab, setActiveTab] = useState('pedidosEnLinea'); // Inicia en la nueva pestaña
   const [productos, setProductos] = useState([]);
+  const [pedidos, setPedidos] = useState([]); // <-- NUEVO: Estado para pedidos en línea
   const [reportData, setReportData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [showModal, setShowModal] = useState(false);
+  
+  // Estados para modales
+  const [showProductModal, setShowProductModal] = useState(false);
   const [productoActual, setProductoActual] = useState(null);
+  const [showAddressModal, setShowAddressModal] = useState(false); // <-- NUEVO
+  const [selectedOrder, setSelectedOrder] = useState(null); // <-- NUEVO
+
+  // --- Lógica de Carga de Datos ---
+  const fetchData = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      if (activeTab === 'productos') {
+        const res = await axios.get('/api/productos');
+        setProductos(res.data);
+      } else if (activeTab === 'reporteGeneral') {
+        const res = await axios.get('/api/ventas/reporte');
+        setReportData(res.data);
+      } else if (activeTab === 'pedidosEnLinea') { // <-- NUEVO: Carga de pedidos
+        const res = await axios.get('/api/pedidos');
+        setPedidos(res.data);
+      }
+    } catch (err) {
+      setError(`No se pudieron cargar los datos.`);
+      console.error("Error en fetchData:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      // Solo carga datos automáticamente para las pestañas que lo necesitan
-      if (activeTab === 'productos' || activeTab === 'reporteGeneral') {
-        setLoading(true);
-        setError('');
-        try {
-          if (activeTab === 'productos') {
-            const res = await axios.get('https://tito-cafe-backend.onrender.com/api/productos');
-            setProductos(res.data);
-          } else if (activeTab === 'reporteGeneral') {
-            const res = await axios.get('https://tito-cafe-backend.onrender.com/api/ventas/reporte');
-            setReportData(res.data);
-          }
-        } catch (err) { 
-          setError(`No se pudieron cargar los datos.`);
-        } finally { 
-          setLoading(false); 
-        }
-      } else {
-        // Para la nueva pestaña, no cargamos nada hasta que el usuario lo pida
-        setLoading(false);
-        setError('');
-      }
-    };
     fetchData();
   }, [activeTab]);
 
-  const refreshProducts = async () => {
-    try {
-      const res = await axios.get('https://tito-cafe-backend.onrender.com/api/productos');
-      setProductos(res.data);
-    } catch {
-      // maneja el error si es necesario
-    }
-  }
-
-  const handleOpenModal = (producto = null) => { setProductoActual(producto); setShowModal(true); };
-  const handleCloseModal = () => { setShowModal(false); setProductoActual(null); };
+  // --- Handlers de Productos ---
+  const handleOpenProductModal = (producto = null) => { setProductoActual(producto); setShowProductModal(true); };
+  const handleCloseProductModal = () => { setShowProductModal(false); setProductoActual(null); };
   
   const handleSaveProducto = async (producto) => {
     const action = producto.id ? 'actualizado' : 'creado';
     try {
       if (producto.id) {
-        await axios.put(`https://tito-cafe-backend.onrender.com/api/productos/${producto.id}`, producto);
+        await axios.put(`/api/productos/${producto.id}`, producto);
       } else {
-        await axios.post('https://tito-cafe-backend.onrender.com/api/productos', producto);
+        await axios.post('/api/productos', producto);
       }
       toast.success(`Producto ${action} con éxito.`);
-      refreshProducts();
-      handleCloseModal();
+      fetchData(); // Refresca los datos de la pestaña actual
+      handleCloseProductModal();
     } catch (err) {
       toast.error(`No se pudo guardar el producto.`);
     }
   };
 
-  const handleDeleteProducto = async (id) => { 
+  const handleDeleteProducto = async (id) => {
     if (window.confirm('¿Estás seguro de que quieres eliminar este producto?')) {
       try {
-        await axios.delete(`https://tito-cafe-backend.onrender.com/api/productos/${id}`);
+        await axios.delete(`/api/productos/${id}`);
         toast.success('Producto eliminado con éxito.');
-        refreshProducts();
+        fetchData();
       } catch (err) {
         toast.error('No se pudo eliminar el producto.');
       }
     }
   };
+  
+  // --- NUEVO: Handlers de Pedidos y Modal de Dirección ---
+  const handleUpdateStatus = async (pedidoId, nuevoEstado) => {
+    try {
+      await axios.patch(`/api/pedidos/${pedidoId}/estado`, { estado: nuevoEstado });
+      toast.success(`Pedido #${pedidoId} actualizado a "${nuevoEstado}"`);
+      fetchData(); // Recarga la lista de pedidos
+    } catch (err) {
+      toast.error('No se pudo actualizar el estado del pedido.');
+    }
+  };
 
+  const handleShowAddress = (pedido) => {
+    setSelectedOrder(pedido);
+    setShowAddressModal(true);
+  };
+  
+  const handleCloseAddressModal = () => {
+    setShowAddressModal(false);
+    setSelectedOrder(null);
+  };
+
+  // --- JSX del Componente ---
   return (
     <div>
       <ul className="nav nav-tabs mb-4">
+        {/* Pestaña de Pedidos en Línea */}
+        <li className="nav-item">
+          <button className={`nav-link ${activeTab === 'pedidosEnLinea' ? 'active' : ''}`} onClick={() => setActiveTab('pedidosEnLinea')}>
+            Pedidos en Línea
+          </button>
+        </li>
+        {/* Pestaña de Gestión de Productos */}
         <li className="nav-item">
           <button className={`nav-link ${activeTab === 'productos' ? 'active' : ''}`} onClick={() => setActiveTab('productos')}>
             Gestión de Productos
           </button>
         </li>
+        {/* Pestañas de Reportes */}
         <li className="nav-item">
           <button className={`nav-link ${activeTab === 'reporteGeneral' ? 'active' : ''}`} onClick={() => setActiveTab('reporteGeneral')}>
             Reporte General
           </button>
         </li>
-        {/* --- 2. AÑADE LA NUEVA PESTAÑA --- */}
         <li className="nav-item">
           <button className={`nav-link ${activeTab === 'reporteProductos' ? 'active' : ''}`} onClick={() => setActiveTab('reporteProductos')}>
             Reporte por Producto
@@ -105,28 +139,51 @@ function AdminPage() {
         </li>
       </ul>
 
-      {/* --- Contenido --- */}
       {loading && <div className="text-center"><div className="spinner-border" role="status"><span className="visually-hidden">Loading...</span></div></div>}
       {error && <div className="alert alert-danger">{error}</div>}
 
-      {!loading && !error && activeTab === 'productos' && (
+      {/* --- NUEVO: Vista de Pedidos en Línea --- */}
+      {!loading && !error && activeTab === 'pedidosEnLinea' && (
         <div>
-          <div className="d-flex justify-content-between align-items-center mb-4">
-            <h1>Gestión de Productos</h1>
-            <button className="btn btn-primary" onClick={() => handleOpenModal()}>Añadir Nuevo Producto</button>
-          </div>
+          <h1 className="mb-4">Gestión de Pedidos en Línea</h1>
           <div className="table-responsive">
             <table className="table table-hover align-middle">
               <thead className="table-dark">
-                <tr><th>ID</th><th>Nombre</th><th>Precio</th><th>Stock</th><th>Categoría</th><th>Acciones</th></tr>
+                <tr>
+                  <th>ID</th>
+                  <th>Cliente</th>
+                  <th>Fecha</th>
+                  <th>Total</th>
+                  <th>Tipo</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
               </thead>
               <tbody>
-                {productos.map((p) => (
-                  <tr key={p.id}>
-                    <td>{p.id}</td><td>{p.nombre}</td><td>${Number(p.precio).toFixed(2)}</td><td>{p.stock}</td><td>{p.categoria}</td>
+                {pedidos.map((pedido) => (
+                  <tr key={pedido.id}>
+                    <td>#{pedido.id}</td>
+                    <td>{pedido.nombre_cliente}</td>
+                    <td>{new Date(pedido.fecha).toLocaleString()}</td>
+                    <td>${Number(pedido.total).toFixed(2)}</td>
                     <td>
-                      <button className="btn btn-sm btn-outline-warning me-2" onClick={() => handleOpenModal(p)}>Editar</button>
-                      <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteProducto(p.id)}>Eliminar</button>
+                      <span className={`badge ${pedido.tipo_orden === 'domicilio' ? 'bg-info text-dark' : 'bg-secondary'}`}>
+                        {pedido.tipo_orden.charAt(0).toUpperCase() + pedido.tipo_orden.slice(1)}
+                      </span>
+                    </td>
+                    <td>{pedido.estado}</td>
+                    <td>
+                      {pedido.tipo_orden === 'domicilio' && (
+                        <button className="btn btn-sm btn-outline-primary me-2" onClick={() => handleShowAddress(pedido)}>
+                          Ver Dirección
+                        </button>
+                      )}
+                      <button className="btn btn-sm btn-warning me-2" onClick={() => handleUpdateStatus(pedido.id, 'En Preparacion')}>
+                        Preparar
+                      </button>
+                      <button className="btn btn-sm btn-success me-2" onClick={() => handleUpdateStatus(pedido.id, 'Completado')}>
+                        Completado
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -136,18 +193,73 @@ function AdminPage() {
         </div>
       )}
 
-      {!loading && !error && activeTab === 'reporteGeneral' && (
+      {/* Vista de Gestión de Productos */}
+      {!loading && !error && activeTab === 'productos' && (
         <div>
-          {reportData.length > 0 ? <SalesReportChart reportData={reportData} /> : <p className="text-center">No hay datos de ventas para mostrar en el gráfico.</p>}
+          <div className="d-flex justify-content-between align-items-center mb-4">
+            <h1>Gestión de Productos</h1>
+            <button className="btn btn-primary" onClick={() => handleOpenProductModal()}>Añadir Nuevo Producto</button>
+          </div>
+          <div className="table-responsive">
+             {/* ... tu tabla de productos se queda igual ... */}
+             <table className="table table-hover align-middle">
+               <thead className="table-dark">
+                 <tr><th>ID</th><th>Nombre</th><th>Precio</th><th>Stock</th><th>Categoría</th><th>Acciones</th></tr>
+               </thead>
+               <tbody>
+                 {productos.map((p) => (
+                   <tr key={p.id}>
+                     <td>{p.id}</td><td>{p.nombre}</td><td>${Number(p.precio).toFixed(2)}</td><td>{p.stock}</td><td>{p.categoria}</td>
+                     <td>
+                       <button className="btn btn-sm btn-outline-warning me-2" onClick={() => handleOpenProductModal(p)}>Editar</button>
+                       <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteProducto(p.id)}>Eliminar</button>
+                     </td>
+                   </tr>
+                 ))}
+               </tbody>
+             </table>
+          </div>
         </div>
       )}
-      
-      {/* --- 3. AÑADE EL RENDERIZADO DEL NUEVO REPORTE --- */}
-      {activeTab === 'reporteProductos' && (
-        <ProductSalesReport />
+
+      {/* Vistas de Reportes */}
+      {!loading && !error && activeTab === 'reporteGeneral' && (
+        <div>
+          {reportData.length > 0 ? <SalesReportChart reportData={reportData} /> : <p className="text-center">No hay datos de ventas para mostrar.</p>}
+        </div>
       )}
+      {activeTab === 'reporteProductos' && <ProductSalesReport />}
       
-      <ProductModal show={showModal} handleClose={handleCloseModal} handleSave={handleSaveProducto} productoActual={productoActual} />
+      {/* Modales */}
+      <ProductModal show={showProductModal} handleClose={handleCloseProductModal} handleSave={handleSaveProducto} productoActual={productoActual} />
+
+      {/* --- NUEVO: Modal para mostrar dirección --- */}
+      {showAddressModal && selectedOrder && (
+        <div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Dirección de Entrega - Pedido #{selectedOrder.id}</h5>
+                <button type="button" className="btn-close" onClick={handleCloseAddressModal}></button>
+              </div>
+              <div className="modal-body">
+                <p><strong>Cliente:</strong> {selectedOrder.nombre_cliente}</p>
+                <p><strong>Dirección:</strong> {selectedOrder.direccion_entrega}</p>
+              </div>
+              <div className="modal-footer">
+                <a 
+                  href={`https://www.google.com/maps?q=${selectedOrder.latitude},${selectedOrder.longitude}`} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="btn btn-success w-100"
+                >
+                  Abrir en Google Maps
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
