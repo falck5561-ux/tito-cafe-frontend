@@ -1,4 +1,4 @@
-// Archivo: src/pages/ClientePage.jsx (Versión Final con Búsqueda y Guardado de Direcciones)
+// Archivo: src/pages/ClientePage.jsx (Versión Definitiva y Corregida)
 
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
@@ -20,7 +20,6 @@ axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'https://tito-cafe-back
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 function ClientePage() {
-  // --- Estados del Componente ---
   const [activeTab, setActiveTab] = useState('crear');
   const [productos, setProductos] = useState([]);
   const [pedidoActual, setPedidoActual] = useState([]);
@@ -36,14 +35,11 @@ function ClientePage() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [clientSecret, setClientSecret] = useState('');
   const [paymentLoading, setPaymentLoading] = useState(false);
-  
-  // --- NUEVOS ESTADOS PARA DIRECCIONES ---
   const [direccionGuardada, setDireccionGuardada] = useState(null);
   const [guardarDireccion, setGuardarDireccion] = useState(false);
 
   const totalFinal = subtotal + costoEnvio;
 
-  // --- LÓGICA DE CARGA OPTIMIZADA ---
   // Carga datos que solo se necesitan una vez al inicio
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -52,8 +48,14 @@ function ClientePage() {
       try {
         const [productosRes, direccionRes] = await Promise.all([
           axios.get('/api/productos'),
+          
+          // =============================================================
+          // ¡ESTA ES LA LÍNEA CRÍTICA QUE SE CORRIGIÓ!
+          // La URL correcta debe ser '/api/usuarios/mi-direccion'.
           axios.get('/api/usuarios/mi-direccion')
+          // =============================================================
         ]);
+        
         setProductos(productosRes.data);
         if (direccionRes.data) {
           setDireccionGuardada(direccionRes.data);
@@ -68,10 +70,10 @@ function ClientePage() {
     fetchInitialData();
   }, []);
 
-  // Carga datos que dependen de la pestaña activa (mis pedidos, mis recompensas)
+  // Carga datos que dependen de la pestaña activa
   useEffect(() => {
     const fetchTabData = async () => {
-      if (activeTab === 'crear' || !token) return; // No hace nada si estamos en 'crear' o no hay token
+      if (activeTab === 'crear' || !token) return;
 
       setLoading(true);
       setError('');
@@ -92,7 +94,6 @@ function ClientePage() {
     };
     fetchTabData();
   }, [activeTab]);
-  // --- FIN DE LÓGICA DE CARGA ---
 
   useEffect(() => {
     const nuevoSubtotal = pedidoActual.reduce((sum, item) => sum + item.cantidad * Number(item.precio), 0);
@@ -106,117 +107,13 @@ function ClientePage() {
     }
   }, [tipoOrden]);
 
-  const agregarProductoAPedido = (producto) => {
-    setPedidoActual(prev => {
-      const existe = prev.find(item => item.id === producto.id);
-      if (existe) {
-        return prev.map(item => item.id === producto.id ? { ...item, cantidad: item.cantidad + 1 } : item);
-      }
-      return [...prev, { ...producto, cantidad: 1 }];
-    });
-  };
-
-  const limpiarPedido = () => {
-    setPedidoActual([]);
-    setCostoEnvio(0);
-    setDireccion(null);
-    setGuardarDireccion(false);
-  };
-
-  const handleLocationSelect = async (location) => {
-    setDireccion(location);
-    setCalculandoEnvio(true);
-    setCostoEnvio(0);
-    try {
-      const res = await axios.post('/api/pedidos/calculate-delivery-cost', { lat: location.lat, lng: location.lng });
-      setCostoEnvio(res.data.deliveryCost);
-      toast.success(`Costo de envío: $${res.data.deliveryCost.toFixed(2)}`);
-    } catch (err) {
-      toast.error(err.response?.data?.msg || 'No se pudo calcular el costo de envío.');
-      setDireccion(null);
-    } finally {
-      setCalculandoEnvio(false);
-    }
-  };
-  
-  const usarDireccionGuardada = () => {
-    if (direccionGuardada) {
-      handleLocationSelect(direccionGuardada);
-      toast.success('Usando dirección guardada.');
-    }
-  };
-
-  const handleProcederAlPago = async () => {
-    if (totalFinal <= 0) return;
-    if (tipoOrden === 'domicilio' && !direccion) {
-      return toast.error('Por favor, selecciona o escribe tu ubicación.');
-    }
-    if (calculandoEnvio) {
-      return toast.error('Espera a que termine el cálculo del envío.');
-    }
-
-    setPaymentLoading(true);
-    try {
-      const res = await axios.post('/api/payments/create-payment-intent', { amount: totalFinal });
-      setClientSecret(res.data.clientSecret);
-      setShowPaymentModal(true);
-    } catch (err) {
-      toast.error('No se pudo iniciar el proceso de pago.');
-    } finally {
-      setPaymentLoading(false);
-    }
-  };
-
-  const handleSuccessfulPayment = async () => {
-    if (guardarDireccion && direccion) {
-      try {
-        await axios.put('/api/usuarios/mi-direccion', direccion);
-        toast.success('Dirección guardada para futuras compras.');
-        setDireccionGuardada(direccion);
-      } catch (err) {
-        toast.error('No se pudo guardar la dirección.');
-      }
-    }
-
-    const productosParaEnviar = pedidoActual.map(({ id, cantidad, precio, nombre }) => ({ id, cantidad, precio: Number(precio), nombre }));
-    
-    const pedidoData = { 
-      total: totalFinal, 
-      productos: productosParaEnviar,
-      tipo_orden: tipoOrden,
-      costo_envio: costoEnvio,
-      direccion_entrega: tipoOrden === 'domicilio' ? direccion?.description : null,
-      latitude: tipoOrden === 'domicilio' ? direccion?.lat : null,
-      longitude: tipoOrden === 'domicilio' ? direccion?.lng : null
-    };
-
-    try {
-      const res = await axios.post('/api/pedidos', pedidoData);
-      if (res.data.recompensaGenerada) {
-        toast.success('¡Felicidades! Ganaste un premio.', { duration: 6000, icon: '🎁' });
-      } else {
-        toast.success('¡Pedido realizado y pagado con éxito!');
-      }
-      limpiarPedido();
-      setShowPaymentModal(false);
-      setClientSecret('');
-      setActiveTab('ver'); 
-    } catch (err) {
-      console.error("Error al registrar el pedido:", err.response?.data || err.message);
-      toast.error(err.response?.data?.msg || 'Hubo un error al registrar tu pedido.');
-    }
-  };
-
-  const getStatusBadge = (estado) => {
-    switch (estado) {
-      case 'Pendiente': return 'bg-warning text-dark';
-      case 'En Preparacion': return 'bg-info text-dark';
-      case 'Listo para Recoger': return 'bg-success text-white';
-      case 'Completado': return 'bg-secondary text-white';
-      case 'En Camino': return 'bg-primary text-white';
-      default: return 'bg-light text-dark';
-    }
-  };
+  const agregarProductoAPedido = (producto) => { setPedidoActual(prev => { const existe = prev.find(item => item.id === producto.id); if (existe) { return prev.map(item => item.id === producto.id ? { ...item, cantidad: item.cantidad + 1 } : item); } return [...prev, { ...producto, cantidad: 1 }]; }); };
+  const limpiarPedido = () => { setPedidoActual([]); setCostoEnvio(0); setDireccion(null); setGuardarDireccion(false); };
+  const handleLocationSelect = async (location) => { setDireccion(location); setCalculandoEnvio(true); setCostoEnvio(0); try { const res = await axios.post('/api/pedidos/calculate-delivery-cost', { lat: location.lat, lng: location.lng }); setCostoEnvio(res.data.deliveryCost); toast.success(`Costo de envío: $${res.data.deliveryCost.toFixed(2)}`); } catch (err) { toast.error(err.response?.data?.msg || 'No se pudo calcular el costo de envío.'); setDireccion(null); } finally { setCalculandoEnvio(false); } };
+  const usarDireccionGuardada = () => { if (direccionGuardada) { handleLocationSelect(direccionGuardada); toast.success('Usando dirección guardada.'); } };
+  const handleProcederAlPago = async () => { if (totalFinal <= 0) return; if (tipoOrden === 'domicilio' && !direccion) { return toast.error('Por favor, selecciona o escribe tu ubicación.'); } if (calculandoEnvio) { return toast.error('Espera a que termine el cálculo del envío.'); } setPaymentLoading(true); try { const res = await axios.post('/api/payments/create-payment-intent', { amount: totalFinal }); setClientSecret(res.data.clientSecret); setShowPaymentModal(true); } catch (err) { toast.error('No se pudo iniciar el proceso de pago.'); } finally { setPaymentLoading(false); } };
+  const handleSuccessfulPayment = async () => { if (guardarDireccion && direccion) { try { await axios.put('/api/usuarios/mi-direccion', direccion); toast.success('Dirección guardada para futuras compras.'); setDireccionGuardada(direccion); } catch (err) { toast.error('No se pudo guardar la dirección.'); } } const productosParaEnviar = pedidoActual.map(({ id, cantidad, precio, nombre }) => ({ id, cantidad, precio: Number(precio), nombre })); const pedidoData = { total: totalFinal, productos: productosParaEnviar, tipo_orden: tipoOrden, costo_envio: costoEnvio, direccion_entrega: tipoOrden === 'domicilio' ? direccion?.description : null, latitude: tipoOrden === 'domicilio' ? direccion?.lat : null, longitude: tipoOrden === 'domicilio' ? direccion?.lng : null }; try { const res = await axios.post('/api/pedidos', pedidoData); if (res.data.recompensaGenerada) { toast.success('¡Felicidades! Ganaste un premio.', { duration: 6000, icon: '🎁' }); } else { toast.success('¡Pedido realizado y pagado con éxito!'); } limpiarPedido(); setShowPaymentModal(false); setClientSecret(''); setActiveTab('ver'); } catch (err) { console.error("Error al registrar el pedido:", err.response?.data || err.message); toast.error(err.response?.data?.msg || 'Hubo un error al registrar tu pedido.'); } };
+  const getStatusBadge = (estado) => { switch (estado) { case 'Pendiente': return 'bg-warning text-dark'; case 'En Preparacion': return 'bg-info text-dark'; case 'Listo para Recoger': return 'bg-success text-white'; case 'Completado': return 'bg-secondary text-white'; case 'En Camino': return 'bg-primary text-white'; default: return 'bg-light text-dark'; } };
 
   return (
     <div>
