@@ -120,54 +120,64 @@ h1, h2, h3, h4, h5, .navbar-brand, .display-4 {
 }
 
 /* =================================================================== */
-/* === ESTILOS PARA EL MODAL DE DETALLES DEL PEDIDO (NUEVO) === */
+/* === ESTILOS PARA EL MODAL DE DETALLES DEL PEDIDO === */
 /* =================================================================== */
 
-/* Estilo por defecto (Modo Claro) */
-.detalles-pedido-modal .modal-content {
+.modal-backdrop {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background-color: rgba(0, 0, 0, 0.7); display: flex; 
+  justify-content: center; align-items: center; z-index: 1050;
+}
+
+/* Estilos por defecto (Modo Claro) */
+.modal-backdrop .modal-content {
   background-color: #ffffff;
   color: var(--texto-principal);
   padding: 1.5rem;
   border: 1px solid var(--cafe-light);
+  border-radius: 0.5rem;
+  width: 90%;
+  max-width: 600px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
 }
 
 /* Anulación para Modo Oscuro */
-[data-bs-theme="dark"] .detalles-pedido-modal .modal-content {
+[data-bs-theme="dark"] .modal-backdrop .modal-content {
   background-color: #2c2c2c;
   color: var(--texto-principal);
   border: 1px solid var(--cafe-medium);
 }
 
-.detalles-pedido-modal h4 {
-  font-size: 1.1rem;
-  font-weight: bold;
-  color: var(--texto-secundario);
+.modal-backdrop .modal-header {
   border-bottom: 1px solid var(--cafe-light);
-  padding-bottom: 0.5rem;
-  margin-top: 1rem;
+  padding-bottom: 1rem;
   margin-bottom: 1rem;
 }
-
-.detalles-pedido-modal .lista-productos {
-  list-style: none;
-  padding: 0;
+[data-bs-theme="dark"] .modal-backdrop .modal-header {
+  border-bottom-color: var(--cafe-medium);
 }
 
-.detalles-pedido-modal .lista-productos li {
-  display: flex;
-  justify-content: space-between;
-  padding: 0.5rem 0;
-}
-
-.detalles-pedido-modal .detalles-envio p {
-  margin-bottom: 0.5rem;
-}
-
-.detalles-pedido-modal .total-pedido {
+.modal-backdrop .modal-footer {
   text-align: right;
-  font-size: 1.8rem;
-  font-weight: bold;
-  color: #28a745;
-  margin-top: 2rem;
-  margin-bottom: 1.5rem;
+  border-top: 1px solid var(--cafe-light);
+  padding-top: 1rem;
+  margin-top: 1.5rem;
+}
+[data-bs-theme="dark"] .modal-backdrop .modal-footer {
+  border-top-color: var(--cafe-medium);
+}
+
+.modal-backdrop .list-group-item {
+  background-color: transparent;
+  color: var(--texto-principal);
+  border-bottom: 1px solid var(--cafe-light);
+}
+[data-bs-theme="dark"] .modal-backdrop .list-group-item {
+  border-bottom-color: var(--cafe-medium);
+}
+.modal-backdrop .list-group-item:last-child {
+  border-bottom: none;
+}
+.modal-backdrop .total-pedido {
+  width: 100%;
 }
