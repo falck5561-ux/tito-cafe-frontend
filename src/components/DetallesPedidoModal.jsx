@@ -1,4 +1,3 @@
-// Archivo: src/components/DetallesPedidoModal.jsx (NUEVO ARCHIVO)
 import React from 'react';
 
 // Estilos para el modal, puedes moverlos a un archivo CSS si prefieres.
@@ -49,8 +48,12 @@ function DetallesPedidoModal({ pedido, onClose }) {
               <hr style={{borderColor: '#444'}} />
               <h6>Detalles de Envío:</h6>
               <p className="mb-1"><strong>Dirección:</strong> {pedido.direccion_entrega}</p>
+              
+              {/* ===== LÍNEA AÑADIDA AQUÍ ===== */}
+              {pedido.referencia && <p className="mb-1"><strong>Referencia:</strong> {pedido.referencia}</p>}
+              
               <a 
-                href={`https://www.google.com/maps?q=${pedido.latitude},${pedido.longitude}`}
+                href={`https://www.google.com/maps/search/?api=1&query=${pedido.latitude},${pedido.longitude}`}
                 target="_blank" 
                 rel="noopener noreferrer" 
                 className="btn btn-outline-info btn-sm mt-2"
