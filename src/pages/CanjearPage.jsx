@@ -1,5 +1,3 @@
-// Archivo: src/pages/CanjearPage.jsx (Código Completo y Corregido)
-
 import React, { useState } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -19,9 +17,25 @@ function CanjearPage() {
     setClienteBuscado(null);
     
     try {
-      // URL construida con la variable de entorno para funcionar en producción
+      // 1. Obtener el token de autenticación del localStorage
+      const token = localStorage.getItem('token');
+      if (!token) {
+        toast.error('Sesión no válida. Por favor, inicia sesión de nuevo.');
+        setLoading(false);
+        return;
+      }
+
       const apiUrl = `${import.meta.env.VITE_API_URL}/api/usuarios/find-by-email`;
-      const res = await axios.post(apiUrl, { email: emailCliente });
+      
+      // 2. Crear la configuración con el header de autorización
+      const config = {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      };
+
+      // 3. Enviar la solicitud POST con el cuerpo y la configuración
+      const res = await axios.post(apiUrl, { email: emailCliente }, config);
       
       setRecompensas(res.data.recompensas);
       setClienteBuscado(res.data.cliente);
@@ -30,7 +44,11 @@ function CanjearPage() {
         toast.success('El cliente no tiene recompensas pendientes.');
       }
     } catch (err) {
-      toast.error(err.response?.data?.msg || 'Cliente no encontrado.');
+      if (err.response && err.response.status === 401) {
+        toast.error('Tu sesión ha expirado. Por favor, inicia sesión de nuevo.');
+      } else {
+        toast.error(err.response?.data?.msg || 'Cliente no encontrado.');
+      }
     } finally {
       setLoading(false);
     }
@@ -42,15 +60,34 @@ function CanjearPage() {
     }
     
     try {
-      // También se debe usar la URL completa para esta llamada
+      // 1. Obtener el token también para esta acción protegida
+      const token = localStorage.getItem('token');
+      if (!token) {
+        toast.error('Sesión no válida. Por favor, inicia sesión de nuevo.');
+        return;
+      }
+
       const apiUrl = `${import.meta.env.VITE_API_URL}/api/recompensas/${recompensaId}/utilizar`;
-      await axios.put(apiUrl);
+      
+      // 2. Crear la configuración con el header
+      const config = {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      };
+      
+      // 3. Enviar la solicitud PUT con la configuración
+      // (Se envía 'null' como segundo argumento porque no hay cuerpo de datos)
+      await axios.put(apiUrl, null, config);
       
       toast.success(`¡Cupón #${recompensaId} canjeado con éxito!`);
-      // Actualiza la lista de recompensas en la pantalla
       setRecompensas(recompensas.filter(r => r.id !== recompensaId));
     } catch (err) {
-      toast.error('No se pudo canjear el cupón.');
+       if (err.response && err.response.status === 401) {
+        toast.error('Tu sesión ha expirado. Por favor, inicia sesión de nuevo.');
+      } else {
+        toast.error('No se pudo canjear el cupón.');
+      }
     }
   };
 
