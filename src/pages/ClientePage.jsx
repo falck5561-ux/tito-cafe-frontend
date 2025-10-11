@@ -1,6 +1,6 @@
-// Archivo: src/pages/ClientePage.jsx (Versión Definitiva y Corregida)
+// Archivo: src/pages/ClientePage.jsx (Versión Definitiva y Unificada)
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
@@ -20,6 +20,7 @@ axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'https://tito-cafe-back
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 function ClientePage() {
+  // --- Estados del Componente ---
   const [activeTab, setActiveTab] = useState('crear');
   const [productos, setProductos] = useState([]);
   const [pedidoActual, setPedidoActual] = useState([]);
@@ -40,6 +41,9 @@ function ClientePage() {
 
   const totalFinal = subtotal + costoEnvio;
 
+  // --- Efectos y Lógica ---
+
+  // Efecto para cargar datos iniciales (productos y dirección guardada) una sola vez
   useEffect(() => {
     const fetchInitialData = async () => {
       setLoading(true);
@@ -47,15 +51,7 @@ function ClientePage() {
       try {
         const [productosRes, direccionRes] = await Promise.all([
           axios.get('/api/productos'),
-          
-          // =============================================================
-          // =============================================================
-          //   ¡ESTA ES LA LÍNEA CRÍTICA QUE HA SIDO CORREGIDA!
-          //   La URL correcta es '/api/usuarios/mi-direccion'
           axios.get('/api/usuarios/mi-direccion')
-          // =============================================================
-          // =============================================================
-
         ]);
         
         setProductos(productosRes.data);
@@ -72,18 +68,22 @@ function ClientePage() {
     fetchInitialData();
   }, []);
 
+  // Efecto para cargar datos cuando se cambia de pestaña
   useEffect(() => {
     const fetchTabData = async () => {
-      if (activeTab === 'crear' || !token) return;
+      if (activeTab === 'crear') return; // Los productos ya se cargaron inicialmente
+      
       setLoading(true);
       setError('');
       try {
-        if (activeTab === 'ver') {
-          const res = await axios.get('/api/pedidos/mis-pedidos');
-          setMisPedidos(res.data);
-        } else if (activeTab === 'recompensas') {
-          const res = await axios.get('/api/recompensas/mis-recompensas');
-          setMisRecompensas(res.data);
+        let endpoint = '';
+        if (activeTab === 'ver') endpoint = '/api/pedidos/mis-pedidos';
+        else if (activeTab === 'recompensas') endpoint = '/api/recompensas/mis-recompensas';
+
+        if (endpoint) {
+          const res = await axios.get(endpoint);
+          if (activeTab === 'ver') setMisPedidos(res.data);
+          else if (activeTab === 'recompensas') setMisRecompensas(res.data);
         }
       } catch (err) {
         setError('No se pudieron cargar los datos de la pestaña.');
@@ -112,9 +112,57 @@ function ClientePage() {
   const handleLocationSelect = async (location) => { setDireccion(location); setCalculandoEnvio(true); setCostoEnvio(0); try { const res = await axios.post('/api/pedidos/calculate-delivery-cost', { lat: location.lat, lng: location.lng }); setCostoEnvio(res.data.deliveryCost); toast.success(`Costo de envío: $${res.data.deliveryCost.toFixed(2)}`); } catch (err) { toast.error(err.response?.data?.msg || 'No se pudo calcular el costo de envío.'); setDireccion(null); } finally { setCalculandoEnvio(false); } };
   const usarDireccionGuardada = () => { if (direccionGuardada) { handleLocationSelect(direccionGuardada); toast.success('Usando dirección guardada.'); } };
   const handleProcederAlPago = async () => { if (totalFinal <= 0) return; if (tipoOrden === 'domicilio' && !direccion) { return toast.error('Por favor, selecciona o escribe tu ubicación.'); } if (calculandoEnvio) { return toast.error('Espera a que termine el cálculo del envío.'); } setPaymentLoading(true); try { const res = await axios.post('/api/payments/create-payment-intent', { amount: totalFinal }); setClientSecret(res.data.clientSecret); setShowPaymentModal(true); } catch (err) { toast.error('No se pudo iniciar el proceso de pago.'); } finally { setPaymentLoading(false); } };
-  const handleSuccessfulPayment = async () => { if (guardarDireccion && direccion) { try { await axios.put('/api/usuarios/mi-direccion', direccion); toast.success('Dirección guardada para futuras compras.'); setDireccionGuardada(direccion); } catch (err) { toast.error('No se pudo guardar la dirección.'); } } const productosParaEnviar = pedidoActual.map(({ id, cantidad, precio, nombre }) => ({ id, cantidad, precio: Number(precio), nombre })); const pedidoData = { total: totalFinal, productos: productosParaEnviar, tipo_orden: tipoOrden, costo_envio: costoEnvio, direccion_entrega: tipoOrden === 'domicilio' ? direccion?.description : null, latitude: tipoOrden === 'domicilio' ? direccion?.lat : null, longitude: tipoOrden === 'domicilio' ? direccion?.lng : null }; try { const res = await axios.post('/api/pedidos', pedidoData); if (res.data.recompensaGenerada) { toast.success('¡Felicidades! Ganaste un premio.', { duration: 6000, icon: '🎁' }); } else { toast.success('¡Pedido realizado y pagado con éxito!'); } limpiarPedido(); setShowPaymentModal(false); setClientSecret(''); setActiveTab('ver'); } catch (err) { console.error("Error al registrar el pedido:", err.response?.data || err.message); toast.error(err.response?.data?.msg || 'Hubo un error al registrar tu pedido.'); } };
+
+  const handleSuccessfulPayment = async () => {
+    // Guardar la dirección si el usuario lo eligió
+    if (guardarDireccion && direccion) {
+      try {
+        await axios.put('/api/usuarios/mi-direccion', direccion);
+        toast.success('Dirección guardada para futuras compras.');
+        setDireccionGuardada(direccion);
+      } catch (err) {
+        toast.error('No se pudo guardar la dirección.');
+      }
+    }
+
+    // CORRECCIÓN CRÍTICA: Asegurarse de que 'precio' es un número
+    const productosParaEnviar = pedidoActual.map(({ id, cantidad, precio, nombre }) => ({
+      id,
+      cantidad,
+      precio: Number(precio), // <-- AQUÍ ESTÁ LA CORRECCIÓN
+      nombre
+    }));
+    
+    const pedidoData = { 
+      total: totalFinal, 
+      productos: productosParaEnviar,
+      tipo_orden: tipoOrden,
+      costo_envio: costoEnvio,
+      direccion_entrega: tipoOrden === 'domicilio' ? direccion?.description : null,
+      latitude: tipoOrden === 'domicilio' ? direccion?.lat : null,
+      longitude: tipoOrden === 'domicilio' ? direccion?.lng : null
+    };
+
+    try {
+      const res = await axios.post('/api/pedidos', pedidoData);
+      if (res.data.recompensaGenerada) {
+        toast.success('¡Felicidades! Ganaste un premio.', { duration: 6000, icon: '🎁' });
+      } else {
+        toast.success('¡Pedido realizado y pagado con éxito!');
+      }
+      limpiarPedido();
+      setShowPaymentModal(false);
+      setClientSecret('');
+      setActiveTab('ver'); 
+    } catch (err) {
+      console.error("Error al registrar el pedido:", err.response?.data || err.message);
+      toast.error(err.response?.data?.msg || 'Hubo un error al registrar tu pedido.');
+    }
+  };
+
   const getStatusBadge = (estado) => { switch (estado) { case 'Pendiente': return 'bg-warning text-dark'; case 'En Preparacion': return 'bg-info text-dark'; case 'Listo para Recoger': return 'bg-success text-white'; case 'Completado': return 'bg-secondary text-white'; case 'En Camino': return 'bg-primary text-white'; default: return 'bg-light text-dark'; } };
 
+  // --- JSX (VISTA DEL COMPONENTE) ---
   return (
     <div>
       <ul className="nav nav-tabs mb-4">
@@ -148,7 +196,7 @@ function ClientePage() {
                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-3">
                     {direccionGuardada && (<button className="btn btn-outline-info w-100 mb-3" onClick={usarDireccionGuardada}>Usar mi dirección guardada</button>)}
                     <label className="form-label">Dirección de Entrega:</label>
-                    <MapSelector onLocationSelect={handleLocationSelect} initialAddress={direccion} />
+                    <MapSelector onLocationSelect={handleLocationSelect} />
                   </motion.div>
                 )}
                 {tipoOrden === 'domicilio' && direccion && (
@@ -171,8 +219,8 @@ function ClientePage() {
         </motion.div>
       )}
 
-      {!loading && activeTab === 'ver' && (<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}><h2>Mis Pedidos</h2>{misPedidos.length === 0 ? <p className="text-center">No has realizado ningún pedido.</p> : (<div className="list-group">{misPedidos.map(p => (<div key={p.id} className="list-group-item list-group-item-action"><div className="d-flex w-100 justify-content-between"><h5 className="mb-1">Pedido #{p.id} ({p.tipo_orden})</h5><small>{new Date(p.fecha).toLocaleDateString()}</small></div><p className="mb-1">Total: ${Number(p.total).toFixed(2)}</p><small>Estado: <span className={`badge ${getStatusBadge(p.estado)}`}>{p.estado}</span></small></div>))}</div>)}</motion.div>)}
-      {!loading && activeTab === 'recompensas' && (<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}><h2>Mis Recompensas</h2>{misRecompensas.length === 0 ? (<p className="text-center">Aún no tienes recompensas.</p>) : (<div className="row g-4">{misRecompensas.map(recompensa => (<div key={recompensa.id} className="col-md-6 col-lg-4"><div className="card text-center text-white bg-dark shadow-lg" style={{ border: '2px dashed #00ff7f' }}><div className="card-body"><h5 className="card-title" style={{ color: '#00ff7f', fontWeight: 'bold' }}>🎁 ¡Cupón Ganado! 🎁</h5><p className="card-text">{recompensa.descripcion}</p><hr style={{ backgroundColor: '#00ff7f' }} /><p className="h3">ID del Cupón: {recompensa.id}</p><p className="card-text mt-2"><small>Muéstrale este ID al empleado para canjear tu premio.</small></p><p className="card-text mt-2"><small className="text-muted">Ganado el: {new Date(recompensa.fecha_creacion).toLocaleDateString()}</small></p></div></div></div>))}</div>)}</motion.div>)}
+      {!loading && activeTab === 'ver' && ( <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}><h2>Mis Pedidos</h2>{misPedidos.length === 0 ? <p className="text-center">No has realizado ningún pedido.</p> : (<div className="list-group">{misPedidos.map(p => (<div key={p.id} className="list-group-item list-group-item-action"><div className="d-flex w-100 justify-content-between"><h5 className="mb-1">Pedido #{p.id} ({p.tipo_orden})</h5><small>{new Date(p.fecha).toLocaleDateString()}</small></div><p className="mb-1">Total: ${Number(p.total).toFixed(2)}</p><small>Estado: <span className={`badge ${getStatusBadge(p.estado)}`}>{p.estado}</span></small></div>))}</div>)}</motion.div>)}
+      {!loading && activeTab === 'recompensas' && ( <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}><h2>Mis Recompensas</h2>{misRecompensas.length === 0 ? (<p className="text-center">Aún no tienes recompensas.</p>) : (<div className="row g-4">{misRecompensas.map(recompensa => (<div key={recompensa.id} className="col-md-6 col-lg-4"><div className="card text-center text-white bg-dark shadow-lg" style={{ border: '2px dashed #00ff7f' }}><div className="card-body"><h5 className="card-title" style={{ color: '#00ff7f', fontWeight: 'bold' }}>🎁 ¡Cupón Ganado! 🎁</h5><p className="card-text">{recompensa.descripcion}</p><hr style={{ backgroundColor: '#00ff7f' }} /><p className="h3">ID del Cupón: {recompensa.id}</p><p className="card-text mt-2"><small>Muéstrale este ID al empleado para canjear tu premio.</small></p><p className="card-text mt-2"><small className="text-muted">Ganado el: {new Date(recompensa.fecha_creacion).toLocaleDateString()}</small></p></div></div></div>))}</div>)}</motion.div>)}
       {showPaymentModal && clientSecret && (<div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}><motion.div initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="modal-dialog"><div className="modal-content"><div className="modal-header"><h5 className="modal-title">Finalizar Compra</h5><button type="button" className="btn-close" onClick={() => setShowPaymentModal(false)}></button></div><div className="modal-body"><Elements stripe={stripePromise} options={{ clientSecret }}><CheckoutForm handleSuccess={handleSuccessfulPayment} total={totalFinal} /></Elements></div></div></motion.div></div>)}
     </div>
   );
