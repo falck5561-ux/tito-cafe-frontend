@@ -3,18 +3,18 @@ import { motion } from 'framer-motion';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination } from 'swiper/modules';
 
-// --- Componente de Tarjeta de Producto ---
 function ProductCard({ product, index }) {
   const precioConDescuento = Number(product.precio) * (1 - product.descuento_porcentaje / 100);
   const hasImages = product.imagenes && product.imagenes.length > 0;
   const hasMultipleImages = hasImages && product.imagenes.length > 1;
 
+  // --- FUNCIÓN ACTUALIZADA CON IMÁGENES LOCALES ---
   const getPlaceholderImage = (categoria) => {
     const cat = categoria?.toLowerCase() || '';
-    if (cat.includes('caliente')) return 'https://placehold.co/600x400/6f4e37/FFF?text=Café';
-    if (cat.includes('fría')) return 'https://placehold.co/600x400/a0c4ff/FFF?text=Bebida';
-    if (cat.includes('postre')) return 'https://placehold.co/600x400/ffc0cb/FFF?text=Postre';
-    return 'https://placehold.co/600x400/d2b48c/FFF?text=Producto';
+    if (cat.includes('caliente') || cat.includes('café')) return '/placeholder-cafe.jpg';
+    if (cat.includes('fría')) return '/placeholder-fria.jpg';
+    if (cat.includes('postre') || cat.includes('pastel')) return '/placeholder-postre.jpg';
+    return '/placeholder-cafe.jpg';
   };
 
   return (
@@ -41,5 +41,4 @@ function ProductCard({ product, index }) {
     </motion.div>
   );
 }
-
 export default ProductCard;

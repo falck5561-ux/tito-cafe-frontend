@@ -135,18 +135,52 @@ h1, h2, h3, h4, h5, .navbar-brand, .display-4 {
 /* =================================================================== */
 
 .parallax-section {
-    /* CAMBIO: Usamos la nueva imagen de los erizos que debe estar en la carpeta 'public' */
     background-image: url('/parallax-erizos.jpg');
-    
-    /* Magia del Parallax */
     background-attachment: fixed;
     background-position: center;
     background-repeat: no-repeat;
     background-size: cover;
-    
-    /* Dimensiones y sombra */
     min-height: 400px;
-    box-shadow: inset 0 0 0 1000px rgba(0,0,0,0.3); /* Sombra interna para oscurecer */
+    box-shadow: inset 0 0 0 1000px rgba(0,0,0,0.3);
+}
+
+/* =================================================================== */
+/* ===      MEJORAS VISUALES GENERALES Y REDISEÑO DE COMBOS      === */
+/* =================================================================== */
+
+h2 {
+    font-size: 2.5rem; /* Títulos de sección más grandes y con más impacto */
+    margin-bottom: 2.5rem !important;
+}
+
+.section-padding {
+    padding-top: 4rem;
+    padding-bottom: 4rem;
+}
+
+.combo-slide-content {
+    background-color: var(--crema);
+}
+
+.combo-image-swiper, .combo-placeholder-image {
+    height: 450px;
+    width: 100%;
+}
+
+.combo-image-swiper img {
+    object-fit: cover;
+    height: 100%;
+    width: 100%;
+}
+
+.combo-placeholder-image {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--cafe-light);
+    color: var(--texto-secundario);
+    font-size: 2rem;
+    font-family: 'Playfair Display', serif;
 }
 
 
@@ -209,7 +243,6 @@ h1, h2, h3, h4, h5, .navbar-brand, .display-4 {
 
 /* --- Cada línea de producto en los detalles --- */
 .detalle-pedido-item {
-  /* ESTA ES LA REGLA CLAVE: Usa la variable de color principal */
   color: var(--texto-principal);
   display: flex;
   justify-content: space-between;
@@ -221,7 +254,6 @@ h1, h2, h3, h4, h5, .navbar-brand, .display-4 {
   border-bottom: none;
 }
 
-/* Estilos para el texto y el precio */
 .detalle-pedido-item span:first-child {
   font-weight: bold;
 }
@@ -234,14 +266,12 @@ h1, h2, h3, h4, h5, .navbar-brand, .display-4 {
 /* ===       ESTILOS PARA CARRITO FLOTANTE EN MÓVIL (NUEVO)        === */
 /* =================================================================== */
 
-/* Oculta la columna del carrito en pantallas de menos de 768px */
 @media (max-width: 767.98px) {
   .columna-carrito-escritorio {
     display: none;
   }
 }
 
-/* Estilos para el nuevo botón flotante */
 .boton-carrito-flotante {
   position: fixed;
   bottom: 20px;
@@ -260,7 +290,6 @@ h1, h2, h3, h4, h5, .navbar-brand, .display-4 {
   border: none;
 }
 
-/* Estilos para la burbuja de notificación */
 .badge-carrito {
   position: absolute;
   top: -5px;
@@ -277,10 +306,6 @@ h1, h2, h3, h4, h5, .navbar-brand, .display-4 {
 /* === FIX: AUTOCOMPLETADOR DE GOOGLE MAPS SOBRE MODALES         === */
 /* =================================================================== */
 
-/*
-  Esto le da al contenedor de sugerencias de Google un z-index muy alto
-  para asegurar que siempre se muestre por encima de cualquier modal de Bootstrap.
-*/
 .pac-container {
     z-index: 9999 !important;
 }
