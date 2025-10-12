@@ -184,7 +184,7 @@ function PosPage() {
               {productos.map(p => (
                 <div key={p.id} className="col-md-4 col-lg-3">
                   <motion.div whileHover={{ scale: 1.05 }} className="card h-100 text-center" onClick={() => agregarProductoAVenta(p)} style={{ cursor: 'pointer' }}>
-                    <div className="card-body d-flex flex-column justify-content-center">
+                    <div className="card-body d-flex flex-column justify-content-center pt-4">
                       <h5 className="card-title">{p.nombre}</h5>
                       <p className="card-text">${Number(p.precio).toFixed(2)}</p>
                     </div>

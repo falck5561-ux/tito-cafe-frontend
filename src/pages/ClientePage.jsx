@@ -220,7 +220,7 @@ function ClientePage() {
                     >
                       {p.en_oferta && <span className="discount-badge">-{p.descuento_porcentaje}%</span>}
                       
-                      <div className="card-body d-flex flex-column justify-content-center">
+                      <div className="card-body d-flex flex-column justify-content-center pt-4">
                         <h5 className="card-title">{p.nombre}</h5>
                         
                         {p.en_oferta && p.descuento_porcentaje > 0 ? (

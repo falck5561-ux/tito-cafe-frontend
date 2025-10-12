@@ -1,13 +1,13 @@
-/* Archivo: src/App.css (Versión Profesional con Colores Unificados) */
+/* Archivo: src/App.css (Versión Final y Corregida) */
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Lato:wght@400;700&display=swap');
 
-/* --- PALETA DE COLORES Y TEMAS --- */
+/* === PALETA DE COLORES Y TEMAS === */
 :root {
   /* --- TEMA CLARO (MEJORADO) --- */
   --cafe-dark: #4a2c2a;
   --cafe-medium: #8d6e63;
   --cafe-light: #d7ccc8;
-  --crema: #fdfaf6;
+  --crema: #fdfaf6; /* Un color crema más cálido que el blanco puro */
   --texto-principal: #372423;
   --texto-secundario: #5d4037;
   
@@ -34,7 +34,7 @@
   --bs-tertiary-bg: #2a2a2a;
 }
 
-/* --- ESTILOS GENERALES --- */
+/* === ESTILOS GENERALES === */
 body {
   font-family: 'Lato', sans-serif;
   background-color: var(--bs-body-bg);
@@ -62,6 +62,21 @@ h1, h2, h3, h4, h5, .navbar-brand, .display-4 { font-family: 'Playfair Display',
   width: 100%; height: 2px; background-color: var(--cafe-medium);
 }
 
+/* === PESTAÑAS (TABS) EN MODO CLARO (CORREGIDO) === */
+[data-bs-theme="light"] .nav-tabs {
+    border-bottom-color: var(--cafe-light);
+}
+[data-bs-theme="light"] .nav-tabs .nav-link {
+    color: var(--texto-secundario);
+    border-color: transparent;
+    border-bottom: 3px solid transparent;
+}
+[data-bs-theme="light"] .nav-tabs .nav-link.active {
+    color: var(--texto-principal);
+    border-color: var(--cafe-light) var(--cafe-light) var(--bs-body-bg);
+    border-bottom-color: var(--cafe-medium);
+}
+
 /* === ESTILOS PARA TARJETAS === */
 .card {
   background-color: var(--bs-card-bg);
@@ -77,66 +92,30 @@ h1, h2, h3, h4, h5, .navbar-brand, .display-4 { font-family: 'Playfair Display',
     font-size: .8em; font-weight: 700; border-radius: 50rem;
 }
 
-/* === HERO Y OTROS === */
+/* === TABLA DE ADMIN EN MODO CLARO (CORREGIDO) === */
+[data-bs-theme="light"] .table-dark {
+    --bs-table-bg: var(--bs-card-bg);
+    --bs-table-color: var(--bs-body-color);
+    --bs-table-border-color: var(--bs-border-color);
+    --bs-table-hover-bg: var(--bs-tertiary-bg);
+    --bs-table-striped-bg: var(--bs-tertiary-bg);
+}
+[data-bs-theme="light"] .table-dark thead th {
+   background-color: var(--cafe-dark);
+   color: var(--crema);
+   border-color: var(--cafe-medium);
+}
+
+/* === UNIFICACIÓN DE COLORES DE BOTONES Y PRECIOS === */
+.btn-primary { background-color: var(--cafe-medium); border-color: var(--cafe-medium); }
+.btn-primary:hover { background-color: var(--cafe-dark); border-color: var(--cafe-dark); }
+.card-text.fw-bold.fs-5, .price-area .discounted-price { color: var(--cafe-dark) !important; }
+[data-bs-theme="dark"] .card-text.fw-bold.fs-5, [data-bs-theme="dark"] .price-area .discounted-price { color: #a5d6a7 !important; }
+
+/* === OTROS ESTILOS === */
 .hero-logo {
   width: 120px; height: 120px; border-radius: 50%; object-fit: cover;
   background-color: #fff; padding: 10px;
   border: 4px solid var(--cafe-light); box-shadow: 0 4px 15px rgba(0,0,0,0.2);
 }
-.parallax-section {
-    background-image: url('/parallax-erizos.jpg');
-    background-attachment: fixed; background-position: center;
-    background-repeat: no-repeat; background-size: cover;
-    min-height: 400px; box-shadow: inset 0 0 0 1000px rgba(0,0,0,0.3);
-}
 .pac-container { z-index: 9999 !important; }
-
-
-/* =================================================================== */
-/* ===         UNIFICACIÓN DE PALETA DE COLORES (NUEVO)          === */
-/* =================================================================== */
-
-/* --- 1. Botones Principales --- */
-.btn-primary {
-  background-color: var(--cafe-medium);
-  border-color: var(--cafe-medium);
-  color: white;
-}
-.btn-primary:hover {
-  background-color: var(--cafe-dark);
-  border-color: var(--cafe-dark);
-}
-.btn-outline-danger {
-  border-color: var(--cafe-medium);
-  color: var(--cafe-medium);
-}
-.btn-outline-danger:hover {
-  background-color: var(--cafe-medium);
-  color: white;
-  border-color: var(--cafe-medium);
-}
-
-/* --- 2. Color de Precios y Éxito --- */
-.card-text.fw-bold.fs-5, 
-.price-area .discounted-price,
-.text-success {
-  color: var(--cafe-dark) !important;
-}
-[data-bs-theme="dark"] .card-text.fw-bold.fs-5,
-[data-bs-theme="dark"] .price-area .discounted-price,
-[data-bs-theme="dark"] .text-success {
-  color: #a5d6a7 !important; /* Un verde menta suave para el modo oscuro */
-}
-
-/* --- 3. Tema para la Tabla de Administrador --- */
-.table thead.table-dark th {
-  background-color: var(--cafe-dark);
-  color: var(--crema);
-  border-color: var(--cafe-medium);
-}
-[data-bs-theme="light"] .table {
-    --bs-table-striped-bg: #f8f6f4;
-}
-.table .btn-info { background-color: var(--cafe-medium); border-color: var(--cafe-medium); }
-.table .btn-warning { background-color: #c7a17a; border-color: #c7a17a; color: var(--cafe-dark); }
-.table .btn-success { background-color: var(--cafe-dark); border-color: var(--cafe-dark); }
