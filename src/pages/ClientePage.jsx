@@ -34,9 +34,8 @@ function ClientePage() {
   const [guardarDireccion, setGuardarDireccion] = useState(false);
   const [referencia, setReferencia] = useState('');
 
-  // Estados para el modal del carrito móvil
   const [showCartModal, setShowCartModal] = useState(false);
-  const [modalView, setModalView] = useState('cart'); // Vistas: 'cart' o 'address'
+  const [modalView, setModalView] = useState('cart');
 
   const totalFinal = subtotal + costoEnvio;
 
@@ -105,7 +104,15 @@ function ClientePage() {
   const incrementarCantidad = (productoId) => { setPedidoActual(prev => prev.map(item => item.id === productoId ? { ...item, cantidad: item.cantidad + 1 } : item)); };
   const decrementarCantidad = (productoId) => { setPedidoActual(prev => { const producto = prev.find(item => item.id === productoId); if (producto.cantidad === 1) { return prev.filter(item => item.id !== productoId); } return prev.map(item => item.id === productoId ? { ...item, cantidad: item.cantidad - 1 } : item); }); };
   const eliminarProducto = (productoId) => { setPedidoActual(prev => prev.filter(item => item.id !== productoId)); };
-  const limpiarPedido = () => { setPedidoActual([]); setCostoEnvio(0); setDireccion(null); setGuardarDireccion(false); setReferencia(''); };
+  
+  const limpiarPedido = () => {
+    setPedidoActual([]);
+    setCostoEnvio(0);
+    setDireccion(null);
+    setGuardarDireccion(false);
+    setReferencia('');
+    setShowCartModal(false); // <--- CORRECCIÓN 1
+  };
 
   const handleLocationSelect = async (location) => { setDireccion(location); setCalculandoEnvio(true); setCostoEnvio(0); try { const res = await axios.post('/api/pedidos/calculate-delivery-cost', { lat: location.lat, lng: location.lng }); setCostoEnvio(res.data.deliveryCost); toast.success(`Costo de envío: $${res.data.deliveryCost.toFixed(2)}`); } catch (err) { toast.error(err.response?.data?.msg || 'No se pudo calcular el costo de envío.'); setDireccion(null); } finally { setCalculandoEnvio(false); } };
   const usarDireccionGuardada = () => { if (direccionGuardada) { handleLocationSelect(direccionGuardada); if (direccionGuardada.referencia) { setReferencia(direccionGuardada.referencia); } toast.success('Usando dirección guardada.'); } };
@@ -118,6 +125,12 @@ function ClientePage() {
     try {
       const token = localStorage.getItem('token');
       const res = await axios.post('/api/payments/create-payment-intent', { amount: totalFinal }, { headers: { Authorization: `Bearer ${token}` } });
+      
+      // --- CORRECCIÓN 2 ---
+      setShowCartModal(false);
+      setModalView('cart');
+      // --------------------
+
       setClientSecret(res.data.clientSecret);
       setShowPaymentModal(true);
     } catch (err) {
@@ -126,7 +139,7 @@ function ClientePage() {
       setPaymentLoading(false);
     }
   };
-  
+
   const handleContinue = () => {
     if (tipoOrden !== 'domicilio') {
       handleProcederAlPago();
@@ -155,8 +168,6 @@ function ClientePage() {
       if (res.data.recompensaGenerada) { toast.success('¡Felicidades! Ganaste un premio.', { duration: 6000, icon: '🎁' }); } else { toast.success('¡Pedido realizado y pagado con éxito!'); }
       limpiarPedido();
       setShowPaymentModal(false);
-      setShowCartModal(false);
-      setModalView('cart');
       setClientSecret('');
       setActiveTab('ver');
     } catch (err) {
@@ -170,6 +181,7 @@ function ClientePage() {
 
   return (
     <div>
+      {/* ... El resto de tu código JSX se mantiene igual, este es el final del archivo con las correcciones ... */}
       <ul className="nav nav-tabs mb-4">
         <li className="nav-item"><button className={`nav-link ${activeTab === 'crear' ? 'active' : ''}`} onClick={() => setActiveTab('crear')}>Hacer un Pedido</button></li>
         <li className="nav-item"><button className={`nav-link ${activeTab === 'ver' ? 'active' : ''}`} onClick={() => setActiveTab('ver')}>Mis Pedidos</button></li>
