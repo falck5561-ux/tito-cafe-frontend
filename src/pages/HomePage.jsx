@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import AuthContext from '../context/AuthContext';
 
-// Importar Swiper y sus estilos (ya lo tenías, perfecto)
+// Importar Swiper y sus estilos
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination, Autoplay } from 'swiper/modules';
 import 'swiper/css';
@@ -38,7 +38,6 @@ function HomePage() {
       try {
         const [productosRes, combosRes] = await Promise.all([
           axios.get('/api/productos'),
-          // CAMBIO: La ruta correcta para combos activos (vista pública) es '/api/combos/activas'
           axios.get('/api/combos/activas') 
         ]);
         setProductos(productosRes.data);
@@ -140,16 +139,20 @@ function HomePage() {
               {productos.map((producto, index) => {
                 const precioConDescuento = Number(producto.precio) * (1 - producto.descuento_porcentaje / 100);
                 
-                // --- CAMBIO: Lógica para manejar las imágenes del producto ---
                 const hasImages = producto.imagenes && producto.imagenes.length > 0;
                 const hasMultipleImages = hasImages && producto.imagenes.length > 1;
 
                 return (
                   <motion.div key={producto.id} className="col" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
                     <div className="card h-100 shadow-sm position-relative">
-                      {producto.en_oferta && <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">-{producto.descuento_porcentaje}%</span>}
                       
-                      {/* --- CAMBIO: Se reemplaza la imagen única por el carrusel condicional --- */}
+                      {/* --- CAMBIO: Se reemplazan las clases de Bootstrap por la clase personalizada 'discount-badge' --- */}
+                      {producto.en_oferta && (
+                        <span className="discount-badge">
+                          -{producto.descuento_porcentaje}%
+                        </span>
+                      )}
+                      
                       {hasMultipleImages ? (
                         <Swiper
                           modules={[Navigation, Pagination]}
@@ -199,5 +202,5 @@ function HomePage() {
     </motion.div>
   );
 }
-// Forzando la actualización para corregir la ruta de la API
+
 export default HomePage;

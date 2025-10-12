@@ -75,6 +75,47 @@ h1, h2, h3, h4, h5, .navbar-brand, .display-4 {
   box-shadow: 0 4px 15px rgba(0,0,0,0.2);
 }
 
+
+/* =================================================================== */
+/* === ESTILOS PARA TARJETAS DE PRODUCTO (CARRUSEL Y DESCUENTO) === */
+/* =================================================================== */
+
+/* --- 1. Etiqueta de Descuento --- */
+.discount-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 10;
+    background-color: #dc3545;
+    color: white;
+    padding: 0.35em 0.65em;
+    font-size: .8em;
+    font-weight: 700;
+    text-align: center;
+    border-radius: 50rem;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+/* --- 2. Flechas del Carrusel de Producto (Swiper) --- */
+.swiper-button-prev,
+.swiper-button-next {
+    background-color: rgba(255, 255, 255, 0.7);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    top: 50%;
+    transform: translateY(-50%);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+}
+
+.swiper-button-prev::after,
+.swiper-button-next::after {
+    color: #343a40;
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+
 /* =================================================================== */
 /* === ESTILOS ADAPTABLES PARA RECOMPENSAS Y TABLA DE PEDIDOS === */
 /* =================================================================== */
@@ -121,7 +162,7 @@ h1, h2, h3, h4, h5, .navbar-brand, .display-4 {
 
 
 /* =================================================================== */
-/* ===        ESTILOS PARA DETALLES DEL PEDIDO (SOLUCIÓN)        === */
+/* ===         ESTILOS PARA DETALLES DEL PEDIDO (SOLUCIÓN)         === */
 /* =================================================================== */
 
 /* --- Contenedor para la lista de productos desplegada --- */
@@ -156,7 +197,7 @@ h1, h2, h3, h4, h5, .navbar-brand, .display-4 {
 
 
 /* =================================================================== */
-/* ===      ESTILOS PARA CARRITO FLOTANTE EN MÓVIL (NUEVO)       === */
+/* ===       ESTILOS PARA CARRITO FLOTANTE EN MÓVIL (NUEVO)        === */
 /* =================================================================== */
 
 /* Oculta la columna del carrito en pantallas de menos de 768px */
