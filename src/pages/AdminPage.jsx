@@ -2,15 +2,19 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import ProductModal from '../components/ProductModal';
-import ComboModal from '../components/ComboModal'; // Corregido: Importa ComboModal
+import ComboModal from '../components/ComboModal';
 import SalesReportChart from '../components/SalesReportChart';
 import ProductSalesReport from '../components/ProductSalesReport';
 import DetallesPedidoModal from '../components/DetallesPedidoModal';
 
-// --- CONFIGURACIÓN CENTRALIZADA DE AXIOS ---
+// --- CAMBIO: Se importan las funciones del nuevo servicio de productos ---
+import { getProducts, createProduct, updateProduct, deleteProduct } from '../services/productService';
+
+// --- CONFIGURACIÓN CENTRALIZADA DE AXIOS (Se mantiene igual) ---
 axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'https://tito-cafe-backend.onrender.com';
 const token = localStorage.getItem('token');
 if (token) {
+  // NOTA: Tu código usa 'Authorization': `Bearer ${token}`. Asegúrate de que tu authMiddleware en el backend espera este formato.
   axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 }
 // ---------------------------------------------
@@ -20,14 +24,13 @@ function AdminPage() {
   const [productos, setProductos] = useState([]);
   const [pedidos, setPedidos] = useState([]);
   const [reportData, setReportData] = useState([]);
-  const [combos, setCombos] = useState([]); // Corregido: Estado para combos
+  const [combos, setCombos] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
   const [showProductModal, setShowProductModal] = useState(false);
   const [productoActual, setProductoActual] = useState(null);
 
-  // Corregido: Estados para el modal de combos
   const [showComboModal, setShowComboModal] = useState(false);
   const [comboActual, setComboActual] = useState(null);
 
@@ -42,15 +45,16 @@ function AdminPage() {
     setError('');
     try {
       if (activeTab === 'productos') {
-        const res = await axios.get('/api/productos');
-        setProductos(res.data);
+        // --- CAMBIO: Se usa la función del servicio en lugar de axios directamente ---
+        const res = await getProducts();
+        setProductos(res);
       } else if (activeTab === 'reporteGeneral') {
         const res = await axios.get('/api/ventas/reporte');
         setReportData(res.data);
       } else if (activeTab === 'pedidosEnLinea') {
         const res = await axios.get('/api/pedidos');
         setPedidos(res.data);
-      } else if (activeTab === 'combos') { // Corregido: Fetch para combos
+      } else if (activeTab === 'combos') {
         const res = await axios.get('/api/combos/todas');
         setCombos(res.data);
       }
@@ -66,13 +70,18 @@ function AdminPage() {
     fetchData();
   }, [activeTab]);
 
-  // --- Lógica de Productos ---
+  // --- Lógica de Productos (MODIFICADA PARA USAR EL SERVICIO) ---
   const handleOpenProductModal = (producto = null) => { setProductoActual(producto); setShowProductModal(true); };
   const handleCloseProductModal = () => { setShowProductModal(false); setProductoActual(null); };
   const handleSaveProducto = async (producto) => {
     const action = producto.id ? 'actualizado' : 'creado';
     try {
-      if (producto.id) { await axios.put(`/api/productos/${producto.id}`, producto); } else { await axios.post('/api/productos', producto); }
+      // --- CAMBIO: Se usan las funciones del servicio ---
+      if (producto.id) {
+        await updateProduct(producto.id, producto);
+      } else {
+        await createProduct(producto);
+      }
       toast.success(`Producto ${action} con éxito.`);
       fetchData();
       handleCloseProductModal();
@@ -81,14 +90,15 @@ function AdminPage() {
   const handleDeleteProducto = async (id) => {
     if (window.confirm('¿Seguro que quieres eliminar este producto?')) {
       try {
-        await axios.delete(`/api/productos/${id}`);
+        // --- CAMBIO: Se usa la función del servicio ---
+        await deleteProduct(id);
         toast.success('Producto eliminado.');
         fetchData();
       } catch (err) { toast.error('No se pudo eliminar el producto.'); }
     }
   };
 
-  // --- Lógica de Combos (antes Promociones) ---
+  // --- Lógica de Combos (Sin cambios) ---
   const handleOpenComboModal = (combo = null) => { setComboActual(combo); setShowComboModal(true); };
   const handleCloseComboModal = () => { setShowComboModal(false); setComboActual(null); };
   const handleSaveCombo = async (combo) => {
@@ -110,7 +120,7 @@ function AdminPage() {
     }
   };
   
-  // --- Lógica de Pedidos ---
+  // --- Lógica de Pedidos (Sin cambios) ---
   const handleUpdateStatus = async (pedidoId, nuevoEstado) => {
     try {
       await axios.put(`/api/pedidos/${pedidoId}/estado`, { estado: nuevoEstado });
@@ -121,7 +131,7 @@ function AdminPage() {
   const handleShowDetails = (pedido) => { setSelectedOrderDetails(pedido); setShowDetailsModal(true); };
   const handleCloseDetailsModal = () => { setShowDetailsModal(false); setSelectedOrderDetails(null); };
 
-  // --- Lógica para la purga de pedidos ---
+  // --- Lógica para la purga de pedidos (Sin cambios) ---
   const handlePurgePedidos = async () => {
     if (purgeConfirmText !== 'ELIMINAR') {
       return toast.error('El texto de confirmación no coincide.');

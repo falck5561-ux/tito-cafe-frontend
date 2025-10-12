@@ -1,46 +1,49 @@
 import React, { useState, useEffect } from 'react';
 
 function ProductModal({ show, handleClose, handleSave, productoActual }) {
-  // Estado inicial que incluye los nuevos campos
+  // CAMBIO: El estado ahora maneja un arreglo 'imagenes' en lugar de 'imagen_url'
   const [formData, setFormData] = useState({
     nombre: '',
-    descripcion: '', // <-- NUEVO
+    descripcion: '',
     precio: '',
     stock: '',
     categoria: '',
-    imagen_url: '',
-    descuento_porcentaje: 0, // <-- NUEVO
-    en_oferta: false, // <-- NUEVO
+    imagenes: [''], // Se inicializa con un campo de imagen vacío
+    descuento_porcentaje: 0,
+    en_oferta: false,
   });
 
   useEffect(() => {
-    if (productoActual) {
-      // Si estamos editando, llenamos el formulario con los datos del producto
-      setFormData({
-        id: productoActual.id,
-        nombre: productoActual.nombre || '',
-        descripcion: productoActual.descripcion || '', // <-- NUEVO
-        precio: productoActual.precio || '',
-        stock: productoActual.stock || 0,
-        categoria: productoActual.categoria || '',
-        imagen_url: productoActual.imagen_url || '',
-        descuento_porcentaje: productoActual.descuento_porcentaje || 0, // <-- NUEVO
-        en_oferta: productoActual.en_oferta || false, // <-- NUEVO
-      });
-    } else {
-      // Si estamos añadiendo uno nuevo, reseteamos el formulario
-      setFormData({
-        nombre: '',
-        descripcion: '',
-        precio: '',
-        stock: '',
-        categoria: '',
-        imagen_url: '',
-        descuento_porcentaje: 0,
-        en_oferta: false,
-      });
+    if (show) {
+      if (productoActual) {
+        // Si editamos, llenamos el form con los datos, incluyendo el arreglo de imágenes
+        setFormData({
+          id: productoActual.id,
+          nombre: productoActual.nombre || '',
+          descripcion: productoActual.descripcion || '',
+          precio: productoActual.precio || '',
+          stock: productoActual.stock || 0,
+          categoria: productoActual.categoria || '',
+          // CAMBIO: Si no hay imágenes o está vacío, se asegura de que haya al menos un campo
+          imagenes: (productoActual.imagenes && productoActual.imagenes.length > 0) ? productoActual.imagenes : [''],
+          descuento_porcentaje: productoActual.descuento_porcentaje || 0,
+          en_oferta: productoActual.en_oferta || false,
+        });
+      } else {
+        // Si añadimos uno nuevo, reseteamos el formulario con un campo de imagen
+        setFormData({
+          nombre: '',
+          descripcion: '',
+          precio: '',
+          stock: '',
+          categoria: '',
+          imagenes: [''],
+          descuento_porcentaje: 0,
+          en_oferta: false,
+        });
+      }
     }
-  }, [productoActual, show]); // Se ejecuta cuando el producto a editar cambia o el modal se abre
+  }, [productoActual, show]);
 
   if (!show) {
     return null;
@@ -54,9 +57,34 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
     }));
   };
 
+  // --- NUEVAS FUNCIONES PARA MANEJAR MÚLTIPLES IMÁGENES ---
+
+  const handleImageChange = (index, value) => {
+    const newImages = [...formData.imagenes];
+    newImages[index] = value;
+    setFormData({ ...formData, imagenes: newImages });
+  };
+
+  const handleAddImageField = () => {
+    setFormData({ ...formData, imagenes: [...formData.imagenes, ''] });
+  };
+
+  const handleRemoveImageField = (index) => {
+    if (formData.imagenes.length <= 1) return; // No permitir eliminar el último campo
+    const newImages = formData.imagenes.filter((_, i) => i !== index);
+    setFormData({ ...formData, imagenes: newImages });
+  };
+
+  // --- NUEVA FUNCIÓN onSave para limpiar datos antes de guardar ---
+
   const onSave = (e) => {
     e.preventDefault();
-    handleSave(formData);
+    // Filtramos las URLs vacías antes de enviar los datos
+    const cleanedData = {
+      ...formData,
+      imagenes: formData.imagenes.filter(url => url && url.trim() !== ''),
+    };
+    handleSave(cleanedData);
   };
 
   return (
@@ -75,7 +103,6 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
                 <input type="text" className="form-control" id="nombre" name="nombre" value={formData.nombre} onChange={handleChange} required />
               </div>
               
-              {/* --- CAMPO NUEVO: DESCRIPCIÓN --- */}
               <div className="mb-3">
                 <label htmlFor="descripcion" className="form-label">Descripción (Opcional)</label>
                 <textarea className="form-control" id="descripcion" name="descripcion" rows="3" value={formData.descripcion} onChange={handleChange}></textarea>
@@ -96,8 +123,30 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
                 <label htmlFor="categoria" className="form-label">Categoría</label>
                 <input type="text" className="form-control" id="categoria" name="categoria" value={formData.categoria} onChange={handleChange} />
               </div>
+              
+              {/* --- CAMBIO: SECCIÓN DINÁMICA PARA MÚLTIPLES IMÁGENES --- */}
+              <div className="p-3 mb-3 border rounded">
+                <h6 className="mb-3">Imágenes del Producto</h6>
+                {formData.imagenes.map((url, index) => (
+                  <div key={index} className="d-flex align-items-center mb-2">
+                    <input
+                      type="text"
+                      className="form-control me-2"
+                      placeholder="https://ejemplo.com/imagen.jpg"
+                      value={url}
+                      onChange={(e) => handleImageChange(index, e.target.value)}
+                    />
+                    <button type="button" className="btn btn-outline-danger btn-sm" onClick={() => handleRemoveImageField(index)} disabled={formData.imagenes.length <= 1}>
+                      &times;
+                    </button>
+                  </div>
+                ))}
+                <button type="button" className="btn btn-outline-primary btn-sm mt-2" onClick={handleAddImageField}>
+                  Añadir URL de Imagen
+                </button>
+              </div>
 
-              {/* --- CAMPOS NUEVOS PARA OFERTAS --- */}
+              {/* --- CAMPOS PARA OFERTAS --- */}
               <div className="p-3 mb-3 border rounded">
                 <h6 className="mb-3">Configuración de Oferta</h6>
                 <div className="mb-3">

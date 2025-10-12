@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import AuthContext from '../context/AuthContext';
 
-// Importar Swiper y sus estilos
+// Importar Swiper y sus estilos (ya lo tenías, perfecto)
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination, Autoplay } from 'swiper/modules';
 import 'swiper/css';
@@ -38,7 +38,8 @@ function HomePage() {
       try {
         const [productosRes, combosRes] = await Promise.all([
           axios.get('/api/productos'),
-          axios.get('/api/combos') // Llama a la API de combos
+          // CAMBIO: La ruta correcta para combos activos (vista pública) es '/api/combos/activas'
+          axios.get('/api/combos/activas') 
         ]);
         setProductos(productosRes.data);
         setCombos(combosRes.data);
@@ -138,11 +139,42 @@ function HomePage() {
             <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
               {productos.map((producto, index) => {
                 const precioConDescuento = Number(producto.precio) * (1 - producto.descuento_porcentaje / 100);
+                
+                // --- CAMBIO: Lógica para manejar las imágenes del producto ---
+                const hasImages = producto.imagenes && producto.imagenes.length > 0;
+                const hasMultipleImages = hasImages && producto.imagenes.length > 1;
+
                 return (
                   <motion.div key={producto.id} className="col" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
                     <div className="card h-100 shadow-sm position-relative">
                       {producto.en_oferta && <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">-{producto.descuento_porcentaje}%</span>}
-                      <img src={producto.imagen_url || getPlaceholderImage(producto.categoria)} className="card-img-top" alt={producto.nombre} style={{ height: '200px', objectFit: 'cover' }} />
+                      
+                      {/* --- CAMBIO: Se reemplaza la imagen única por el carrusel condicional --- */}
+                      {hasMultipleImages ? (
+                        <Swiper
+                          modules={[Navigation, Pagination]}
+                          spaceBetween={0}
+                          slidesPerView={1}
+                          navigation
+                          pagination={{ clickable: true }}
+                          className="card-img-top"
+                          style={{ height: '200px' }}
+                        >
+                          {producto.imagenes.map((url, i) => (
+                            <SwiperSlide key={i}>
+                              <img src={url} className="img-fluid" alt={`${producto.nombre} ${i + 1}`} style={{ height: '200px', width: '100%', objectFit: 'cover' }} />
+                            </SwiperSlide>
+                          ))}
+                        </Swiper>
+                      ) : (
+                        <img 
+                          src={hasImages ? producto.imagenes[0] : getPlaceholderImage(producto.categoria)} 
+                          className="card-img-top" 
+                          alt={producto.nombre} 
+                          style={{ height: '200px', objectFit: 'cover' }} 
+                        />
+                      )}
+
                       <div className="card-body d-flex flex-column">
                         <h5 className="card-title text-center flex-grow-1">{producto.nombre}</h5>
                       </div>
@@ -156,7 +188,7 @@ function HomePage() {
                           <span className="fw-bold fs-5" style={{color: '#28a745'}}>${Number(producto.precio).toFixed(2)}</span>
                         )}
                       </div>
-                    </div>          
+                    </div>                    
                   </motion.div>
                 );
               })}
@@ -169,4 +201,3 @@ function HomePage() {
 }
 
 export default HomePage;
-
