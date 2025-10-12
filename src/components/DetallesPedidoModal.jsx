@@ -3,55 +3,60 @@ import React from 'react';
 function DetallesPedidoModal({ pedido, onClose }) {
   if (!pedido) return null;
 
-  return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h4 className="modal-title">Detalles del Pedido #{pedido.id}</h4>
-          <p className="mb-0 text-muted"><strong>Cliente:</strong> {pedido.nombre_cliente}</p>
-        </div>
-        
-        <div className="modal-body">
-          <h6>Productos:</h6>
-          <ul className="list-group list-group-flush mb-3">
-            {/* MEJORA: Usar un ID único para el 'key' si es posible */}
-            {pedido.productos?.map((producto) => (
-              <li key={producto.id || producto.nombre} className="list-group-item d-flex justify-content-between align-items-center">
-                <span>
-                  <strong>{producto.cantidad}x</strong> {producto.nombre}
-                </span>
-                <span className="badge bg-success rounded-pill">
-                  ${(producto.cantidad * producto.precio).toFixed(2)}
-                </span>
-              </li>
-            )) || <p>No se encontraron productos para este pedido.</p>}
-          </ul>
-          
-          {pedido.tipo_orden === 'domicilio' && (
-            <div>
-              <hr />
-              <h6>Detalles de Envío:</h6>
-              <p className="mb-1"><strong>Dirección:</strong> {pedido.direccion_entrega}</p>
-              {pedido.referencia && <p className="mb-1"><strong>Referencia:</strong> {pedido.referencia}</p>}
-              
-              {/* CORRECCIÓN: URL correcta para Google Maps */}
-              <a 
-                href={`https://www.google.com/maps/search/?api=1&query=${pedido.latitude},${pedido.longitude}`}
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="btn btn-outline-info btn-sm mt-2"
-              >
-                Abrir en Google Maps
-              </a>
-            </div>
-          )}
-        </div>
+  const totalProductos = pedido.productos.reduce((sum, p) => sum + (p.cantidad * Number(p.precio)), 0);
 
-        <div className="modal-footer">
-          <h3 className="total-pedido text-success">Total: ${parseFloat(pedido.total).toFixed(2)}</h3>
-          <button type="button" className="btn btn-secondary mt-2 w-100" onClick={onClose}>
-            Cerrar
-          </button>
+  return (
+    <div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.7)' }}>
+      <div className="modal-dialog modal-dialog-centered modal-lg">
+        <div className="modal-content">
+          <div className="modal-header">
+            <h5 className="modal-title">Detalles del Pedido #{pedido.id} - {pedido.nombre_cliente}</h5>
+            <button type="button" className="btn-close" onClick={onClose}></button>
+          </div>
+          <div className="modal-body">
+            {/* Lista de Productos */}
+            <h6>Productos:</h6>
+            <ul className="list-group list-group-flush mb-4">
+              {pedido.productos.map(producto => (
+                <li key={producto.nombre} className="list-group-item d-flex justify-content-between align-items-center">
+                  <span>{producto.cantidad}x {producto.nombre}</span>
+                  <span className="badge bg-primary rounded-pill">${(producto.cantidad * Number(producto.precio)).toFixed(2)}</span>
+                </li>
+              ))}
+            </ul>
+
+            {/* Detalles de Envío si es a domicilio */}
+            {pedido.tipo_orden === 'domicilio' && (
+              <div className="mb-4">
+                <h6>Detalles de Envío:</h6>
+                <div className="card">
+                  <div className="card-body">
+                    <p className="card-text mb-1"><strong>Dirección:</strong> {pedido.direccion_entrega}</p>
+                    {pedido.referencia && <p className="card-text mb-2"><strong>Referencia:</strong> {pedido.referencia}</p>}
+                    <a 
+                      href={`https://www.google.com/maps/search/?api=1&query=${pedido.latitude},${pedido.longitude}`} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="btn btn-outline-info btn-sm"
+                    >
+                      Abrir en Google Maps
+                    </a>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Resumen de Costos */}
+            <div className="text-end">
+              <p className="mb-1">Subtotal Productos: <strong>${totalProductos.toFixed(2)}</strong></p>
+              {pedido.costo_envio > 0 && <p className="mb-1">Costo de Envío: <strong>${Number(pedido.costo_envio).toFixed(2)}</strong></p>}
+              <hr className="my-1" />
+              <h4 className="mb-0">Total: <span className="text-success">${Number(pedido.total).toFixed(2)}</span></h4>
+            </div>
+          </div>
+          <div className="modal-footer">
+            <button type="button" className="btn btn-secondary" onClick={onClose}>Cerrar</button>
+          </div>
         </div>
       </div>
     </div>
