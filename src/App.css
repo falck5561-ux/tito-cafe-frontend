@@ -135,8 +135,8 @@ h1, h2, h3, h4, h5, .navbar-brand, .display-4 {
 /* =================================================================== */
 
 .parallax-section {
-    /* Elige una imagen atractiva de tu café o de granos de café */
-    background-image: url('https://images.unsplash.com/photo-1559924233-6500b3c20b22');
+    /* CAMBIO: Usamos la nueva imagen de los erizos que debe estar en la carpeta 'public' */
+    background-image: url('/parallax-erizos.jpg');
     
     /* Magia del Parallax */
     background-attachment: fixed;
