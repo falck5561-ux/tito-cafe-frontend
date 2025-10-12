@@ -34,8 +34,9 @@ function ClientePage() {
   const [guardarDireccion, setGuardarDireccion] = useState(false);
   const [referencia, setReferencia] = useState('');
 
-  // --- NUEVO ESTADO PARA EL MODAL DEL CARRITO MÓVIL ---
+  // Estados para el modal del carrito móvil
   const [showCartModal, setShowCartModal] = useState(false);
+  const [modalView, setModalView] = useState('cart'); // Vistas: 'cart' o 'address'
 
   const totalFinal = subtotal + costoEnvio;
 
@@ -125,6 +126,14 @@ function ClientePage() {
       setPaymentLoading(false);
     }
   };
+  
+  const handleContinue = () => {
+    if (tipoOrden !== 'domicilio') {
+      handleProcederAlPago();
+    } else {
+      setModalView('address');
+    }
+  };
 
   const handleSuccessfulPayment = async () => {
     const token = localStorage.getItem('token');
@@ -146,7 +155,8 @@ function ClientePage() {
       if (res.data.recompensaGenerada) { toast.success('¡Felicidades! Ganaste un premio.', { duration: 6000, icon: '🎁' }); } else { toast.success('¡Pedido realizado y pagado con éxito!'); }
       limpiarPedido();
       setShowPaymentModal(false);
-      setShowCartModal(false); // Cierra el modal del carrito móvil
+      setShowCartModal(false);
+      setModalView('cart');
       setClientSecret('');
       setActiveTab('ver');
     } catch (err) {
@@ -302,7 +312,6 @@ function ClientePage() {
         </div>
       )}
 
-      {/* --- CÓDIGO AÑADIDO PARA CARRITO FLOTANTE MÓVIL --- */}
       {pedidoActual.length > 0 && (
         <button className="boton-carrito-flotante d-md-none" onClick={() => setShowCartModal(true)}>
           🛒
@@ -314,41 +323,70 @@ function ClientePage() {
         <div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
           <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="modal-dialog modal-dialog-scrollable">
             <div className="modal-content">
-              <div className="modal-header"><h5 className="modal-title">Mi Pedido</h5><button type="button" className="btn-close" onClick={() => setShowCartModal(false)}></button></div>
-              <div className="modal-body">
-                <ul className="list-group list-group-flush">
-                  {pedidoActual.map((item) => (
-                    <li key={item.id} className="list-group-item d-flex align-items-center justify-content-between p-1">
-                      <span className="me-auto">{item.nombre}</span>
-                      <div className="d-flex align-items-center">
-                        <button className="btn btn-outline-secondary btn-sm" onClick={() => decrementarCantidad(item.id)}>-</button>
-                        <span className="mx-2">{item.cantidad}</span>
-                        <button className="btn btn-outline-secondary btn-sm" onClick={() => incrementarCantidad(item.id)}>+</button>
-                      </div>
-                      <span className="mx-3" style={{ minWidth: '60px', textAlign: 'right' }}>${(item.cantidad * Number(item.precio)).toFixed(2)}</span>
-                      <button className="btn btn-outline-danger btn-sm" onClick={() => eliminarProducto(item.id)}>&times;</button>
-                    </li>
-                  ))}
-                </ul>
-                <hr />
-                <h5>Elige una opción:</h5>
-                <div className="form-check"><input className="form-check-input" type="radio" name="tipoOrdenModal" id="llevarModal" value="llevar" checked={tipoOrden === 'llevar'} onChange={(e) => setTipoOrden(e.target.value)} /><label className="form-check-label" htmlFor="llevarModal">Para Recoger</label></div>
-                <div className="form-check"><input className="form-check-input" type="radio" name="tipoOrdenModal" id="localModal" value="local" checked={tipoOrden === 'local'} onChange={(e) => setTipoOrden(e.target.value)} /><label className="form-check-label" htmlFor="localModal">Para Comer Aquí</label></div>
-                <div className="form-check"><input className="form-check-input" type="radio" name="tipoOrdenModal" id="domicilioModal" value="domicilio" checked={tipoOrden === 'domicilio'} onChange={(e) => setTipoOrden(e.target.value)} /><label className="form-check-label" htmlFor="domicilioModal">Entrega a Domicilio</label></div>
-                <hr />
-                <p className="d-flex justify-content-between">Subtotal: <span>${subtotal.toFixed(2)}</span></p>
-                {tipoOrden === 'domicilio' && (<motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="d-flex justify-content-between">Costo de Envío: {calculandoEnvio ? <span className="spinner-border spinner-border-sm"></span> : <span>${costoEnvio.toFixed(2)}</span>}</motion.p>)}
-                <h4>Total: ${totalFinal.toFixed(2)}</h4>
+              <div className="modal-header">
+                <h5 className="modal-title">{modalView === 'cart' ? 'Mi Pedido' : 'Dirección de Entrega'}</h5>
+                <button type="button" className="btn-close" onClick={() => { setShowCartModal(false); setModalView('cart'); }}></button>
               </div>
-              <div className="modal-footer d-grid gap-2">
-                 <button className="btn btn-primary" onClick={handleProcederAlPago} disabled={pedidoActual.length === 0 || paymentLoading || calculandoEnvio}>{paymentLoading ? 'Iniciando...' : 'Proceder al Pago'}</button>
-                 <button className="btn btn-outline-danger" onClick={limpiarPedido}>Vaciar Carrito</button>
-              </div>
+              {modalView === 'cart' && (
+                <>
+                  <div className="modal-body">
+                    <ul className="list-group list-group-flush">
+                      {pedidoActual.map((item) => (
+                        <li key={item.id} className="list-group-item d-flex align-items-center justify-content-between p-1">
+                          <span className="me-auto">{item.nombre}</span>
+                          <div className="d-flex align-items-center">
+                            <button className="btn btn-outline-secondary btn-sm" onClick={() => decrementarCantidad(item.id)}>-</button>
+                            <span className="mx-2">{item.cantidad}</span>
+                            <button className="btn btn-outline-secondary btn-sm" onClick={() => incrementarCantidad(item.id)}>+</button>
+                          </div>
+                          <span className="mx-3" style={{ minWidth: '60px', textAlign: 'right' }}>${(item.cantidad * Number(item.precio)).toFixed(2)}</span>
+                          <button className="btn btn-outline-danger btn-sm" onClick={() => eliminarProducto(item.id)}>&times;</button>
+                        </li>
+                      ))}
+                    </ul>
+                    <hr />
+                    <h5>Elige una opción:</h5>
+                    <div className="form-check"><input className="form-check-input" type="radio" name="tipoOrdenModal" id="llevarModal" value="llevar" checked={tipoOrden === 'llevar'} onChange={(e) => setTipoOrden(e.target.value)} /><label className="form-check-label" htmlFor="llevarModal">Para Recoger</label></div>
+                    <div className="form-check"><input className="form-check-input" type="radio" name="tipoOrdenModal" id="localModal" value="local" checked={tipoOrden === 'local'} onChange={(e) => setTipoOrden(e.target.value)} /><label className="form-check-label" htmlFor="localModal">Para Comer Aquí</label></div>
+                    <div className="form-check"><input className="form-check-input" type="radio" name="tipoOrdenModal" id="domicilioModal" value="domicilio" checked={tipoOrden === 'domicilio'} onChange={(e) => setTipoOrden(e.target.value)} /><label className="form-check-label" htmlFor="domicilioModal">Entrega a Domicilio</label></div>
+                    <hr />
+                    <p className="d-flex justify-content-between">Subtotal: <span>${subtotal.toFixed(2)}</span></p>
+                    {tipoOrden === 'domicilio' && (<motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="d-flex justify-content-between">Costo de Envío: {calculandoEnvio ? <span className="spinner-border spinner-border-sm"></span> : <span>${costoEnvio.toFixed(2)}</span>}</motion.p>)}
+                    <h4>Total: ${totalFinal.toFixed(2)}</h4>
+                  </div>
+                  <div className="modal-footer d-grid gap-2">
+                    <button className="btn btn-primary" onClick={handleContinue} disabled={pedidoActual.length === 0 || paymentLoading}>{tipoOrden === 'domicilio' ? 'Siguiente' : 'Proceder al Pago'}</button>
+                    <button className="btn btn-outline-danger" onClick={limpiarPedido}>Vaciar Carrito</button>
+                  </div>
+                </>
+              )}
+              {modalView === 'address' && (
+                <>
+                  <div className="modal-body">
+                    {direccionGuardada && (<button className="btn btn-outline-info w-100 mb-3" onClick={usarDireccionGuardada}>Usar mi dirección guardada</button>)}
+                    <label className="form-label">Busca tu dirección en el mapa:</label>
+                    <MapSelector onLocationSelect={handleLocationSelect} initialAddress={direccion} />
+                    <div className="mt-3">
+                      <label htmlFor="referenciaModal" className="form-label">Referencia (opcional):</label>
+                      <input type="text" id="referenciaModal" className="form-control" value={referencia} onChange={(e) => setReferencia(e.target.value)} placeholder="Ej: Casa azul, portón negro"/>
+                    </div>
+                    <div className="form-check mt-3">
+                      <input className="form-check-input" type="checkbox" id="guardarDireccionModal" checked={guardarDireccion} onChange={(e) => setGuardarDireccion(e.target.checked)} />
+                      <label className="form-check-label" htmlFor="guardarDireccionModal">Guardar/Actualizar dirección</label>
+                    </div>
+                  </div>
+                  <div className="modal-footer d-flex justify-content-between">
+                    <button className="btn btn-secondary" onClick={() => setModalView('cart')}>Volver</button>
+                    <button className="btn btn-primary" onClick={handleProcederAlPago} disabled={!direccion || paymentLoading || calculandoEnvio}>
+                      {paymentLoading ? 'Iniciando...' : 'Confirmar y Pagar'}
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </motion.div>
         </div>
       )}
-      {/* --- FIN DEL CÓDIGO AÑADIDO --- */}
     </div>
   );
 }
