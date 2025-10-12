@@ -100,7 +100,7 @@ function ClientePage() {
     }
   }, [tipoOrden]);
 
-  // --- FUNCIÓN MODIFICADA PARA MANEJAR PRECIOS DE OFERTA ---
+  // --- FUNCIÓN CORREGIDA PARA MANEJAR PRECIOS DE OFERTA ---
   const agregarProductoAPedido = (producto) => {
     let precioFinal = Number(producto.precio);
     if (producto.en_oferta && producto.descuento_porcentaje > 0) {
@@ -114,7 +114,6 @@ function ClientePage() {
           item.id === producto.id ? { ...item, cantidad: item.cantidad + 1 } : item
         );
       }
-      // Se guarda el producto con el precio ya calculado (sea el original o el de oferta)
       return [...prev, { ...producto, cantidad: 1, precio: precioFinal }];
     });
   };

@@ -16,7 +16,7 @@ axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'https://tito-cafe-back
 
 function HomePage() {
   const [productos, setProductos] = useState([]);
-  const [combos, setCombos] = useState([]); // Corregido: Estado para combos
+  const [combos, setCombos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const { user } = useContext(AuthContext);
@@ -38,7 +38,7 @@ function HomePage() {
       try {
         const [productosRes, combosRes] = await Promise.all([
           axios.get('/api/productos'),
-          axios.get('/api/combos') // Corregido: Llama a la API de combos
+          axios.get('/api/combos') // Llama a la API de combos
         ]);
         setProductos(productosRes.data);
         setCombos(combosRes.data);
@@ -91,7 +91,6 @@ function HomePage() {
       
       {!loading && !error && (
         <>
-          {/* --- CARRUSEL DE COMBOS --- */}
           {combos.length > 0 && (
             <div className="mb-5">
               <h2 className="text-center mb-4">Combos Especiales</h2>
@@ -134,7 +133,6 @@ function HomePage() {
             </div>
           )}
 
-          {/* --- MENÚ DE PRODUCTOS CON OFERTAS --- */}
           <div className="mt-5">
             <h2 className="text-center mb-4">Nuestro Menú</h2>
             <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
@@ -158,7 +156,7 @@ function HomePage() {
                           <span className="fw-bold fs-5" style={{color: '#28a745'}}>${Number(producto.precio).toFixed(2)}</span>
                         )}
                       </div>
-                    </div>
+                    </div>          
                   </motion.div>
                 );
               })}
