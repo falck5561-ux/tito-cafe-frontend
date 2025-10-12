@@ -39,7 +39,7 @@ h1, h2, h3, h4, h5, .navbar-brand, .display-4 {
 .card {
   background-color: var(--bs-card-bg, white);
   border: 1px solid var(--bs-card-border-color, #dee2e6);
-  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out, border-color 0.2s ease-in-out;
 }
 
 .card:hover {
@@ -96,23 +96,38 @@ h1, h2, h3, h4, h5, .navbar-brand, .display-4 {
     box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
 
-/* --- 2. Flechas del Carrusel de Producto (Swiper) --- */
+/* --- 2. Flechas del Carrusel de Producto (Swiper) - VERSIÓN MEJORADA --- */
 .swiper-button-prev,
 .swiper-button-next {
-    background-color: rgba(255, 255, 255, 0.7);
+    /* Ocultamos las flechas por defecto */
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+
+    /* Estilo de fondo oscuro y semitransparente */
+    background-color: rgba(0, 0, 0, 0.4);
     border-radius: 50%;
     width: 40px;
     height: 40px;
-    top: 50%;
-    transform: translateY(-50%);
-    box-shadow: 0 2px 5px rgba(0,0,0,0.15);
 }
 
+/* Solo mostramos las flechas cuando el mouse está sobre la tarjeta */
+.card:hover .swiper-button-prev,
+.card:hover .swiper-button-next {
+    opacity: 1;
+}
+
+/* Hacemos los íconos de las flechas más finos y de color blanco */
 .swiper-button-prev::after,
 .swiper-button-next::after {
-    color: #343a40;
-    font-size: 1.2rem;
-    font-weight: 700;
+    color: white;
+    font-size: 0.9rem;
+    font-weight: 900;
+}
+
+/* --- 3. Borde Rojo para Tarjetas en Oferta --- */
+.card.en-oferta {
+    border: 2px solid #dc3545; /* Borde rojo de Bootstrap */
+    box-shadow: 0 5px 15px rgba(220, 53, 69, 0.2); /* Sombra roja sutil */
 }
 
 

@@ -144,9 +144,10 @@ function HomePage() {
 
                 return (
                   <motion.div key={producto.id} className="col" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
-                    <div className="card h-100 shadow-sm position-relative">
+                    
+                    {/* --- CAMBIO: Se añade la clase 'en-oferta' si el producto tiene descuento --- */}
+                    <div className={`card h-100 shadow-sm position-relative ${producto.en_oferta ? 'en-oferta' : ''}`}>
                       
-                      {/* --- CAMBIO: Se reemplazan las clases de Bootstrap por la clase personalizada 'discount-badge' --- */}
                       {producto.en_oferta && (
                         <span className="discount-badge">
                           -{producto.descuento_porcentaje}%
