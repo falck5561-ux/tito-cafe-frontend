@@ -199,5 +199,5 @@ function HomePage() {
     </motion.div>
   );
 }
-
+// Forzando la actualización para corregir la ruta de la API
 export default HomePage;
