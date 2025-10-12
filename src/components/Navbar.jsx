@@ -9,8 +9,8 @@ function Navbar() {
   return (
     <nav className="navbar navbar-expand-lg navbar-dark fixed-top">
       <div className="container">
-        <Link className="navbar-brand d-flex align-items-center" to="/">
-          <img src="/icon.png" alt="Tito Café Logo" width="35" height="35" className="d-inline-block align-text-top me-2"/>
+        {/* --- CAMBIO: Se ha eliminado el <img> de aquí --- */}
+        <Link className="navbar-brand" to="/">
           <span>Tito Café</span>
         </Link>
 
