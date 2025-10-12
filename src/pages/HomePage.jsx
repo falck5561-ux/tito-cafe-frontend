@@ -1,28 +1,17 @@
-import React, { useContext } from 'react'; // Se importa useContext
+import React, { useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
-// Importaciones de nuestros componentes y hooks
+// Importaciones actualizadas (ya no se necesitan 'ComboSlide' ni 'Swiper' aquí)
 import { useMenuData } from '../hooks/useMenuData';
 import ProductCard from '../components/ProductCard';
-import ComboSlide from '../components/ComboSlide';
-import AuthContext from '../context/AuthContext'; // Se importa el AuthContext
-
-// Importaciones de Swiper y sus estilos (¡Importante que estén aquí!)
-import { Swiper } from 'swiper/react';
-import { Navigation, Pagination, Autoplay } from 'swiper/modules';
-import 'swiper/css';
-import 'swiper/css/navigation';
-import 'swiper/css/pagination';
+import AuthContext from '../context/AuthContext';
 
 function HomePage() {
-  // 1. Obtenemos los datos del menú desde nuestro hook
-  const { productos, combos, loading, error } = useMenuData();
-  
-  // 2. Obtenemos el usuario directamente del Contexto de Autenticación
+  // Obtenemos los datos, pero 'combos' ya no se usará en esta página
+  const { productos, loading, error } = useMenuData();
   const { user } = useContext(AuthContext);
 
-  // 3. Definimos la función que depende del usuario
   const getPedidoUrl = () => {
     if (!user) return "/login";
     switch (user.rol) {
@@ -56,21 +45,7 @@ function HomePage() {
       
       {!loading && !error && (
         <div>
-            {combos.length > 0 && (
-              <div className="container section-padding">
-                <h2 className="text-center">Combos Especiales</h2>
-                <Swiper
-                    modules={[Navigation, Pagination, Autoplay]}
-                    spaceBetween={30} slidesPerView={1} navigation pagination={{ clickable: true }}
-                    autoplay={{ delay: 5000, disableOnInteraction: false }} loop={true}
-                    className="shadow-lg" style={{ borderRadius: '15px', overflow: 'hidden' }}
-                >
-                    {combos.map((combo) => (
-                      <ComboSlide key={combo.id} combo={combo} getPedidoUrl={getPedidoUrl} />
-                    ))}
-                </Swiper>
-              </div>
-            )}
+            {/* --- SECCIÓN DE COMBOS ELIMINADA --- */}
 
             <div className="container text-center section-padding">
               <h2 className="text-center">El Corazón de Tito Café</h2>
