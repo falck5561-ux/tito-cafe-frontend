@@ -197,3 +197,15 @@ h1, h2, h3, h4, h5, .navbar-brand, .display-4 {
   font-size: 12px;
   font-weight: bold;
 }
+
+/* =================================================================== */
+/* === FIX: AUTOCOMPLETADOR DE GOOGLE MAPS SOBRE MODALES         === */
+/* =================================================================== */
+
+/*
+  Esto le da al contenedor de sugerencias de Google un z-index muy alto
+  para asegurar que siempre se muestre por encima de cualquier modal de Bootstrap.
+*/
+.pac-container {
+    z-index: 9999 !important;
+}
