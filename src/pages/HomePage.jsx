@@ -3,9 +3,9 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useMenuData } from '../hooks/useMenuData';
 import ProductCard from '../components/ProductCard';
-import ComboSlide from '../components/ComboSlide'; // Importamos el nuevo componente
+import ComboSlide from '../components/ComboSlide';
 
-// Importar Swiper
+// Importar Swiper y sus estilos
 import { Swiper } from 'swiper/react';
 import { Navigation, Pagination, Autoplay } from 'swiper/modules';
 import 'swiper/css';
@@ -13,11 +13,7 @@ import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 
 function HomePage() {
-  const { productos, combos, loading, error } = useMenuData();
-
-  const getPedidoUrl = () => {
-    // (Tu función getPedidoUrl se queda aquí, sin cambios)
-  };
+  const { productos, combos, loading, error, user, getPedidoUrl } = useMenuData();
 
   const heroStyle = {
     backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://images.unsplash.com/photo-1497935586351-b67a49e012bf?q=80&w=2071')`,
@@ -61,7 +57,7 @@ function HomePage() {
             <div className="container text-center my-5 py-5">
               <h2 className="mb-4">El Corazón de Tito Café</h2>
               <p className="lead" style={{ maxWidth: '700px', margin: '0 auto' }}>
-                En Tito Café, cada grano cuenta una historia...
+                En Tito Café, cada grano cuenta una historia. Nos dedicamos a encontrar los mejores cafés de origen, tostarlos a la perfección y servirlos con la pasión que nos caracteriza. Más que una cafetería, somos un punto de encuentro para amigos, ideas y momentos inolvidables.
               </p>
             </div>
 
