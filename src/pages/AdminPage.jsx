@@ -33,7 +33,7 @@ function AdminPage() {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedOrderDetails, setSelectedOrderDetails] = useState(null);
 
-  // --- ESTADOS PARA LA PURGA DE PEDIDOS ---
+  // --- Estados para la purga de pedidos ---
   const [showPurgeModal, setShowPurgeModal] = useState(false);
   const [purgeConfirmText, setPurgeConfirmText] = useState('');
 
@@ -121,7 +121,7 @@ function AdminPage() {
   const handleShowDetails = (pedido) => { setSelectedOrderDetails(pedido); setShowDetailsModal(true); };
   const handleCloseDetailsModal = () => { setShowDetailsModal(false); setSelectedOrderDetails(null); };
 
-  // --- LÓGICA PARA LA PURGA DE PEDIDOS ---
+  // --- Lógica para la purga de pedidos ---
   const handlePurgePedidos = async () => {
     if (purgeConfirmText !== 'ELIMINAR') {
       return toast.error('El texto de confirmación no coincide.');
@@ -131,11 +131,10 @@ function AdminPage() {
       toast.success('¡Historial de pedidos eliminado con éxito!');
       setShowPurgeModal(false);
       setPurgeConfirmText('');
-      // Vuelve a cargar los datos para que la tabla de pedidos se vacíe
       if (activeTab === 'pedidosEnLinea') {
         fetchData(); 
       } else {
-        setActiveTab('pedidosEnLinea'); // Cambia a la pestaña de pedidos para ver el resultado
+        setActiveTab('pedidosEnLinea');
       }
     } catch (error) {
       toast.error('Ocurrió un error al eliminar los pedidos.');
@@ -155,13 +154,101 @@ function AdminPage() {
       {loading && <div className="text-center"><div className="spinner-border" role="status"></div></div>}
       {error && <div className="alert alert-danger">{error}</div>}
 
-      {/* ... El resto del código de las pestañas ... */}
+      {!loading && !error && activeTab === 'pedidosEnLinea' && (
+        <div>
+          <h1 className="mb-4">Gestión de Pedidos en Línea</h1>
+          <div className="table-responsive">
+            <table className="table table-dark table-hover align-middle">
+              <thead>
+                <tr><th>ID</th><th>Cliente</th><th>Fecha</th><th>Total</th><th>Tipo</th><th>Estado</th><th>Acciones</th></tr>
+              </thead>
+              <tbody>
+                {pedidos.map((pedido) => (
+                  <tr key={pedido.id}>
+                    <td>#{pedido.id}</td>
+                    <td>{pedido.nombre_cliente}</td>
+                    <td>{new Date(pedido.fecha).toLocaleString()}</td>
+                    <td>${Number(pedido.total).toFixed(2)}</td>
+                    <td><span className={`badge ${pedido.tipo_orden === 'domicilio' ? 'bg-info text-dark' : 'bg-secondary'}`}>{pedido.tipo_orden.charAt(0).toUpperCase() + pedido.tipo_orden.slice(1)}</span></td>
+                    <td>{pedido.estado}</td>
+                    <td>
+                      <button className="btn btn-sm btn-info me-2" onClick={() => handleShowDetails(pedido)}>Ver Pedido</button>
+                      <button className="btn btn-sm btn-warning me-2" onClick={() => handleUpdateStatus(pedido.id, 'En Preparacion')}>Preparar</button>
+                      <button className="btn btn-sm btn-success me-2" onClick={() => handleUpdateStatus(pedido.id, 'Completado')}>Completado</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
+      {!loading && !error && activeTab === 'productos' && (
+        <div>
+          <div className="d-flex justify-content-between align-items-center mb-4">
+            <h1>Gestión de Productos</h1>
+            <button className="btn btn-primary" onClick={() => handleOpenProductModal()}>Añadir Nuevo Producto</button>
+          </div>
+          <div className="table-responsive">
+            <table className="table table-hover align-middle">
+              <thead className="table-dark">
+                <tr><th>ID</th><th>Nombre</th><th>Precio</th><th>Stock</th><th>Categoría</th><th>Acciones</th></tr>
+              </thead>
+              <tbody>
+                {productos.map((p) => (
+                  <tr key={p.id}>
+                    <td>{p.id}</td><td>{p.nombre}</td><td>${Number(p.precio).toFixed(2)}</td><td>{p.stock}</td><td>{p.categoria}</td>
+                    <td>
+                      <button className="btn btn-sm btn-outline-warning me-2" onClick={() => handleOpenProductModal(p)}>Editar</button>
+                      <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteProducto(p.id)}>Eliminar</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {!loading && !error && activeTab === 'promociones' && (
+        <div>
+          <div className="d-flex justify-content-between align-items-center mb-4">
+            <h1>Gestión de Promociones</h1>
+            <button className="btn btn-primary" onClick={() => handleOpenPromoModal()}>Añadir Nueva Promoción</button>
+          </div>
+          <div className="table-responsive">
+            <table className="table table-hover align-middle">
+              <thead className="table-dark">
+                <tr><th>ID</th><th>Título</th><th>Precio</th><th>Estado</th><th>Acciones</th></tr>
+              </thead>
+              <tbody>
+                {promociones.map((promo) => (
+                  <tr key={promo.id}>
+                    <td>{promo.id}</td>
+                    <td>{promo.titulo}</td>
+                    <td>${Number(promo.precio).toFixed(2)}</td>
+                    <td>
+                      <span className={`badge ${promo.activa ? 'bg-success' : 'bg-secondary'}`}>
+                        {promo.activa ? 'Activa' : 'Inactiva'}
+                      </span>
+                    </td>
+                    <td>
+                      <button className="btn btn-sm btn-outline-warning me-2" onClick={() => handleOpenPromoModal(promo)}>Editar</button>
+                      <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeletePromo(promo.id)}>Eliminar</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+      
       {!loading && !error && activeTab === 'reporteGeneral' && (
         <div>
           {reportData.length > 0 ? <SalesReportChart reportData={reportData} /> : <p className="text-center">No hay datos de ventas para mostrar.</p>}
           
-          {/* --- ZONA DE PELIGRO AÑADIDA --- */}
           <div className="mt-5 p-4 border border-danger rounded">
             <h3 className="text-danger">Zona de Peligro</h3>
             <p>Las acciones en esta área son permanentes y no se pueden deshacer.</p>
@@ -175,14 +262,12 @@ function AdminPage() {
         </div>
       )}
 
-      {/* ... El resto del código de las pestañas ... */}
-
-      {/* --- MODALES --- */}
+      {activeTab === 'reporteProductos' && <ProductSalesReport />}
+      
       <ProductModal show={showProductModal} handleClose={handleCloseProductModal} handleSave={handleSaveProducto} productoActual={productoActual} />
       <PromoModal show={showPromoModal} handleClose={handleClosePromoModal} handleSave={handleSavePromo} promoActual={promoActual} />
       {showDetailsModal && (<DetallesPedidoModal pedido={selectedOrderDetails} onClose={handleCloseDetailsModal} />)}
 
-      {/* --- MODAL DE CONFIRMACIÓN PARA LA PURGA --- */}
       {showPurgeModal && (
         <div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
           <div className="modal-dialog modal-dialog-centered">
