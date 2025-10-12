@@ -70,6 +70,8 @@ function HomePage() {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
+      
+      {/* --- SECCIÓN HERO --- */}
       <div className="p-5 mb-5 text-center rounded-3 shadow" style={heroStyle}>
         <motion.img 
           src="/logo-inicio.png" 
@@ -87,138 +89,108 @@ function HomePage() {
       </div>
 
       {loading && <div className="text-center my-5"><div className="spinner-border" style={{ width: '3rem', height: '3rem' }} role="status"></div></div>}
-      {error && <div className="alert alert-danger">{error}</div>}
+      {error && <div className="alert alert-danger container">{error}</div>}
       
       {!loading && !error && (
-        <>
-          {combos.length > 0 && (
-            <div className="mb-5">
-              <h2 className="text-center mb-4">Combos Especiales</h2>
-              {/* --- SECCIÓN DE COMBOS MEJORADA --- */}
-              <Swiper
-                modules={[Navigation, Pagination, Autoplay]}
-                spaceBetween={30}
-                slidesPerView={1}
-                navigation
-                pagination={{ clickable: true }}
-                autoplay={{ delay: 5000, disableOnInteraction: false }}
-                loop={true}
-                className="shadow-lg"
-                style={{ borderRadius: '15px', overflow: 'hidden', background: 'var(--crema)' }}
-              >
-                {combos.map((combo) => {
-                    const precioConDescuento = Number(combo.precio) * (1 - combo.descuento_porcentaje / 100);
-                    const hasImages = combo.imagenes && combo.imagenes.length > 0;
-                    const hasMultipleImages = hasImages && combo.imagenes.length > 1;
+        // --- INICIA EL CONTENIDO PRINCIPAL DE LA PÁGINA ---
+        <div>
+            {/* --- SECCIÓN DE COMBOS --- */}
+            {combos.length > 0 && (
+              <div className="container my-5">
+                <h2 className="text-center mb-4">Combos Especiales</h2>
+                <Swiper
+                  modules={[Navigation, Pagination, Autoplay]}
+                  spaceBetween={30}
+                  slidesPerView={1}
+                  navigation
+                  pagination={{ clickable: true }}
+                  autoplay={{ delay: 5000, disableOnInteraction: false }}
+                  loop={true}
+                  className="shadow-lg"
+                  style={{ borderRadius: '15px', overflow: 'hidden', background: 'var(--crema)' }}
+                >
+                  {combos.map((combo) => {
+                      const precioConDescuento = Number(combo.precio) * (1 - combo.descuento_porcentaje / 100);
+                      const hasImages = combo.imagenes && combo.imagenes.length > 0;
+                      const hasMultipleImages = hasImages && combo.imagenes.length > 1;
+                      return (
+                          <SwiperSlide key={combo.id}>
+                              <div className={`row g-0 align-items-center ${combo.en_oferta ? 'en-oferta' : ''}`}>
+                                  <div className="col-lg-6 position-relative">
+                                      {combo.en_oferta && (<span className="discount-badge" style={{ top: '20px', right: '20px' }}>-{combo.descuento_porcentaje}%</span>)}
+                                      {hasMultipleImages ? (
+                                          <Swiper modules={[Pagination]} pagination={{ clickable: true }} loop={true}>
+                                              {combo.imagenes.map((url, i) => (<SwiperSlide key={i}><img src={url} className="img-fluid" alt={`${combo.titulo} ${i + 1}`} style={{ objectFit: 'cover', height: '450px', width: '100%' }} /></SwiperSlide>))}
+                                          </Swiper>
+                                      ) : (<img src={hasImages ? combo.imagenes[0] : getPlaceholderImage('postre')} className="img-fluid" alt={combo.titulo} style={{ objectFit: 'cover', height: '450px', width: '100%' }} />)}
+                                  </div>
+                                  <div className="col-lg-6 p-5 text-center">
+                                      <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}>
+                                          <h3 className="display-5">{combo.titulo}</h3>
+                                          <p className="lead my-4">{combo.descripcion}</p>
+                                          {combo.en_oferta && combo.descuento_porcentaje > 0 ? (
+                                              <div>
+                                                  <span className="text-muted text-decoration-line-through me-2">${Number(combo.precio).toFixed(2)}</span>
+                                                  <h2 className="my-3 d-inline" style={{ color: '#28a745', fontWeight: 'bold' }}>${precioConDescuento.toFixed(2)}</h2>
+                                              </div>
+                                          ) : (<h2 className="my-3" style={{ color: '#28a745', fontWeight: 'bold' }}>${Number(combo.precio).toFixed(2)}</h2>)}
+                                          <Link to={getPedidoUrl()} className="btn btn-primary btn-lg mt-3">¡Lo Quiero!</Link>
+                                      </motion.div>
+                                  </div>
+                              </div>
+                          </SwiperSlide>
+                      );
+                  })}
+                </Swiper>
+              </div>
+            )}
 
-                    return (
-                        <SwiperSlide key={combo.id}>
-                            <div className={`row g-0 align-items-center ${combo.en_oferta ? 'en-oferta' : ''}`}>
-                                <div className="col-lg-6 position-relative">
-                                    {combo.en_oferta && (
-                                        <span className="discount-badge" style={{ top: '20px', right: '20px' }}>
-                                            -{combo.descuento_porcentaje}%
-                                        </span>
-                                    )}
-                                    {hasMultipleImages ? (
-                                        <Swiper modules={[Pagination]} pagination={{ clickable: true }} loop={true}>
-                                            {combo.imagenes.map((url, i) => (
-                                                <SwiperSlide key={i}>
-                                                    <img src={url} className="img-fluid" alt={`${combo.titulo} ${i + 1}`} style={{ objectFit: 'cover', height: '450px', width: '100%' }} />
-                                                </SwiperSlide>
-                                            ))}
-                                        </Swiper>
-                                    ) : (
-                                        <img src={hasImages ? combo.imagenes[0] : getPlaceholderImage('postre')} className="img-fluid" alt={combo.titulo} style={{ objectFit: 'cover', height: '450px', width: '100%' }} />
-                                    )}
-                                </div>
-                                <div className="col-lg-6 p-5 text-center">
-                                    <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}>
-                                        <h3 className="display-5">{combo.titulo}</h3>
-                                        <p className="lead my-4">{combo.descripcion}</p>
-                                        {combo.en_oferta && combo.descuento_porcentaje > 0 ? (
-                                            <div>
-                                                <span className="text-muted text-decoration-line-through me-2">${Number(combo.precio).toFixed(2)}</span>
-                                                <h2 className="my-3 d-inline" style={{ color: '#28a745', fontWeight: 'bold' }}>${precioConDescuento.toFixed(2)}</h2>
-                                            </div>
-                                        ) : (
-                                            <h2 className="my-3" style={{ color: '#28a745', fontWeight: 'bold' }}>${Number(combo.precio).toFixed(2)}</h2>
-                                        )}
-                                        <Link to={getPedidoUrl()} className="btn btn-primary btn-lg mt-3">¡Lo Quiero!</Link>
-                                    </motion.div>
-                                </div>
+            {/* --- NUEVA SECCIÓN: SOBRE NOSOTROS --- */}
+            <div className="container text-center my-5 py-5">
+              <h2 className="mb-4">El Corazón de Tito Café</h2>
+              <p className="lead" style={{ maxWidth: '700px', margin: '0 auto' }}>
+                En Tito Café, cada grano cuenta una historia. Nos dedicamos a encontrar los mejores cafés de origen, tostarlos a la perfección y servirlos con la pasión que nos caracteriza. Más que una cafetería, somos un punto de encuentro para amigos, ideas y momentos inolvidables.
+              </p>
+            </div>
+
+            {/* --- NUEVA SECCIÓN: SEPARADOR VISUAL (PARALLAX) --- */}
+            <div className="parallax-section my-5"></div>
+
+            {/* --- SECCIÓN DE MENÚ --- */}
+            <div className="container my-5">
+              <h2 className="text-center mb-4">Nuestro Menú</h2>
+              <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
+                {productos.map((producto, index) => {
+                  const precioConDescuento = Number(producto.precio) * (1 - producto.descuento_porcentaje / 100);
+                  const hasImages = producto.imagenes && producto.imagenes.length > 0;
+                  const hasMultipleImages = hasImages && producto.imagenes.length > 1;
+                  return (
+                    <motion.div key={producto.id} className="col" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
+                      <div className={`card h-100 shadow-sm position-relative ${producto.en_oferta ? 'en-oferta' : ''}`}>
+                        {producto.en_oferta && (<span className="discount-badge">-{producto.descuento_porcentaje}%</span>)}
+                        {hasMultipleImages ? (
+                          <Swiper modules={[Navigation, Pagination]} spaceBetween={0} slidesPerView={1} navigation pagination={{ clickable: true }} className="card-img-top" style={{ height: '200px' }}>
+                            {producto.imagenes.map((url, i) => (<SwiperSlide key={i}><img src={url} className="img-fluid" alt={`${producto.nombre} ${i + 1}`} style={{ height: '200px', width: '100%', objectFit: 'cover' }} /></SwiperSlide>))}
+                          </Swiper>
+                        ) : (<img src={hasImages ? producto.imagenes[0] : getPlaceholderImage(producto.categoria)} className="card-img-top" alt={producto.nombre} style={{ height: '200px', objectFit: 'cover' }} />)}
+                        <div className="card-body d-flex flex-column">
+                          <h5 className="card-title text-center flex-grow-1">{producto.nombre}</h5>
+                        </div>
+                        <div className="card-footer bg-transparent border-top-0 pb-3 text-center">
+                          {producto.en_oferta && producto.descuento_porcentaje > 0 ? (
+                            <div>
+                              <span className="text-muted text-decoration-line-through me-2">${Number(producto.precio).toFixed(2)}</span>
+                              <span className="fw-bold fs-5" style={{color: '#28a745'}}>${precioConDescuento.toFixed(2)}</span>
                             </div>
-                        </SwiperSlide>
-                    );
+                          ) : (<span className="fw-bold fs-5" style={{color: '#28a745'}}>${Number(producto.precio).toFixed(2)}</span>)}
+                        </div>
+                      </div>                    
+                    </motion.div>
+                  );
                 })}
-              </Swiper>
+              </div>
             </div>
-          )}
-
-          <div className="mt-5">
-            <h2 className="text-center mb-4">Nuestro Menú</h2>
-            <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
-              {productos.map((producto, index) => {
-                const precioConDescuento = Number(producto.precio) * (1 - producto.descuento_porcentaje / 100);
-                
-                const hasImages = producto.imagenes && producto.imagenes.length > 0;
-                const hasMultipleImages = hasImages && producto.imagenes.length > 1;
-
-                return (
-                  <motion.div key={producto.id} className="col" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
-                    <div className={`card h-100 shadow-sm position-relative ${producto.en_oferta ? 'en-oferta' : ''}`}>
-                      
-                      {producto.en_oferta && (
-                        <span className="discount-badge">
-                          -{producto.descuento_porcentaje}%
-                        </span>
-                      )}
-                      
-                      {hasMultipleImages ? (
-                        <Swiper
-                          modules={[Navigation, Pagination]}
-                          spaceBetween={0}
-                          slidesPerView={1}
-                          navigation
-                          pagination={{ clickable: true }}
-                          className="card-img-top"
-                          style={{ height: '200px' }}
-                        >
-                          {producto.imagenes.map((url, i) => (
-                            <SwiperSlide key={i}>
-                              <img src={url} className="img-fluid" alt={`${producto.nombre} ${i + 1}`} style={{ height: '200px', width: '100%', objectFit: 'cover' }} />
-                            </SwiperSlide>
-                          ))}
-                        </Swiper>
-                      ) : (
-                        <img 
-                          src={hasImages ? producto.imagenes[0] : getPlaceholderImage(producto.categoria)} 
-                          className="card-img-top" 
-                          alt={producto.nombre} 
-                          style={{ height: '200px', objectFit: 'cover' }} 
-                        />
-                      )}
-
-                      <div className="card-body d-flex flex-column">
-                        <h5 className="card-title text-center flex-grow-1">{producto.nombre}</h5>
-                      </div>
-                      <div className="card-footer bg-transparent border-top-0 pb-3 text-center">
-                        {producto.en_oferta && producto.descuento_porcentaje > 0 ? (
-                          <div>
-                            <span className="text-muted text-decoration-line-through me-2">${Number(producto.precio).toFixed(2)}</span>
-                            <span className="fw-bold fs-5" style={{color: '#28a745'}}>${precioConDescuento.toFixed(2)}</span>
-                          </div>
-                        ) : (
-                          <span className="fw-bold fs-5" style={{color: '#28a745'}}>${Number(producto.precio).toFixed(2)}</span>
-                        )}
-                      </div>
-                    </div>                    
-                  </motion.div>
-                );
-              })}
-            </div>
-          </div>
-        </>
+        </div>
       )}
     </motion.div>
   );
