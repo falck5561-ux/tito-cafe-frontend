@@ -5,10 +5,12 @@ import { Navigation, Pagination } from 'swiper/modules';
 
 function ProductCard({ product, index }) {
   const precioConDescuento = Number(product.precio) * (1 - product.descuento_porcentaje / 100);
-  const hasImages = product.imagenes && product.imagenes.length > 0;
-  const hasMultipleImages = hasImages && product.imagenes.length > 1;
+  
+  // --- CORRECCIÓN: Nos aseguramos de que 'imagenes' sea siempre un arreglo ---
+  const images = Array.isArray(product.imagenes) ? product.imagenes : [];
+  const hasImages = images.length > 0;
+  const hasMultipleImages = images.length > 1;
 
-  // --- FUNCIÓN ACTUALIZADA CON IMÁGENES LOCALES ---
   const getPlaceholderImage = (categoria) => {
     const cat = categoria?.toLowerCase() || '';
     if (cat.includes('caliente') || cat.includes('café')) return '/placeholder-cafe.jpg';
@@ -23,9 +25,12 @@ function ProductCard({ product, index }) {
         {product.en_oferta && (<span className="discount-badge">-{product.descuento_porcentaje}%</span>)}
         {hasMultipleImages ? (
           <Swiper modules={[Navigation, Pagination]} spaceBetween={0} slidesPerView={1} navigation pagination={{ clickable: true }} className="card-img-top" style={{ height: '200px' }}>
-            {product.imagenes.map((url, i) => (<SwiperSlide key={i}><img src={url} className="img-fluid" alt={`${product.nombre} ${i + 1}`} style={{ height: '200px', width: '100%', objectFit: 'cover' }} /></SwiperSlide>))}
+            {/* Usamos el arreglo seguro 'images' */}
+            {images.map((url, i) => (<SwiperSlide key={i}><img src={url} className="img-fluid" alt={`${product.nombre} ${i + 1}`} style={{ height: '200px', width: '100%', objectFit: 'cover' }} /></SwiperSlide>))}
           </Swiper>
-        ) : (<img src={hasImages ? product.imagenes[0] : getPlaceholderImage(product.categoria)} className="card-img-top" alt={product.nombre} style={{ height: '200px', objectFit: 'cover' }} />)}
+        ) : (
+          <img src={hasImages ? images[0] : getPlaceholderImage(product.categoria)} className="card-img-top" alt={product.nombre} style={{ height: '200px', objectFit: 'cover' }} />
+        )}
         <div className="card-body d-flex flex-column">
           <h5 className="card-title text-center flex-grow-1">{product.nombre}</h5>
         </div>

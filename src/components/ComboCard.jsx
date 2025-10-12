@@ -6,6 +6,11 @@ import { Link } from 'react-router-dom';
 
 function ComboCard({ combo, index }) {
   const precioConDescuento = Number(combo.precio) * (1 - combo.descuento_porcentaje / 100);
+  
+  // --- CORRECCIÓN: Nos aseguramos de que 'imagenes' sea siempre un arreglo ---
+  const images = Array.isArray(combo.imagenes) ? combo.imagenes : [];
+  const hasImages = images.length > 0;
+  const hasMultipleImages = images.length > 1;
 
   return (
     <motion.div 
@@ -17,11 +22,16 @@ function ComboCard({ combo, index }) {
       <div className={`combo-card ${combo.en_oferta ? 'en-oferta' : ''}`}>
         <div className="combo-card-image-wrapper">
           {combo.en_oferta && (<span className="discount-badge">-{combo.descuento_porcentaje}%</span>)}
-          <Swiper modules={[Navigation, Pagination, Autoplay]} loop={true} autoplay={{ delay: 3000 }} pagination={{ clickable: true }} navigation>
-            {combo.imagenes.map((url, i) => (
-              <SwiperSlide key={i}><img src={url} alt={`${combo.titulo} ${i + 1}`} /></SwiperSlide>
-            ))}
-          </Swiper>
+          {hasMultipleImages ? (
+              <Swiper modules={[Navigation, Pagination, Autoplay]} loop={true} autoplay={{ delay: 3000 }} pagination={{ clickable: true }} navigation>
+                {/* Usamos el arreglo seguro 'images' */}
+                {images.map((url, i) => (
+                  <SwiperSlide key={i}><img src={url} alt={`${combo.titulo} ${i + 1}`} /></SwiperSlide>
+                ))}
+              </Swiper>
+          ) : (
+            <img src={hasImages ? images[0] : '/placeholder-postre.jpg'} className="card-img-top" alt={combo.titulo} style={{ height: '350px', width: '100%', objectFit: 'cover' }} />
+          )}
         </div>
         <div className="combo-card-body">
           <h3 className="combo-card-title">{combo.titulo}</h3>
