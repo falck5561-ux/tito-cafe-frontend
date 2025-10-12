@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useContext } from 'react'; // CAMBIO: Se importa useContext
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useMenuData } from '../hooks/useMenuData';
 import ProductCard from '../components/ProductCard';
 import ComboSlide from '../components/ComboSlide';
+import AuthContext from '../context/AuthContext'; // CAMBIO: Se importa el AuthContext
 
 // Importar Swiper y sus estilos
 import { Swiper } from 'swiper/react';
@@ -13,7 +14,22 @@ import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 
 function HomePage() {
-  const { productos, combos, loading, error, user, getPedidoUrl } = useMenuData();
+  // --- CORRECCIÓN ---
+  // 1. Obtenemos los datos del menú desde nuestro hook personalizado
+  const { productos, combos, loading, error } = useMenuData();
+  // 2. Obtenemos el usuario directamente del AuthContext
+  const { user } = useContext(AuthContext);
+
+  // 3. La función getPedidoUrl se queda aquí, ya que depende del 'user'
+  const getPedidoUrl = () => {
+    if (!user) return "/login";
+    switch (user.rol) {
+      case 'Cliente': return "/cliente";
+      case 'Jefe': return "/admin";
+      case 'Empleado': return "/pos";
+      default: return "/login";
+    }
+  };
 
   const heroStyle = {
     backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://images.unsplash.com/photo-1497935586351-b67a49e012bf?q=80&w=2071')`,
