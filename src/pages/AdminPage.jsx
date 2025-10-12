@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import ProductModal from '../components/ProductModal';
-import PromoModal from '../components/PromoModal';
+import ComboModal from '../components/ComboModal'; // Corregido: Importa ComboModal
 import SalesReportChart from '../components/SalesReportChart';
 import ProductSalesReport from '../components/ProductSalesReport';
 import DetallesPedidoModal from '../components/DetallesPedidoModal';
@@ -20,20 +20,20 @@ function AdminPage() {
   const [productos, setProductos] = useState([]);
   const [pedidos, setPedidos] = useState([]);
   const [reportData, setReportData] = useState([]);
-  const [promociones, setPromociones] = useState([]);
+  const [combos, setCombos] = useState([]); // Corregido: Estado para combos
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
   const [showProductModal, setShowProductModal] = useState(false);
   const [productoActual, setProductoActual] = useState(null);
 
-  const [showPromoModal, setShowPromoModal] = useState(false);
-  const [promoActual, setPromoActual] = useState(null);
+  // Corregido: Estados para el modal de combos
+  const [showComboModal, setShowComboModal] = useState(false);
+  const [comboActual, setComboActual] = useState(null);
 
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedOrderDetails, setSelectedOrderDetails] = useState(null);
 
-  // --- Estados para la purga de pedidos ---
   const [showPurgeModal, setShowPurgeModal] = useState(false);
   const [purgeConfirmText, setPurgeConfirmText] = useState('');
 
@@ -50,9 +50,9 @@ function AdminPage() {
       } else if (activeTab === 'pedidosEnLinea') {
         const res = await axios.get('/api/pedidos');
         setPedidos(res.data);
-      } else if (activeTab === 'promociones') {
-        const res = await axios.get('/api/promociones/todas');
-        setPromociones(res.data);
+      } else if (activeTab === 'combos') { // Corregido: Fetch para combos
+        const res = await axios.get('/api/combos/todas');
+        setCombos(res.data);
       }
     } catch (err) {
       setError(`No se pudieron cargar los datos.`);
@@ -88,25 +88,25 @@ function AdminPage() {
     }
   };
 
-  // --- Lógica de Promociones ---
-  const handleOpenPromoModal = (promo = null) => { setPromoActual(promo); setShowPromoModal(true); };
-  const handleClosePromoModal = () => { setShowPromoModal(false); setPromoActual(null); };
-  const handleSavePromo = async (promo) => {
-    const action = promo.id ? 'actualizada' : 'creada';
+  // --- Lógica de Combos (antes Promociones) ---
+  const handleOpenComboModal = (combo = null) => { setComboActual(combo); setShowComboModal(true); };
+  const handleCloseComboModal = () => { setShowComboModal(false); setComboActual(null); };
+  const handleSaveCombo = async (combo) => {
+    const action = combo.id ? 'actualizado' : 'creado';
     try {
-      if (promo.id) { await axios.put(`/api/promociones/${promo.id}`, promo); } else { await axios.post('/api/promociones', promo); }
-      toast.success(`Promoción ${action} con éxito.`);
+      if (combo.id) { await axios.put(`/api/combos/${combo.id}`, combo); } else { await axios.post('/api/combos', combo); }
+      toast.success(`Combo ${action} con éxito.`);
       fetchData();
-      handleClosePromoModal();
-    } catch (err) { toast.error(`No se pudo guardar la promoción.`); }
+      handleCloseComboModal();
+    } catch (err) { toast.error(`No se pudo guardar el combo.`); }
   };
-  const handleDeletePromo = async (id) => {
-    if (window.confirm('¿Seguro que quieres eliminar esta promoción?')) {
+  const handleDeleteCombo = async (id) => {
+    if (window.confirm('¿Seguro que quieres eliminar este combo?')) {
       try {
-        await axios.delete(`/api/promociones/${id}`);
-        toast.success('Promoción eliminada.');
+        await axios.delete(`/api/combos/${id}`);
+        toast.success('Combo eliminado.');
         fetchData();
-      } catch (err) { toast.error('No se pudo eliminar la promoción.'); }
+      } catch (err) { toast.error('No se pudo eliminar el combo.'); }
     }
   };
   
@@ -146,7 +146,7 @@ function AdminPage() {
       <ul className="nav nav-tabs mb-4">
         <li className="nav-item"><button className={`nav-link ${activeTab === 'pedidosEnLinea' ? 'active' : ''}`} onClick={() => setActiveTab('pedidosEnLinea')}>Pedidos en Línea</button></li>
         <li className="nav-item"><button className={`nav-link ${activeTab === 'productos' ? 'active' : ''}`} onClick={() => setActiveTab('productos')}>Gestión de Productos</button></li>
-        <li className="nav-item"><button className={`nav-link ${activeTab === 'promociones' ? 'active' : ''}`} onClick={() => setActiveTab('promociones')}>Gestión de Promociones</button></li>
+        <li className="nav-item"><button className={`nav-link ${activeTab === 'combos' ? 'active' : ''}`} onClick={() => setActiveTab('combos')}>Gestión de Combos</button></li>
         <li className="nav-item"><button className={`nav-link ${activeTab === 'reporteGeneral' ? 'active' : ''}`} onClick={() => setActiveTab('reporteGeneral')}>Reporte General</button></li>
         <li className="nav-item"><button className={`nav-link ${activeTab === 'reporteProductos' ? 'active' : ''}`} onClick={() => setActiveTab('reporteProductos')}>Reporte por Producto</button></li>
       </ul>
@@ -193,12 +193,17 @@ function AdminPage() {
           <div className="table-responsive">
             <table className="table table-hover align-middle">
               <thead className="table-dark">
-                <tr><th>ID</th><th>Nombre</th><th>Precio</th><th>Stock</th><th>Categoría</th><th>Acciones</th></tr>
+                <tr><th>ID</th><th>Nombre</th><th>Precio</th><th>Oferta</th><th>Stock</th><th>Categoría</th><th>Acciones</th></tr>
               </thead>
               <tbody>
                 {productos.map((p) => (
                   <tr key={p.id}>
-                    <td>{p.id}</td><td>{p.nombre}</td><td>${Number(p.precio).toFixed(2)}</td><td>{p.stock}</td><td>{p.categoria}</td>
+                    <td>{p.id}</td>
+                    <td>{p.nombre}</td>
+                    <td>${Number(p.precio).toFixed(2)}</td>
+                    <td>{p.en_oferta ? `${p.descuento_porcentaje}%` : 'No'}</td>
+                    <td>{p.stock}</td>
+                    <td>{p.categoria}</td>
                     <td>
                       <button className="btn btn-sm btn-outline-warning me-2" onClick={() => handleOpenProductModal(p)}>Editar</button>
                       <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteProducto(p.id)}>Eliminar</button>
@@ -211,11 +216,11 @@ function AdminPage() {
         </div>
       )}
 
-      {!loading && !error && activeTab === 'promociones' && (
+      {!loading && !error && activeTab === 'combos' && (
         <div>
           <div className="d-flex justify-content-between align-items-center mb-4">
-            <h1>Gestión de Promociones</h1>
-            <button className="btn btn-primary" onClick={() => handleOpenPromoModal()}>Añadir Nueva Promoción</button>
+            <h1>Gestión de Combos</h1>
+            <button className="btn btn-primary" onClick={() => handleOpenComboModal()}>Añadir Nuevo Combo</button>
           </div>
           <div className="table-responsive">
             <table className="table table-hover align-middle">
@@ -223,19 +228,19 @@ function AdminPage() {
                 <tr><th>ID</th><th>Título</th><th>Precio</th><th>Estado</th><th>Acciones</th></tr>
               </thead>
               <tbody>
-                {promociones.map((promo) => (
-                  <tr key={promo.id}>
-                    <td>{promo.id}</td>
-                    <td>{promo.titulo}</td>
-                    <td>${Number(promo.precio).toFixed(2)}</td>
+                {combos.map((combo) => (
+                  <tr key={combo.id}>
+                    <td>{combo.id}</td>
+                    <td>{combo.titulo}</td>
+                    <td>${Number(combo.precio).toFixed(2)}</td>
                     <td>
-                      <span className={`badge ${promo.activa ? 'bg-success' : 'bg-secondary'}`}>
-                        {promo.activa ? 'Activa' : 'Inactiva'}
+                      <span className={`badge ${combo.activa ? 'bg-success' : 'bg-secondary'}`}>
+                        {combo.activa ? 'Activo' : 'Inactivo'}
                       </span>
                     </td>
                     <td>
-                      <button className="btn btn-sm btn-outline-warning me-2" onClick={() => handleOpenPromoModal(promo)}>Editar</button>
-                      <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeletePromo(promo.id)}>Eliminar</button>
+                      <button className="btn btn-sm btn-outline-warning me-2" onClick={() => handleOpenComboModal(combo)}>Editar</button>
+                      <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteCombo(combo.id)}>Eliminar</button>
                     </td>
                   </tr>
                 ))}
@@ -265,7 +270,7 @@ function AdminPage() {
       {activeTab === 'reporteProductos' && <ProductSalesReport />}
       
       <ProductModal show={showProductModal} handleClose={handleCloseProductModal} handleSave={handleSaveProducto} productoActual={productoActual} />
-      <PromoModal show={showPromoModal} handleClose={handleClosePromoModal} handleSave={handleSavePromo} promoActual={promoActual} />
+      <ComboModal show={showComboModal} handleClose={handleCloseComboModal} handleSave={handleSaveCombo} comboActual={comboActual} />
       {showDetailsModal && (<DetallesPedidoModal pedido={selectedOrderDetails} onClose={handleCloseDetailsModal} />)}
 
       {showPurgeModal && (

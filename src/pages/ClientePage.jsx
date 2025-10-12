@@ -100,8 +100,13 @@ function ClientePage() {
     }
   }, [tipoOrden]);
 
+  // --- FUNCIÓN MODIFICADA PARA MANEJAR PRECIOS DE OFERTA ---
   const agregarProductoAPedido = (producto) => {
-    const precioFinal = (producto.en_oferta && producto.precio_oferta > 0) ? producto.precio_oferta : producto.precio;
+    let precioFinal = Number(producto.precio);
+    if (producto.en_oferta && producto.descuento_porcentaje > 0) {
+      precioFinal = precioFinal * (1 - producto.descuento_porcentaje / 100);
+    }
+
     setPedidoActual(prev => {
       const existe = prev.find(item => item.id === producto.id);
       if (existe) {
@@ -109,6 +114,7 @@ function ClientePage() {
           item.id === producto.id ? { ...item, cantidad: item.cantidad + 1 } : item
         );
       }
+      // Se guarda el producto con el precio ya calculado (sea el original o el de oferta)
       return [...prev, { ...producto, cantidad: 1, precio: precioFinal }];
     });
   };
@@ -205,29 +211,32 @@ function ClientePage() {
           <div className="col-md-8">
             <h2>Elige tus Productos</h2>
             <div className="row g-3">
-              {productos?.map(p => (
-                <div key={p.id} className="col-md-4 col-lg-3">
-                  <div 
-                    className="card h-100 text-center shadow-sm position-relative" 
-                    onClick={() => agregarProductoAPedido(p)} 
-                    style={{ cursor: 'pointer', border: p.en_oferta ? '2px solid #198754' : '' }}
-                  >
-                    {p.en_oferta && <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">OFERTA</span>}
-                    <div className="card-body d-flex flex-column justify-content-center">
-                      <h5 className="card-title">{p.nombre}</h5>
-                      
-                      {p.en_oferta && p.precio_oferta > 0 ? (
-                        <div>
-                          <span className="text-muted text-decoration-line-through me-2">${Number(p.precio).toFixed(2)}</span>
-                          <span className="card-text text-success fw-bold fs-5">${Number(p.precio_oferta).toFixed(2)}</span>
-                        </div>
-                      ) : (
-                        <p className="card-text text-success fw-bold fs-5">${Number(p.precio).toFixed(2)}</p>
-                      )}
+              {productos?.map(p => {
+                const precioConDescuento = Number(p.precio) * (1 - p.descuento_porcentaje / 100);
+                return (
+                  <div key={p.id} className="col-md-4 col-lg-3">
+                    <div 
+                      className="card h-100 text-center shadow-sm position-relative" 
+                      onClick={() => agregarProductoAPedido(p)} 
+                      style={{ cursor: 'pointer', border: p.en_oferta ? '2px solid #dc3545' : '' }}
+                    >
+                      {p.en_oferta && <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">-{p.descuento_porcentaje}%</span>}
+                      <div className="card-body d-flex flex-column justify-content-center">
+                        <h5 className="card-title">{p.nombre}</h5>
+                        
+                        {p.en_oferta && p.descuento_porcentaje > 0 ? (
+                          <div>
+                            <span className="text-muted text-decoration-line-through me-2">${Number(p.precio).toFixed(2)}</span>
+                            <span className="card-text text-success fw-bold fs-5">${precioConDescuento.toFixed(2)}</span>
+                          </div>
+                        ) : (
+                          <p className="card-text text-success fw-bold fs-5">${Number(p.precio).toFixed(2)}</p>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
           

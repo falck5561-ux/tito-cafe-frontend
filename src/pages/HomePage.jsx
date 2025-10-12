@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import AuthContext from '../context/AuthContext';
 
-// 1. Importar Swiper y sus estilos
+// Importar Swiper y sus estilos
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination, Autoplay } from 'swiper/modules';
 import 'swiper/css';
@@ -16,7 +16,7 @@ axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'https://tito-cafe-back
 
 function HomePage() {
   const [productos, setProductos] = useState([]);
-  const [promociones, setPromociones] = useState([]);
+  const [combos, setCombos] = useState([]); // Corregido: Estado para combos
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const { user } = useContext(AuthContext);
@@ -36,12 +36,12 @@ function HomePage() {
       setLoading(true);
       setError('');
       try {
-        const [productosRes, promocionesRes] = await Promise.all([
+        const [productosRes, combosRes] = await Promise.all([
           axios.get('/api/productos'),
-          axios.get('/api/promociones')
+          axios.get('/api/combos') // Corregido: Llama a la API de combos
         ]);
         setProductos(productosRes.data);
-        setPromociones(promocionesRes.data);
+        setCombos(combosRes.data);
       } catch (err) {
         setError('No se pudo cargar el menú. Intenta de nuevo más tarde.');
         console.error(err);
@@ -91,9 +91,10 @@ function HomePage() {
       
       {!loading && !error && (
         <>
-          {promociones.length > 0 && (
+          {/* --- CARRUSEL DE COMBOS --- */}
+          {combos.length > 0 && (
             <div className="mb-5">
-              <h2 className="text-center mb-4">Promociones Especiales</h2>
+              <h2 className="text-center mb-4">Combos Especiales</h2>
               <Swiper
                 modules={[Navigation, Pagination, Autoplay]}
                 spaceBetween={30}
@@ -105,29 +106,24 @@ function HomePage() {
                 className="shadow-lg"
                 style={{ borderRadius: '15px', overflow: 'hidden', background: 'var(--crema)' }}
               >
-                {promociones.map((promo) => (
-                  <SwiperSlide key={promo.id}>
+                {combos.map((combo) => (
+                  <SwiperSlide key={combo.id}>
                     <div className="row g-0 align-items-center">
                       <div className="col-lg-6">
-                        {/* --- LÓGICA PARA MOSTRAR UNA O DOS IMÁGENES --- */}
-                        {promo.imagen_url_2 ? (
+                        {combo.imagen_url_2 ? (
                           <div className="row g-0">
-                            <div className="col-6">
-                              <img src={promo.imagen_url} className="img-fluid" alt={promo.titulo} style={{ objectFit: 'cover', height: '450px', width: '100%' }} />
-                            </div>
-                            <div className="col-6">
-                              <img src={promo.imagen_url_2} className="img-fluid" alt={promo.titulo} style={{ objectFit: 'cover', height: '450px', width: '100%' }} />
-                            </div>
+                            <div className="col-6"><img src={combo.imagen_url} className="img-fluid" alt={combo.titulo} style={{ objectFit: 'cover', height: '450px', width: '100%' }} /></div>
+                            <div className="col-6"><img src={combo.imagen_url_2} className="img-fluid" alt={combo.titulo} style={{ objectFit: 'cover', height: '450px', width: '100%' }} /></div>
                           </div>
                         ) : (
-                          <img src={promo.imagen_url} className="img-fluid" alt={promo.titulo} style={{ objectFit: 'cover', height: '450px', width: '100%' }} />
+                          <img src={combo.imagen_url} className="img-fluid" alt={combo.titulo} style={{ objectFit: 'cover', height: '450px', width: '100%' }} />
                         )}
                       </div>
                       <div className="col-lg-6 p-5 text-center">
                         <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}>
-                          <h3 className="display-5">{promo.titulo}</h3>
-                          <p className="lead my-4">{promo.descripcion}</p>
-                          <h2 className="my-3" style={{color: '#28a745', fontWeight: 'bold'}}>${Number(promo.precio).toFixed(2)}</h2>
+                          <h3 className="display-5">{combo.titulo}</h3>
+                          <p className="lead my-4">{combo.descripcion}</p>
+                          <h2 className="my-3" style={{color: '#28a745', fontWeight: 'bold'}}>${Number(combo.precio).toFixed(2)}</h2>
                           <Link to={getPedidoUrl()} className="btn btn-primary btn-lg mt-3">¡Aprovechar Oferta!</Link>
                         </motion.div>
                       </div>
@@ -138,22 +134,34 @@ function HomePage() {
             </div>
           )}
 
+          {/* --- MENÚ DE PRODUCTOS CON OFERTAS --- */}
           <div className="mt-5">
             <h2 className="text-center mb-4">Nuestro Menú</h2>
             <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
-              {productos.map((producto, index) => (
-                <motion.div key={producto.id} className="col" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
-                  <div className="card h-100 shadow-sm">
-                    <img src={producto.imagen_url || getPlaceholderImage(producto.categoria)} className="card-img-top" alt={producto.nombre} style={{ height: '200px', objectFit: 'cover' }} />
-                    <div className="card-body d-flex flex-column">
-                      <h5 className="card-title text-center flex-grow-1">{producto.nombre}</h5>
+              {productos.map((producto, index) => {
+                const precioConDescuento = Number(producto.precio) * (1 - producto.descuento_porcentaje / 100);
+                return (
+                  <motion.div key={producto.id} className="col" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
+                    <div className="card h-100 shadow-sm position-relative">
+                      {producto.en_oferta && <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">-{producto.descuento_porcentaje}%</span>}
+                      <img src={producto.imagen_url || getPlaceholderImage(producto.categoria)} className="card-img-top" alt={producto.nombre} style={{ height: '200px', objectFit: 'cover' }} />
+                      <div className="card-body d-flex flex-column">
+                        <h5 className="card-title text-center flex-grow-1">{producto.nombre}</h5>
+                      </div>
+                      <div className="card-footer bg-transparent border-top-0 pb-3 text-center">
+                        {producto.en_oferta && producto.descuento_porcentaje > 0 ? (
+                          <div>
+                            <span className="text-muted text-decoration-line-through me-2">${Number(producto.precio).toFixed(2)}</span>
+                            <span className="fw-bold fs-5" style={{color: '#28a745'}}>${precioConDescuento.toFixed(2)}</span>
+                          </div>
+                        ) : (
+                          <span className="fw-bold fs-5" style={{color: '#28a745'}}>${Number(producto.precio).toFixed(2)}</span>
+                        )}
+                      </div>
                     </div>
-                    <div className="card-footer bg-transparent border-top-0 pb-3 text-center">
-                      <span className="fw-bold fs-5" style={{color: '#28a745'}}>${Number(producto.precio).toFixed(2)}</span>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
+                  </motion.div>
+                );
+              })}
             </div>
           </div>
         </>
@@ -163,3 +171,4 @@ function HomePage() {
 }
 
 export default HomePage;
+
