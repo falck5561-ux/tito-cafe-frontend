@@ -146,7 +146,6 @@ function ClientePage() {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="row">
           <div className="col-md-8">
             <h2>Elige tus Productos</h2>
-            {/* CORRECCIÓN 1: Se añade ?.map */}
             <div className="row g-3">{productos?.map(p => (<div key={p.id} className="col-md-4 col-lg-3"><div className="card h-100 text-center shadow-sm" onClick={() => agregarProductoAPedido(p)} style={{ cursor: 'pointer' }}><div className="card-body d-flex flex-column justify-content-center"><h5 className="card-title">{p.nombre}</h5><p className="card-text text-success fw-bold">${Number(p.precio).toFixed(2)}</p></div></div></div>))}</div>
           </div>
           <div className="col-md-4">
@@ -203,7 +202,6 @@ function ClientePage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {/* CORRECCIÓN 2: Se añade ?.map */}
                   {misPedidos?.map(p => (
                     <React.Fragment key={p.id}>
                       <tr 
@@ -216,34 +214,36 @@ function ClientePage() {
                         <td><span className={`badge ${getStatusBadge(p.estado)}`}>{p.estado}</span></td>
                         <td className="text-end">${Number(p.total).toFixed(2)}</td>
                       </tr>
+                      
+                      {/* === BLOQUE DE CÓDIGO CORREGIDO === */}
                       {ordenExpandida === p.id && (
                         <tr>
                           <td colSpan="5">
                             <motion.div 
-                              className="p-3 bg-light"
+                              className="detalle-pedido-productos"
                               initial={{ opacity: 0, height: 0 }}
                               animate={{ opacity: 1, height: 'auto' }}
                               transition={{ duration: 0.3 }}
                             >
-                              <h6 className="fw-bold">Detalle del Pedido #{p.id}</h6>
-                              <ul className="list-unstyled mb-0">
-                                {p.productos?.map(producto => (
-                                  <li key={`${p.id}-${producto.nombre}`} className="d-flex justify-content-between">
-                                    <span>{producto.cantidad}x {producto.nombre}</span>
-                                    <span>${(producto.cantidad * Number(producto.precio)).toFixed(2)}</span>
-                                  </li>
-                                ))}
-                                {p.costo_envio > 0 && (
-                                  <li className="d-flex justify-content-between mt-2 pt-2 border-top">
-                                    <span className="fw-bold">Costo de Envío</span>
-                                    <span className="fw-bold">${Number(p.costo_envio).toFixed(2)}</span>
-                                  </li>
-                                )}
-                              </ul>
+                              <h5 className="mb-3">Detalle del Pedido #{p.id}</h5>
+                              {p.productos?.map(producto => (
+                                <div key={`${p.id}-${producto.nombre}`} className="detalle-pedido-item">
+                                  <span>{producto.cantidad}x {producto.nombre}</span>
+                                  <span>${(producto.cantidad * Number(producto.precio)).toFixed(2)}</span>
+                                </div>
+                              ))}
+                              {p.costo_envio > 0 && (
+                                <div className="detalle-pedido-item mt-2 pt-2 border-top">
+                                  <span className="fw-bold">Costo de Envío</span>
+                                  <span className="fw-bold">${Number(p.costo_envio).toFixed(2)}</span>
+                                </div>
+                              )}
                             </motion.div>
                           </td>
                         </tr>
                       )}
+                      {/* === FIN DEL BLOQUE CORREGIDO === */}
+                      
                     </React.Fragment>
                   ))}
                 </tbody>
@@ -258,7 +258,6 @@ function ClientePage() {
           <h2>Mis Recompensas</h2>
           {misRecompensas?.length === 0 ? (<p className="text-center">Aún no tienes recompensas.</p>) : (
             <div className="row g-4">
-              {/* CORRECCIÓN 3: Se añade ?.map */}
               {misRecompensas?.map(recompensa => (
                 <div key={recompensa.id} className="col-md-6 col-lg-4">
                   <div className="recompensa-card">
