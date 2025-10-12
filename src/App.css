@@ -7,7 +7,7 @@
   --cafe-dark: #4a2c2a;
   --cafe-medium: #8d6e63;
   --cafe-light: #d7ccc8;
-  --crema: #fdfaf6; /* Un color crema más cálido que el blanco puro */
+  --crema: #fdfaf6;
   --texto-principal: #372423;
   --texto-secundario: #5d4037;
   
@@ -67,12 +67,14 @@ h1, h2, h3, h4, h5, .navbar-brand, .display-4 { font-family: 'Playfair Display',
     border-bottom-color: var(--cafe-light);
 }
 [data-bs-theme="light"] .nav-tabs .nav-link {
-    color: var(--texto-secundario);
+    color: var(--cafe-medium) !important; /* Corrige el contraste del texto inactivo */
+    font-weight: 500;
     border-color: transparent;
     border-bottom: 3px solid transparent;
 }
 [data-bs-theme="light"] .nav-tabs .nav-link.active {
-    color: var(--texto-principal);
+    color: var(--texto-principal) !important; /* Corrige el contraste del texto activo */
+    font-weight: bold;
     border-color: var(--cafe-light) var(--cafe-light) var(--bs-body-bg);
     border-bottom-color: var(--cafe-medium);
 }
@@ -93,6 +95,13 @@ h1, h2, h3, h4, h5, .navbar-brand, .display-4 { font-family: 'Playfair Display',
 }
 
 /* === TABLA DE ADMIN EN MODO CLARO (CORREGIDO) === */
+.table {
+    --bs-table-bg: var(--bs-card-bg);
+    --bs-table-color: var(--bs-body-color);
+    --bs-table-border-color: var(--bs-border-color);
+    --bs-table-hover-bg: var(--bs-tertiary-bg);
+    --bs-table-striped-bg: var(--bs-tertiary-bg);
+}
 [data-bs-theme="light"] .table-dark {
     --bs-table-bg: var(--bs-card-bg);
     --bs-table-color: var(--bs-body-color);
@@ -100,6 +109,7 @@ h1, h2, h3, h4, h5, .navbar-brand, .display-4 { font-family: 'Playfair Display',
     --bs-table-hover-bg: var(--bs-tertiary-bg);
     --bs-table-striped-bg: var(--bs-tertiary-bg);
 }
+.table-dark thead th,
 [data-bs-theme="light"] .table-dark thead th {
    background-color: var(--cafe-dark);
    color: var(--crema);
@@ -119,3 +129,4 @@ h1, h2, h3, h4, h5, .navbar-brand, .display-4 { font-family: 'Playfair Display',
   border: 4px solid var(--cafe-light); box-shadow: 0 4px 15px rgba(0,0,0,0.2);
 }
 .pac-container { z-index: 9999 !important; }
+    
