@@ -94,8 +94,37 @@ function ClientePage() {
     }
   }, [tipoOrden]);
 
+  // --- LÓGICA DE GESTIÓN DEL CARRITO ---
   const agregarProductoAPedido = (producto) => { setPedidoActual(prev => { const existe = prev.find(item => item.id === producto.id); if (existe) { return prev.map(item => item.id === producto.id ? { ...item, cantidad: item.cantidad + 1 } : item); } return [...prev, { ...producto, cantidad: 1 }]; }); };
+  
+  // NUEVO: Funciones para manejar la cantidad y eliminar productos
+  const incrementarCantidad = (productoId) => {
+    setPedidoActual(prev =>
+      prev.map(item =>
+        item.id === productoId ? { ...item, cantidad: item.cantidad + 1 } : item
+      )
+    );
+  };
+
+  const decrementarCantidad = (productoId) => {
+    setPedidoActual(prev => {
+      const producto = prev.find(item => item.id === productoId);
+      if (producto.cantidad === 1) {
+        return prev.filter(item => item.id !== productoId);
+      }
+      return prev.map(item =>
+        item.id === productoId ? { ...item, cantidad: item.cantidad - 1 } : item
+      );
+    });
+  };
+
+  const eliminarProducto = (productoId) => {
+    setPedidoActual(prev => prev.filter(item => item.id !== productoId));
+  };
+
   const limpiarPedido = () => { setPedidoActual([]); setCostoEnvio(0); setDireccion(null); setGuardarDireccion(false); setReferencia(''); };
+  // --- FIN DE LÓGICA DE GESTIÓN DEL CARRITO ---
+
   const handleLocationSelect = async (location) => { setDireccion(location); setCalculandoEnvio(true); setCostoEnvio(0); try { const res = await axios.post('/api/pedidos/calculate-delivery-cost', { lat: location.lat, lng: location.lng }); setCostoEnvio(res.data.deliveryCost); toast.success(`Costo de envío: $${res.data.deliveryCost.toFixed(2)}`); } catch (err) { toast.error(err.response?.data?.msg || 'No se pudo calcular el costo de envío.'); setDireccion(null); } finally { setCalculandoEnvio(false); } };
   const usarDireccionGuardada = () => { if (direccionGuardada) { handleLocationSelect(direccionGuardada); if (direccionGuardada.referencia) { setReferencia(direccionGuardada.referencia); } toast.success('Usando dirección guardada.'); } };
   const handleProcederAlPago = async () => { if (totalFinal <= 0) return; if (tipoOrden === 'domicilio' && !direccion) { return toast.error('Por favor, selecciona o escribe tu ubicación.'); } if (calculandoEnvio) { return toast.error('Espera a que termine el cálculo del envío.'); } setPaymentLoading(true); try { const res = await axios.post('/api/payments/create-payment-intent', { amount: totalFinal }); setClientSecret(res.data.clientSecret); setShowPaymentModal(true); } catch (err) { toast.error('No se pudo iniciar el proceso de pago.'); } finally { setPaymentLoading(false); } };
@@ -153,7 +182,25 @@ function ClientePage() {
               <div className="card-body">
                 <h3 className="card-title text-center">Mi Pedido</h3>
                 <hr />
-                <ul className="list-group list-group-flush">{pedidoActual.map((item, i) => (<li key={i} className="list-group-item d-flex justify-content-between"><span>{item.cantidad}x {item.nombre}</span><span>${(item.cantidad * Number(item.precio)).toFixed(2)}</span></li>))}</ul>
+                {/* --- JSX DEL CARRITO MEJORADO --- */}
+                <ul className="list-group list-group-flush">
+                  {pedidoActual.length === 0 && <li className="list-group-item text-center text-muted">Tu carrito está vacío</li>}
+                  {pedidoActual.map((item) => (
+                    <li key={item.id} className="list-group-item d-flex align-items-center justify-content-between p-1">
+                      <span className="me-auto">{item.nombre}</span>
+                      <div className="d-flex align-items-center">
+                        <button className="btn btn-outline-secondary btn-sm" onClick={() => decrementarCantidad(item.id)}>-</button>
+                        <span className="mx-2">{item.cantidad}</span>
+                        <button className="btn btn-outline-secondary btn-sm" onClick={() => incrementarCantidad(item.id)}>+</button>
+                      </div>
+                      <span className="mx-3" style={{ minWidth: '60px', textAlign: 'right' }}>
+                        ${(item.cantidad * Number(item.precio)).toFixed(2)}
+                      </span>
+                      <button className="btn btn-outline-danger btn-sm" onClick={() => eliminarProducto(item.id)}>&times;</button>
+                    </li>
+                  ))}
+                </ul>
+                {/* --- FIN DEL JSX MEJORADO --- */}
                 <hr />
                 <h5>Elige una opción:</h5>
                 <div className="form-check"><input className="form-check-input" type="radio" name="tipoOrden" id="llevar" value="llevar" checked={tipoOrden === 'llevar'} onChange={(e) => setTipoOrden(e.target.value)} /><label className="form-check-label" htmlFor="llevar">Para Recoger</label></div>
@@ -215,7 +262,6 @@ function ClientePage() {
                         <td className="text-end">${Number(p.total).toFixed(2)}</td>
                       </tr>
                       
-                      {/* === BLOQUE DE CÓDIGO CORREGIDO === */}
                       {ordenExpandida === p.id && (
                         <tr>
                           <td colSpan="5">
@@ -242,7 +288,6 @@ function ClientePage() {
                           </td>
                         </tr>
                       )}
-                      {/* === FIN DEL BLOQUE CORREGIDO === */}
                       
                     </React.Fragment>
                   ))}

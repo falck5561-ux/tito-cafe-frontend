@@ -46,17 +46,62 @@ function PosPage() {
   };
 
   useEffect(() => { fetchData(); }, [activeTab]);
+
+  // --- LÓGICA DE CARRITO MEJORADA ---
+
+  // CORRECCIÓN 1: El useEffect ahora multiplica por la cantidad
   useEffect(() => {
-    const nuevoTotal = ventaActual.reduce((sum, item) => sum + Number(item.precio), 0);
+    const nuevoTotal = ventaActual.reduce((sum, item) => sum + (item.cantidad * Number(item.precio)), 0);
     setTotalVenta(nuevoTotal);
   }, [ventaActual]);
 
-  const agregarProductoAVenta = (producto) => setVentaActual(prev => [...prev, producto]);
+  // CORRECCIÓN 2: La función ahora agrupa los productos
+  const agregarProductoAVenta = (producto) => {
+    setVentaActual(prevVenta => {
+      const productoExistente = prevVenta.find(item => item.id === producto.id);
+      if (productoExistente) {
+        return prevVenta.map(item =>
+          item.id === producto.id ? { ...item, cantidad: item.cantidad + 1 } : item
+        );
+      }
+      return [...prevVenta, { ...producto, cantidad: 1 }];
+    });
+  };
+
+  // NUEVO: Funciones para manejar la cantidad y eliminar productos
+  const incrementarCantidad = (productoId) => {
+    setVentaActual(prev =>
+      prev.map(item =>
+        item.id === productoId ? { ...item, cantidad: item.cantidad + 1 } : item
+      )
+    );
+  };
+
+  const decrementarCantidad = (productoId) => {
+    setVentaActual(prev => {
+      const producto = prev.find(item => item.id === productoId);
+      if (producto.cantidad === 1) {
+        return prev.filter(item => item.id !== productoId);
+      }
+      return prev.map(item =>
+        item.id === productoId ? { ...item, cantidad: item.cantidad - 1 } : item
+      );
+    });
+  };
+
+  const eliminarProducto = (productoId) => {
+    setVentaActual(prev => prev.filter(item => item.id !== productoId));
+  };
+  
   const limpiarVenta = () => setVentaActual([]);
+  
+  // --- FIN DE LÓGICA DE CARRITO MEJORADA ---
   
   const handleCobrar = async () => {
     if (ventaActual.length === 0) return toast.error('El ticket está vacío.');
-    const ventaData = { total: totalVenta, metodo_pago: 'Efectivo', productos: ventaActual };
+    // Se ajustan los productos para enviar la cantidad correcta
+    const productosParaEnviar = ventaActual.map(({ id, cantidad, precio, nombre }) => ({ id, cantidad, precio: Number(precio), nombre }));
+    const ventaData = { total: totalVenta, metodo_pago: 'Efectivo', productos: productosParaEnviar };
     try {
       await axios.post('/api/ventas', ventaData);
       toast.success('¡Venta registrada con éxito!');
@@ -100,13 +145,7 @@ function PosPage() {
             <table className="table table-dark table-hover align-middle">
               <thead>
                 <tr>
-                  <th>ID</th>
-                  <th>Cliente</th>
-                  <th>Fecha</th>
-                  <th>Total</th>
-                  <th>Tipo</th>
-                  <th>Estado</th>
-                  <th>Acciones</th>
+                  <th>ID</th><th>Cliente</th><th>Fecha</th><th>Total</th><th>Tipo</th><th>Estado</th><th>Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -155,7 +194,37 @@ function PosPage() {
             </div>
           </div>
           <div className="col-md-4">
-            <div className="card"><div className="card-body"><h3 className="card-title text-center">Ticket de Venta</h3><hr /><ul className="list-group list-group-flush">{ventaActual.map((item, i) => (<li key={i} className="list-group-item d-flex justify-content-between"><span>{item.nombre}</span><span>${Number(item.precio).toFixed(2)}</span></li>))}</ul><hr /><h4>Total: ${totalVenta.toFixed(2)}</h4><div className="d-grid gap-2 mt-3"><button className="btn btn-success" onClick={handleCobrar}>Cobrar</button><button className="btn btn-danger" onClick={limpiarVenta}>Cancelar</button></div></div></div>
+            <div className="card">
+              <div className="card-body">
+                <h3 className="card-title text-center">Ticket de Venta</h3>
+                <hr />
+                {/* --- JSX DEL TICKET MEJORADO --- */}
+                <ul className="list-group list-group-flush">
+                  {ventaActual.length === 0 && <li className="list-group-item text-center text-muted">El ticket está vacío</li>}
+                  {ventaActual.map((item) => (
+                    <li key={item.id} className="list-group-item d-flex align-items-center justify-content-between p-1">
+                      <span className="me-auto">{item.nombre}</span>
+                      <div className="d-flex align-items-center">
+                        <button className="btn btn-outline-secondary btn-sm" onClick={() => decrementarCantidad(item.id)}>-</button>
+                        <span className="mx-2">{item.cantidad}</span>
+                        <button className="btn btn-outline-secondary btn-sm" onClick={() => incrementarCantidad(item.id)}>+</button>
+                      </div>
+                      <span className="mx-3" style={{ minWidth: '60px', textAlign: 'right' }}>
+                        ${(item.cantidad * Number(item.precio)).toFixed(2)}
+                      </span>
+                      <button className="btn btn-outline-danger btn-sm" onClick={() => eliminarProducto(item.id)}>&times;</button>
+                    </li>
+                  ))}
+                </ul>
+                {/* --- FIN DEL JSX MEJORADO --- */}
+                <hr />
+                <h4>Total: ${totalVenta.toFixed(2)}</h4>
+                <div className="d-grid gap-2 mt-3">
+                  <button className="btn btn-success" onClick={handleCobrar}>Cobrar</button>
+                  <button className="btn btn-danger" onClick={limpiarVenta}>Cancelar</button>
+                </div>
+              </div>
+            </div>
           </div>
         </motion.div>
       );
