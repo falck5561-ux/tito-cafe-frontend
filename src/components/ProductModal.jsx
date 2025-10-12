@@ -6,8 +6,8 @@ function PromoModal({ show, handleClose, handleSave, promoActual }) {
     descripcion: '',
     precio: '',
     imagen_url: '',
-    imagen_url_2: '', // <-- CAMPO PARA SEGUNDA IMAGEN
-    activa: true      // <-- CAMPO PARA ACTIVAR/DESACTIVAR
+    imagen_url_2: '', // <-- Ya lo tienes aquí
+    activa: true      // <-- Y el interruptor aquí
   });
 
   useEffect(() => {
@@ -73,13 +73,13 @@ function PromoModal({ show, handleClose, handleSave, promoActual }) {
                 <input type="text" className="form-control" id="imagen_url" name="imagen_url" value={promo.imagen_url} placeholder="https://ejemplo.com/imagen1.jpg" onChange={handleChange} />
               </div>
               
-              {/* --- CAMPO PARA SEGUNDA IMAGEN AÑADIDO --- */}
+              {/* --- CAMPO PARA SEGUNDA IMAGEN --- */}
               <div className="mb-3">
                 <label htmlFor="imagen_url_2" className="form-label">URL de la Imagen Secundaria (Opcional)</label>
                 <input type="text" className="form-control" id="imagen_url_2" name="imagen_url_2" value={promo.imagen_url_2} placeholder="https://ejemplo.com/imagen2.jpg" onChange={handleChange} />
               </div>
               
-              {/* --- INTERRUPTOR PARA ACTIVAR/INACTIVAR AÑADIDO --- */}
+              {/* --- INTERRUPTOR PARA ACTIVAR/INACTIVAR --- */}
               <div className="form-check form-switch mb-3">
                 <input className="form-check-input" type="checkbox" role="switch" id="activa" name="activa" checked={promo.activa} onChange={handleChange} />
                 <label className="form-check-label" htmlFor="activa">Promoción Activa</label>

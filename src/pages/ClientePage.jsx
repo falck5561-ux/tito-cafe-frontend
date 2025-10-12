@@ -100,7 +100,19 @@ function ClientePage() {
     }
   }, [tipoOrden]);
 
-  const agregarProductoAPedido = (producto) => { setPedidoActual(prev => { const existe = prev.find(item => item.id === producto.id); if (existe) { return prev.map(item => item.id === producto.id ? { ...item, cantidad: item.cantidad + 1 } : item); } return [...prev, { ...producto, cantidad: 1 }]; }); };
+  const agregarProductoAPedido = (producto) => {
+    const precioFinal = (producto.en_oferta && producto.precio_oferta > 0) ? producto.precio_oferta : producto.precio;
+    setPedidoActual(prev => {
+      const existe = prev.find(item => item.id === producto.id);
+      if (existe) {
+        return prev.map(item =>
+          item.id === producto.id ? { ...item, cantidad: item.cantidad + 1 } : item
+        );
+      }
+      return [...prev, { ...producto, cantidad: 1, precio: precioFinal }];
+    });
+  };
+
   const incrementarCantidad = (productoId) => { setPedidoActual(prev => prev.map(item => item.id === productoId ? { ...item, cantidad: item.cantidad + 1 } : item)); };
   const decrementarCantidad = (productoId) => { setPedidoActual(prev => { const producto = prev.find(item => item.id === productoId); if (producto.cantidad === 1) { return prev.filter(item => item.id !== productoId); } return prev.map(item => item.id === productoId ? { ...item, cantidad: item.cantidad - 1 } : item); }); };
   const eliminarProducto = (productoId) => { setPedidoActual(prev => prev.filter(item => item.id !== productoId)); };
@@ -111,7 +123,7 @@ function ClientePage() {
     setDireccion(null);
     setGuardarDireccion(false);
     setReferencia('');
-    setShowCartModal(false); // <--- CORRECCIÓN 1
+    setShowCartModal(false);
   };
 
   const handleLocationSelect = async (location) => { setDireccion(location); setCalculandoEnvio(true); setCostoEnvio(0); try { const res = await axios.post('/api/pedidos/calculate-delivery-cost', { lat: location.lat, lng: location.lng }); setCostoEnvio(res.data.deliveryCost); toast.success(`Costo de envío: $${res.data.deliveryCost.toFixed(2)}`); } catch (err) { toast.error(err.response?.data?.msg || 'No se pudo calcular el costo de envío.'); setDireccion(null); } finally { setCalculandoEnvio(false); } };
@@ -126,10 +138,8 @@ function ClientePage() {
       const token = localStorage.getItem('token');
       const res = await axios.post('/api/payments/create-payment-intent', { amount: totalFinal }, { headers: { Authorization: `Bearer ${token}` } });
       
-      // --- CORRECCIÓN 2 ---
       setShowCartModal(false);
       setModalView('cart');
-      // --------------------
 
       setClientSecret(res.data.clientSecret);
       setShowPaymentModal(true);
@@ -181,7 +191,6 @@ function ClientePage() {
 
   return (
     <div>
-      {/* ... El resto de tu código JSX se mantiene igual, este es el final del archivo con las correcciones ... */}
       <ul className="nav nav-tabs mb-4">
         <li className="nav-item"><button className={`nav-link ${activeTab === 'crear' ? 'active' : ''}`} onClick={() => setActiveTab('crear')}>Hacer un Pedido</button></li>
         <li className="nav-item"><button className={`nav-link ${activeTab === 'ver' ? 'active' : ''}`} onClick={() => setActiveTab('ver')}>Mis Pedidos</button></li>
@@ -195,8 +204,33 @@ function ClientePage() {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="row">
           <div className="col-md-8">
             <h2>Elige tus Productos</h2>
-            <div className="row g-3">{productos?.map(p => (<div key={p.id} className="col-md-4 col-lg-3"><div className="card h-100 text-center shadow-sm" onClick={() => agregarProductoAPedido(p)} style={{ cursor: 'pointer' }}><div className="card-body d-flex flex-column justify-content-center"><h5 className="card-title">{p.nombre}</h5><p className="card-text text-success fw-bold">${Number(p.precio).toFixed(2)}</p></div></div></div>))}</div>
+            <div className="row g-3">
+              {productos?.map(p => (
+                <div key={p.id} className="col-md-4 col-lg-3">
+                  <div 
+                    className="card h-100 text-center shadow-sm position-relative" 
+                    onClick={() => agregarProductoAPedido(p)} 
+                    style={{ cursor: 'pointer', border: p.en_oferta ? '2px solid #198754' : '' }}
+                  >
+                    {p.en_oferta && <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">OFERTA</span>}
+                    <div className="card-body d-flex flex-column justify-content-center">
+                      <h5 className="card-title">{p.nombre}</h5>
+                      
+                      {p.en_oferta && p.precio_oferta > 0 ? (
+                        <div>
+                          <span className="text-muted text-decoration-line-through me-2">${Number(p.precio).toFixed(2)}</span>
+                          <span className="card-text text-success fw-bold fs-5">${Number(p.precio_oferta).toFixed(2)}</span>
+                        </div>
+                      ) : (
+                        <p className="card-text text-success fw-bold fs-5">${Number(p.precio).toFixed(2)}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
+          
           <div className="col-md-4 columna-carrito-escritorio">
             <div className="card shadow-sm">
               <div className="card-body">

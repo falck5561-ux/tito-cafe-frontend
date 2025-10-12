@@ -16,7 +16,7 @@ axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'https://tito-cafe-back
 
 function HomePage() {
   const [productos, setProductos] = useState([]);
-  const [promociones, setPromociones] = useState([]); // <-- Estado para promociones
+  const [promociones, setPromociones] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const { user } = useContext(AuthContext);
@@ -36,10 +36,9 @@ function HomePage() {
       setLoading(true);
       setError('');
       try {
-        // Hacemos las dos llamadas a la API al mismo tiempo para más eficiencia
         const [productosRes, promocionesRes] = await Promise.all([
           axios.get('/api/productos'),
-          axios.get('/api/promociones') // <-- Llama a la nueva ruta pública
+          axios.get('/api/promociones')
         ]);
         setProductos(productosRes.data);
         setPromociones(promocionesRes.data);
@@ -92,7 +91,6 @@ function HomePage() {
       
       {!loading && !error && (
         <>
-          {/* --- 2. SECCIÓN DEL CARRUSEL DE PROMOCIONES --- */}
           {promociones.length > 0 && (
             <div className="mb-5">
               <h2 className="text-center mb-4">Promociones Especiales</h2>
@@ -111,7 +109,19 @@ function HomePage() {
                   <SwiperSlide key={promo.id}>
                     <div className="row g-0 align-items-center">
                       <div className="col-lg-6">
-                        <img src={promo.imagen_url} className="img-fluid" alt={promo.titulo} style={{ objectFit: 'cover', height: '450px', width: '100%' }} />
+                        {/* --- LÓGICA PARA MOSTRAR UNA O DOS IMÁGENES --- */}
+                        {promo.imagen_url_2 ? (
+                          <div className="row g-0">
+                            <div className="col-6">
+                              <img src={promo.imagen_url} className="img-fluid" alt={promo.titulo} style={{ objectFit: 'cover', height: '450px', width: '100%' }} />
+                            </div>
+                            <div className="col-6">
+                              <img src={promo.imagen_url_2} className="img-fluid" alt={promo.titulo} style={{ objectFit: 'cover', height: '450px', width: '100%' }} />
+                            </div>
+                          </div>
+                        ) : (
+                          <img src={promo.imagen_url} className="img-fluid" alt={promo.titulo} style={{ objectFit: 'cover', height: '450px', width: '100%' }} />
+                        )}
                       </div>
                       <div className="col-lg-6 p-5 text-center">
                         <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}>
@@ -128,7 +138,6 @@ function HomePage() {
             </div>
           )}
 
-          {/* --- SECCIÓN DEL MENÚ DE PRODUCTOS --- */}
           <div className="mt-5">
             <h2 className="text-center mb-4">Nuestro Menú</h2>
             <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
