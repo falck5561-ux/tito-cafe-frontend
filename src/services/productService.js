@@ -1,79 +1,41 @@
-// Ruta: src/services/productService.js
+// src/services/productService.js
 
-import axios from 'axios';
-
-const API_URL = 'https://tito-cafe-backend.onrender.com/api/productos';
+// 1. Importa solo el apiClient. No más axios directo.
+import apiClient from './api';
 
 /**
  * Obtiene todos los productos del backend.
  */
-export const getProducts = async () => {
-  try {
-    const response = await axios.get(API_URL);
-    return response.data;
-  } catch (error) {
-    console.error('Error al obtener los productos:', error);
-    throw error; // Lanza el error para que el componente lo maneje
-  }
+export const getProducts = () => {
+  // El apiClient ya sabe la URL base
+  return apiClient.get('/productos');
 };
 
 /**
  * Crea un nuevo producto.
- * @param {object} productData - Los datos del producto, incluyendo el arreglo 'imagenes'.
- * @param {string} token - El token de autenticación del administrador.
+ * @param {FormData} productData - Se recomienda FormData para subir imágenes.
  */
-export const createProduct = async (productData, token) => {
-  const config = {
-    headers: {
-      'x-auth-token': token,
-    },
-  };
-  try {
-    const response = await axios.post(API_URL, productData, config);
-    return response.data;
-  } catch (error) {
-    console.error('Error al crear el producto:', error);
-    throw error;
-  }
+export const createProduct = (productData) => {
+  // No necesitas pasar el token. El apiClient lo añade solo.
+  // La cabecera 'Content-Type' para FormData se establece automáticamente.
+  return apiClient.post('/productos', productData);
 };
 
 /**
  * Actualiza un producto existente.
  * @param {string} productId - El ID del producto a actualizar.
- * @param {object} productData - Los datos actualizados del producto.
- * @param {string} token - El token de autenticación.
+ * @param {FormData} productData - Los datos actualizados.
  */
-export const updateProduct = async (productId, productData, token) => {
-  const config = {
-    headers: {
-      'x-auth-token': token,
-    },
-  };
-  try {
-    const response = await axios.put(`${API_URL}/${productId}`, productData, config);
-    return response.data;
-  } catch (error) {
-    console.error('Error al actualizar el producto:', error);
-    throw error;
-  }
+export const updateProduct = (productId, productData) => {
+  // Tampoco necesitas el token aquí.
+  return apiClient.put(`/productos/${productId}`, productData);
 };
 
 /**
  * Elimina un producto.
  * @param {string} productId - El ID del producto a eliminar.
- * @param {string} token - El token de autenticación.
  */
-export const deleteProduct = async (productId, token) => {
-  const config = {
-    headers: {
-      'x-auth-token': token,
-    },
-  };
-  try {
-    const response = await axios.delete(`${API_URL}/${productId}`, config);
-    return response.data;
-  } catch (error) {
-    console.error('Error al eliminar el producto:', error);
-    throw error;
-  }
+export const deleteProduct = (productId) => {
+  // Ni aquí. El interceptor se encarga de la seguridad.
+  return apiClient.delete(`/productos/${productId}`);
 };

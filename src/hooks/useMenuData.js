@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react';
-import axios from 'axios';
+// src/hooks/useMenuData.jsx
 
-// Este hook se encargará de toda la lógica de fetching para el menú
+import { useState, useEffect } from 'react';
+// 1. Importa apiClient en lugar de axios
+import apiClient from '../services/api';
+
 export function useMenuData() {
   const [productos, setProductos] = useState([]);
   const [combos, setCombos] = useState([]);
@@ -13,9 +15,10 @@ export function useMenuData() {
       setLoading(true);
       setError('');
       try {
+        // 2. Usa apiClient y quita el prefijo '/api' (ya está en la baseURL)
         const [productosRes, combosRes] = await Promise.all([
-          axios.get('/api/productos'),
-          axios.get('/api/combos/activas') 
+          apiClient.get('/productos'),
+          apiClient.get('/combos/activas') 
         ]);
         setProductos(productosRes.data);
         setCombos(combosRes.data);
@@ -27,8 +30,7 @@ export function useMenuData() {
       }
     };
     fetchMenuData();
-  }, []); // Se ejecuta solo una vez
+  }, []);
 
-  // El hook devuelve los datos y los estados
   return { productos, combos, loading, error };
 }
