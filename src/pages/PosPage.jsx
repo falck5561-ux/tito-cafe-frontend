@@ -13,10 +13,9 @@ if (token) {
 // ---------------------------------------------
 
 function PosPage() {
-  const [activeTab, setActiveTab] = useState('pedidos');
+  const [activeTab, setActiveTab] = useState('pos');
   const [productos, setProductos] = useState([]);
   const [ventaActual, setVentaActual] = useState([]);
-  const [totalVenta, setTotalVenta] = useState(0);
   const [pedidos, setPedidos] = useState([]);
   const [ventasDelDia, setVentasDelDia] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -25,13 +24,25 @@ function PosPage() {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedOrderDetails, setSelectedOrderDetails] = useState(null);
 
+  // --- ESTADOS NUEVOS PARA DESCUENTOS ---
+  const [recompensas, setRecompensas] = useState([]);
+  const [recompensaAplicada, setRecompensaAplicada] = useState(null);
+  
+  // --- ESTADOS PARA CÁLCULO DE TOTALES ---
+  const [subtotal, setSubtotal] = useState(0);
+  const [montoDescuento, setMontoDescuento] = useState(0);
+  const [totalVenta, setTotalVenta] = useState(0);
+
   const fetchData = async () => {
     setLoading(true);
     setError('');
     try {
       if (activeTab === 'pos') {
-        const res = await axios.get('/api/productos');
-        setProductos(res.data);
+        const resProductos = await axios.get('/api/productos');
+        setProductos(resProductos.data);
+        // Cargar recompensas disponibles para el POS
+        const resRecompensas = await axios.get('/api/recompensas/disponibles');
+        setRecompensas(resRecompensas.data);
       } else if (activeTab === 'pedidos') {
         const res = await axios.get('/api/pedidos');
         setPedidos(res.data);
@@ -41,21 +52,28 @@ function PosPage() {
       }
     } catch (err) {
       setError(`No se pudieron cargar los datos.`);
+      toast.error('Error al cargar datos. Revisa la consola.');
       console.error(err);
     } finally { setLoading(false); }
   };
 
-  useEffect(() => { fetchData(); }, [activeTab]);
-
-  // --- LÓGICA DE CARRITO MEJORADA ---
-
-  // CORRECCIÓN 1: El useEffect ahora multiplica por la cantidad
   useEffect(() => {
-    const nuevoTotal = ventaActual.reduce((sum, item) => sum + (item.cantidad * Number(item.precio)), 0);
-    setTotalVenta(nuevoTotal);
-  }, [ventaActual]);
+    fetchData();
+  }, [activeTab]);
 
-  // CORRECCIÓN 2: La función ahora agrupa los productos
+  // --- LÓGICA DE CÁLCULO DE TOTALES (CON DESCUENTOS) ---
+  useEffect(() => {
+    const nuevoSubtotal = ventaActual.reduce((sum, item) => sum + (item.cantidad * Number(item.precio)), 0);
+    setSubtotal(nuevoSubtotal);
+
+    let descuento = 0;
+    if (recompensaAplicada && recompensaAplicada.porcentaje_descuento) {
+      descuento = nuevoSubtotal * (recompensaAplicada.porcentaje_descuento / 100);
+    }
+    setMontoDescuento(descuento);
+    setTotalVenta(nuevoSubtotal - descuento);
+  }, [ventaActual, recompensaAplicada]);
+
   const agregarProductoAVenta = (producto) => {
     setVentaActual(prevVenta => {
       const productoExistente = prevVenta.find(item => item.id === producto.id);
@@ -68,13 +86,8 @@ function PosPage() {
     });
   };
 
-  // NUEVO: Funciones para manejar la cantidad y eliminar productos
   const incrementarCantidad = (productoId) => {
-    setVentaActual(prev =>
-      prev.map(item =>
-        item.id === productoId ? { ...item, cantidad: item.cantidad + 1 } : item
-      )
-    );
+    setVentaActual(prev => prev.map(item => item.id === productoId ? { ...item, cantidad: item.cantidad + 1 } : item));
   };
 
   const decrementarCantidad = (productoId) => {
@@ -83,9 +96,7 @@ function PosPage() {
       if (producto.cantidad === 1) {
         return prev.filter(item => item.id !== productoId);
       }
-      return prev.map(item =>
-        item.id === productoId ? { ...item, cantidad: item.cantidad - 1 } : item
-      );
+      return prev.map(item => item.id === productoId ? { ...item, cantidad: item.cantidad - 1 } : item);
     });
   };
 
@@ -93,21 +104,31 @@ function PosPage() {
     setVentaActual(prev => prev.filter(item => item.id !== productoId));
   };
   
-  const limpiarVenta = () => setVentaActual([]);
-  
-  // --- FIN DE LÓGICA DE CARRITO MEJORADA ---
+  const limpiarVenta = () => {
+    setVentaActual([]);
+    setRecompensaAplicada(null);
+  };
   
   const handleCobrar = async () => {
     if (ventaActual.length === 0) return toast.error('El ticket está vacío.');
-    // Se ajustan los productos para enviar la cantidad correcta
+    
     const productosParaEnviar = ventaActual.map(({ id, cantidad, precio, nombre }) => ({ id, cantidad, precio: Number(precio), nombre }));
-    const ventaData = { total: totalVenta, metodo_pago: 'Efectivo', productos: productosParaEnviar };
+    
+    const ventaData = {
+      total: totalVenta,
+      subtotal: subtotal,
+      metodo_pago: 'Efectivo',
+      productos: productosParaEnviar,
+      recompensaId: recompensaAplicada ? recompensaAplicada.id : null,
+      monto_descuento: montoDescuento,
+    };
+
     try {
       await axios.post('/api/ventas', ventaData);
       toast.success('¡Venta registrada con éxito!');
       limpiarVenta();
       if (activeTab === 'historial') {
-        fetchData();
+        fetchData(); // Recargar el historial si estamos en esa pestaña
       }
     } catch (err) { 
       toast.error('Error al registrar la venta.');
@@ -115,6 +136,16 @@ function PosPage() {
     }
   };
 
+  const handleRecompensaChange = (e) => {
+    const recompensaId = e.target.value;
+    if (!recompensaId) {
+      setRecompensaAplicada(null);
+    } else {
+      const recompensaSeleccionada = recompensas.find(r => r.id === parseInt(recompensaId));
+      setRecompensaAplicada(recompensaSeleccionada);
+    }
+  };
+  
   const handleUpdateStatus = async (pedidoId, nuevoEstado) => {
     try {
       await axios.put(`/api/pedidos/${pedidoId}/estado`, { estado: nuevoEstado });
@@ -198,7 +229,6 @@ function PosPage() {
               <div className="card-body">
                 <h3 className="card-title text-center">Ticket de Venta</h3>
                 <hr />
-                {/* --- JSX DEL TICKET MEJORADO --- */}
                 <ul className="list-group list-group-flush">
                   {ventaActual.length === 0 && <li className="list-group-item text-center text-muted">El ticket está vacío</li>}
                   {ventaActual.map((item) => (
@@ -216,9 +246,44 @@ function PosPage() {
                     </li>
                   ))}
                 </ul>
-                {/* --- FIN DEL JSX MEJORADO --- */}
                 <hr />
-                <h4>Total: ${totalVenta.toFixed(2)}</h4>
+                
+                {/* --- SECCIÓN NUEVA DE DESCUENTOS --- */}
+                <div className="mb-3">
+                    <label htmlFor="recompensa-select" className="form-label">Aplicar Descuento</label>
+                    <select 
+                        id="recompensa-select" 
+                        className="form-select"
+                        value={recompensaAplicada ? recompensaAplicada.id : ""}
+                        onChange={handleRecompensaChange}
+                        disabled={ventaActual.length === 0}
+                    >
+                        <option value="">Sin descuento</option>
+                        {recompensas.map(rec => (
+                            <option key={rec.id} value={rec.id}>
+                                {rec.descripcion} ({rec.porcentaje_descuento}%)
+                            </option>
+                        ))}
+                    </select>
+                </div>
+                
+                {/* --- CÁLCULOS DE TOTALES --- */}
+                <p className="d-flex justify-content-between">
+                    <span>Subtotal:</span>
+                    <span>${subtotal.toFixed(2)}</span>
+                </p>
+                {recompensaAplicada && (
+                    <p className="d-flex justify-content-between text-danger">
+                        <span>Descuento ({recompensaAplicada.porcentaje_descuento}%):</span>
+                        <span>-${montoDescuento.toFixed(2)}</span>
+                    </p>
+                )}
+                <hr/>
+                <h4 className="d-flex justify-content-between">
+                    <span>Total:</span>
+                    <span>${totalVenta.toFixed(2)}</span>
+                </h4>
+                
                 <div className="d-grid gap-2 mt-3">
                   <button className="btn btn-success" onClick={handleCobrar}>Cobrar</button>
                   <button className="btn btn-danger" onClick={limpiarVenta}>Cancelar</button>
