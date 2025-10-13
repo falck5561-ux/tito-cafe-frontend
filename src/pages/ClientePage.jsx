@@ -1,21 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 import CheckoutForm from '../components/CheckoutForm';
 import MapSelector from '../components/MapSelector';
-
-// --- CONFIGURACIÓN GLOBAL DE AXIOS ---
-// Corregido para evitar errores de compilación
-axios.defaults.baseURL = 'https://tito-cafe-backend.onrender.com';
-// ------------------------------------
+// Se importa el apiClient centralizado
+import apiClient from '../services/api';
 
 const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY || "pk_test_51SFnF0ROWvZ0m785J38J20subms9zeVw92xxsdct2OVzHbIXF8Kueajcp4jxJblwBhozD1xDljC2UG1qDNOGOxTX00UiDpoLCI");
 
-
-// --- ESTILOS CSS PARA LOS CUPONES DE RECOMPENSAS ---
 const styles = {
   recompensasContainer: {
     padding: '1rem 0',
@@ -67,7 +61,6 @@ const styles = {
   },
 };
 
-
 function ClientePage() {
   const [activeTab, setActiveTab] = useState('crear');
   const [ordenExpandida, setOrdenExpandida] = useState(null);
@@ -88,7 +81,6 @@ function ClientePage() {
   const [direccionGuardada, setDireccionGuardada] = useState(null);
   const [guardarDireccion, setGuardarDireccion] = useState(false);
   const [referencia, setReferencia] = useState('');
-
   const [showCartModal, setShowCartModal] = useState(false);
   const [modalView, setModalView] = useState('cart');
 
@@ -99,11 +91,9 @@ function ClientePage() {
       setLoading(true);
       setError('');
       try {
-        const token = localStorage.getItem('token');
-        const config = { headers: { Authorization: `Bearer ${token}` } };
         const [productosRes, direccionRes] = await Promise.all([
-          axios.get('/api/productos', config),
-          axios.get('/api/usuarios/mi-direccion', config)
+          apiClient.get('/productos'),
+          apiClient.get('/usuarios/mi-direccion')
         ]);
         setProductos(productosRes.data);
         if (direccionRes.data) {
@@ -120,18 +110,16 @@ function ClientePage() {
 
   useEffect(() => {
     const fetchTabData = async () => {
-      const token = localStorage.getItem('token');
-      if (activeTab === 'crear' || !token) return;
+      if (activeTab === 'crear') return;
       
-      const config = { headers: { Authorization: `Bearer ${token}` } };
       setLoading(true);
       setError('');
       try {
         if (activeTab === 'ver') {
-          const res = await axios.get('/api/pedidos/mis-pedidos', config);
+          const res = await apiClient.get('/pedidos/mis-pedidos');
           setMisPedidos(res.data);
         } else if (activeTab === 'recompensas') {
-          const res = await axios.get('/api/recompensas/mis-recompensas', config);
+          const res = await apiClient.get('/recompensas/mis-recompensas');
           setMisRecompensas(res.data);
         }
       } catch (err) {
@@ -160,7 +148,6 @@ function ClientePage() {
     if (producto.en_oferta && producto.descuento_porcentaje > 0) {
       precioFinal = precioFinal * (1 - producto.descuento_porcentaje / 100);
     }
-
     setPedidoActual(prev => {
       const existe = prev.find(item => item.id === producto.id);
       if (existe) {
@@ -185,7 +172,22 @@ function ClientePage() {
     setShowCartModal(false);
   };
 
-  const handleLocationSelect = async (location) => { setDireccion(location); setCalculandoEnvio(true); setCostoEnvio(0); try { const res = await axios.post('/api/pedidos/calculate-delivery-cost', { lat: location.lat, lng: location.lng }); setCostoEnvio(res.data.deliveryCost); toast.success(`Costo de envío: $${res.data.deliveryCost.toFixed(2)}`); } catch (err) { toast.error(err.response?.data?.msg || 'No se pudo calcular el costo de envío.'); setDireccion(null); } finally { setCalculandoEnvio(false); } };
+  const handleLocationSelect = async (location) => {
+    setDireccion(location);
+    setCalculandoEnvio(true);
+    setCostoEnvio(0);
+    try {
+      const res = await apiClient.post('/pedidos/calcular-envio', { lat: location.lat, lng: location.lng });
+      setCostoEnvio(res.data.deliveryCost);
+      toast.success(`Costo de envío: $${res.data.deliveryCost.toFixed(2)}`);
+    } catch (err) {
+      toast.error(err.response?.data?.msg || 'No se pudo calcular el costo de envío.');
+      setDireccion(null);
+    } finally {
+      setCalculandoEnvio(false);
+    }
+  };
+
   const usarDireccionGuardada = () => { if (direccionGuardada) { handleLocationSelect(direccionGuardada); if (direccionGuardada.referencia) { setReferencia(direccionGuardada.referencia); } toast.success('Usando dirección guardada.'); } };
   
   const handleProcederAlPago = async () => {
@@ -194,8 +196,7 @@ function ClientePage() {
     if (calculandoEnvio) { return toast.error('Espera a que termine el cálculo del envío.'); }
     setPaymentLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const res = await axios.post('/api/payments/create-payment-intent', { amount: totalFinal }, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await apiClient.post('/payments/create-payment-intent', { amount: totalFinal });
       
       setShowCartModal(false);
       setModalView('cart');
@@ -218,12 +219,10 @@ function ClientePage() {
   };
 
   const handleSuccessfulPayment = async () => {
-    const token = localStorage.getItem('token');
-    const config = { headers: { Authorization: `Bearer ${token}` } };
     if (guardarDireccion && direccion) {
       try {
         const datosParaGuardar = { ...direccion, referencia };
-        await axios.put('/api/usuarios/mi-direccion', datosParaGuardar, config);
+        await apiClient.put('/usuarios/mi-direccion', datosParaGuardar);
         toast.success('Dirección y referencia guardadas.');
         setDireccionGuardada(datosParaGuardar);
       } catch (err) {
@@ -233,7 +232,7 @@ function ClientePage() {
     const productosParaEnviar = pedidoActual.map(({ id, cantidad, precio, nombre }) => ({ id, cantidad, precio: Number(precio), nombre }));
     const pedidoData = { total: totalFinal, productos: productosParaEnviar, tipo_orden: tipoOrden, costo_envio: costoEnvio, direccion_entrega: tipoOrden === 'domicilio' ? direccion?.description : null, latitude: tipoOrden === 'domicilio' ? direccion?.lat : null, longitude: tipoOrden === 'domicilio' ? direccion?.lng : null, referencia: tipoOrden === 'domicilio' ? referencia : null };
     try {
-      const res = await axios.post('/api/pedidos', pedidoData, config);
+      const res = await apiClient.post('/pedidos', pedidoData);
       if (res.data.recompensaGenerada) { toast.success('¡Felicidades! Ganaste un premio.', { duration: 6000, icon: '🎁' }); } else { toast.success('¡Pedido realizado y pagado con éxito!'); }
       limpiarPedido();
       setShowPaymentModal(false);
@@ -385,7 +384,6 @@ function ClientePage() {
         </motion.div>
       )}
 
-      {/* --- SECCIÓN DE RECOMPENSAS CON NUEVO DISEÑO --- */}
       {!loading && activeTab === 'recompensas' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <h2 className="mb-4">Mis Recompensas</h2>
