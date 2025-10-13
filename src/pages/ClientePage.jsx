@@ -12,7 +12,7 @@ import MapSelector from '../components/MapSelector';
 axios.defaults.baseURL = 'https://tito-cafe-backend.onrender.com';
 // ------------------------------------
 
-const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY || "TU_LLAVE_PUBLICA_DE_STRIPE");
+const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY || "pk_test_51SFnF0ROWvZ0m785J38J20subms9zeVw92xxsdct2OVzHbIXF8Kueajcp4jxJblwBhozD1xDljC2UG1qDNOGOxTX00UiDpoLCI");
 
 
 // --- ESTILOS CSS PARA LOS CUPONES DE RECOMPENSAS ---
