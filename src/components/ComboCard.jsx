@@ -1,17 +1,25 @@
-// Archivo: src/components/ComboCard.jsx
+// Archivo: src/components/ComboCard.jsx (Versión Corregida y Robusta)
 
 import React from 'react';
 import { motion } from 'framer-motion';
 
-// Asumimos que cada 'combo' tiene: id, nombre, precio_original, precio_final, imagen_url
 function ComboCard({ combo }) {
-  // Calculamos el porcentaje de descuento dinámicamente
-  const precioOriginal = parseFloat(combo.precio_original);
-  const precioFinal = parseFloat(combo.precio_final);
-  const descuento = ((precioOriginal - precioFinal) / precioOriginal) * 100;
-  const tieneDescuento = descuento > 0;
+  // --- CORRECCIÓN CLAVE ---
+  // Usamos el operador '|| 0' para asegurarnos de que si los precios no vienen, se use 0 por defecto.
+  // Esto evita el error NaN (Not a Number).
+  const precioOriginal = parseFloat(combo.precio_original || 0);
+  const precioFinal = parseFloat(combo.precio_final || precioOriginal); // Si no hay precio final, usa el original
 
-  // Animación para cada tarjeta
+  const tieneDescuento = precioOriginal > precioFinal;
+  let descuento = 0;
+  if (tieneDescuento && precioOriginal > 0) {
+    descuento = ((precioOriginal - precioFinal) / precioOriginal) * 100;
+  }
+
+  // --- CORRECCIÓN DE IMAGEN ---
+  // Si no hay imagen_url, usamos un placeholder de un servicio en línea confiable.
+  const imageUrl = combo.imagen_url || `https://placehold.co/400x300/2a2a2a/f5f5f5?text=${combo.nombre}`;
+
   const cardVariants = {
     hidden: { y: 20, opacity: 0 },
     visible: { y: 0, opacity: 1 }
@@ -19,42 +27,39 @@ function ComboCard({ combo }) {
 
   return (
     <motion.div 
-      className="col" // Bootstrap se encarga del tamaño de la columna
+      className="col"
       variants={cardVariants}
       initial="hidden"
       animate="visible"
       transition={{ duration: 0.4 }}
     >
-      {/* Aplicamos las clases CSS que definimos en el mensaje anterior */}
       <div className="product-card">
-
         <div className="card-image-container">
-          <img src={combo.imagen_url || 'https://via.placeholder.com/300'} alt={combo.nombre} />
+          {/* Usamos la URL de imagen segura que definimos arriba */}
+          <img src={imageUrl} alt={combo.nombre} />
           
-          {/* Mostramos la insignia solo si hay descuento */}
           {tieneDescuento && (
             <span className="discount-badge">-{descuento.toFixed(0)}%</span>
           )}
         </div>
 
         <div className="card-body">
-          <h3 className="card-title">{combo.nombre}</h3>
+          <h3 className="card-title">{combo.nombre || 'Nombre no disponible'}</h3>
           
           <div className="card-price">
-            {/* Mostramos precios diferentes si hay descuento */}
             {tieneDescuento ? (
               <>
                 <span className="original-price">${precioOriginal.toFixed(2)}</span>
                 <span className="discounted-price">${precioFinal.toFixed(2)}</span>
               </>
             ) : (
-              <span className="discounted-price">${precioOriginal.toFixed(2)}</span>
+              // Si no hay descuento, solo mostramos el precio final.
+              <span className="discounted-price">${precioFinal.toFixed(2)}</span>
             )}
           </div>
           
           <button className="btn-buy">¡Lo Quiero!</button>
         </div>
-
       </div>
     </motion.div>
   );
