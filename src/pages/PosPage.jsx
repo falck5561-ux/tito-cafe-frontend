@@ -2,20 +2,49 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
-import DetallesPedidoModal from '../components/DetallesPedidoModal';
 
 // --- CONFIGURACIÓN DE AXIOS ---
-axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'https://tito-cafe-backend.onrender.com';
+// Se corrigió el error de 'import.meta' usando la URL directamente.
+axios.defaults.baseURL = 'https://tito-cafe-backend.onrender.com';
 const token = localStorage.getItem('token');
 if (token) {
   axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 }
 // ---------------------------------------------
 
+// --- COMPONENTE MODAL INTEGRADO PARA EVITAR ERROR DE IMPORTACIÓN ---
+// Este componente se usa cuando haces clic en "Ver Pedido" en la pestaña de Pedidos en Línea.
+const DetallesPedidoModal = ({ pedido, onClose }) => {
+  if (!pedido) return null;
+
+  return (
+    <div style={{
+      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.7)', display: 'flex',
+      alignItems: 'center', justifyContent: 'center', zIndex: 1050
+    }} onClick={onClose}>
+      <div style={{
+        backgroundColor: '#2c2c2c', color: 'white', padding: '2rem',
+        borderRadius: '0.5rem', width: '90%', maxWidth: '500px'
+      }} onClick={e => e.stopPropagation()}>
+        <h3>Detalles del Pedido #{pedido.id}</h3>
+        <hr />
+        <p><strong>Cliente:</strong> {pedido.nombre_cliente}</p>
+        <p><strong>Fecha:</strong> {new Date(pedido.fecha).toLocaleString()}</p>
+        <p><strong>Total:</strong> ${Number(pedido.total).toFixed(2)}</p>
+        <p><strong>Tipo:</strong> {pedido.tipo_orden}</p>
+        <p><strong>Estado:</strong> {pedido.estado}</p>
+        <button className="btn btn-danger mt-3 w-100" onClick={onClose}>Cerrar</button>
+      </div>
+    </div>
+  );
+};
+
 function PosPage() {
   const [activeTab, setActiveTab] = useState('pos');
   const [productos, setProductos] = useState([]);
   const [ventaActual, setVentaActual] = useState([]);
+  const [totalVenta, setTotalVenta] = useState(0);
   const [pedidos, setPedidos] = useState([]);
   const [ventasDelDia, setVentasDelDia] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -24,25 +53,13 @@ function PosPage() {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedOrderDetails, setSelectedOrderDetails] = useState(null);
 
-  // --- ESTADOS NUEVOS PARA DESCUENTOS ---
-  const [recompensas, setRecompensas] = useState([]);
-  const [recompensaAplicada, setRecompensaAplicada] = useState(null);
-  
-  // --- ESTADOS PARA CÁLCULO DE TOTALES ---
-  const [subtotal, setSubtotal] = useState(0);
-  const [montoDescuento, setMontoDescuento] = useState(0);
-  const [totalVenta, setTotalVenta] = useState(0);
-
   const fetchData = async () => {
     setLoading(true);
     setError('');
     try {
       if (activeTab === 'pos') {
-        const resProductos = await axios.get('/api/productos');
-        setProductos(resProductos.data);
-        // Cargar recompensas disponibles para el POS
-        const resRecompensas = await axios.get('/api/recompensas/disponibles');
-        setRecompensas(resRecompensas.data);
+        const res = await axios.get('/api/productos');
+        setProductos(res.data);
       } else if (activeTab === 'pedidos') {
         const res = await axios.get('/api/pedidos');
         setPedidos(res.data);
@@ -52,42 +69,47 @@ function PosPage() {
       }
     } catch (err) {
       setError(`No se pudieron cargar los datos.`);
-      toast.error('Error al cargar datos. Revisa la consola.');
       console.error(err);
     } finally { setLoading(false); }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, [activeTab]);
+  useEffect(() => { fetchData(); }, [activeTab]);
 
-  // --- LÓGICA DE CÁLCULO DE TOTALES (CON DESCUENTOS) ---
   useEffect(() => {
-    const nuevoSubtotal = ventaActual.reduce((sum, item) => sum + (item.cantidad * Number(item.precio)), 0);
-    setSubtotal(nuevoSubtotal);
-
-    let descuento = 0;
-    if (recompensaAplicada && recompensaAplicada.porcentaje_descuento) {
-      descuento = nuevoSubtotal * (recompensaAplicada.porcentaje_descuento / 100);
-    }
-    setMontoDescuento(descuento);
-    setTotalVenta(nuevoSubtotal - descuento);
-  }, [ventaActual, recompensaAplicada]);
+    const nuevoTotal = ventaActual.reduce((sum, item) => sum + (item.cantidad * Number(item.precioFinal)), 0);
+    setTotalVenta(nuevoTotal);
+  }, [ventaActual]);
 
   const agregarProductoAVenta = (producto) => {
+    let precioFinal = parseFloat(producto.precio);
+    if (producto.oferta_activa && producto.porcentaje_descuento > 0) {
+      const descuento = precioFinal * (producto.porcentaje_descuento / 100);
+      precioFinal -= descuento;
+    }
+    
     setVentaActual(prevVenta => {
       const productoExistente = prevVenta.find(item => item.id === producto.id);
+      
       if (productoExistente) {
         return prevVenta.map(item =>
           item.id === producto.id ? { ...item, cantidad: item.cantidad + 1 } : item
         );
       }
-      return [...prevVenta, { ...producto, cantidad: 1 }];
+      
+      return [...prevVenta, { 
+        ...producto, 
+        cantidad: 1, 
+        precioFinal: precioFinal.toFixed(2)
+      }];
     });
   };
 
   const incrementarCantidad = (productoId) => {
-    setVentaActual(prev => prev.map(item => item.id === productoId ? { ...item, cantidad: item.cantidad + 1 } : item));
+    setVentaActual(prev =>
+      prev.map(item =>
+        item.id === productoId ? { ...item, cantidad: item.cantidad + 1 } : item
+      )
+    );
   };
 
   const decrementarCantidad = (productoId) => {
@@ -96,7 +118,9 @@ function PosPage() {
       if (producto.cantidad === 1) {
         return prev.filter(item => item.id !== productoId);
       }
-      return prev.map(item => item.id === productoId ? { ...item, cantidad: item.cantidad - 1 } : item);
+      return prev.map(item =>
+        item.id === productoId ? { ...item, cantidad: item.cantidad - 1 } : item
+      );
     });
   };
 
@@ -104,23 +128,22 @@ function PosPage() {
     setVentaActual(prev => prev.filter(item => item.id !== productoId));
   };
   
-  const limpiarVenta = () => {
-    setVentaActual([]);
-    setRecompensaAplicada(null);
-  };
+  const limpiarVenta = () => setVentaActual([]);
   
   const handleCobrar = async () => {
     if (ventaActual.length === 0) return toast.error('El ticket está vacío.');
     
-    const productosParaEnviar = ventaActual.map(({ id, cantidad, precio, nombre }) => ({ id, cantidad, precio: Number(precio), nombre }));
+    const productosParaEnviar = ventaActual.map(({ id, cantidad, precioFinal, nombre }) => ({ 
+      id, 
+      cantidad, 
+      precio: Number(precioFinal),
+      nombre 
+    }));
     
-    const ventaData = {
-      total: totalVenta,
-      subtotal: subtotal,
-      metodo_pago: 'Efectivo',
-      productos: productosParaEnviar,
-      recompensaId: recompensaAplicada ? recompensaAplicada.id : null,
-      monto_descuento: montoDescuento,
+    const ventaData = { 
+      total: totalVenta, 
+      metodo_pago: 'Efectivo', 
+      productos: productosParaEnviar 
     };
 
     try {
@@ -128,7 +151,7 @@ function PosPage() {
       toast.success('¡Venta registrada con éxito!');
       limpiarVenta();
       if (activeTab === 'historial') {
-        fetchData(); // Recargar el historial si estamos en esa pestaña
+        fetchData();
       }
     } catch (err) { 
       toast.error('Error al registrar la venta.');
@@ -136,16 +159,6 @@ function PosPage() {
     }
   };
 
-  const handleRecompensaChange = (e) => {
-    const recompensaId = e.target.value;
-    if (!recompensaId) {
-      setRecompensaAplicada(null);
-    } else {
-      const recompensaSeleccionada = recompensas.find(r => r.id === parseInt(recompensaId));
-      setRecompensaAplicada(recompensaSeleccionada);
-    }
-  };
-  
   const handleUpdateStatus = async (pedidoId, nuevoEstado) => {
     try {
       await axios.put(`/api/pedidos/${pedidoId}/estado`, { estado: nuevoEstado });
@@ -212,16 +225,44 @@ function PosPage() {
           <div className="col-md-8">
             <h2>Menú de Productos</h2>
             <div className="row g-3">
-              {productos.map(p => (
-                <div key={p.id} className="col-md-4 col-lg-3">
-                  <motion.div whileHover={{ scale: 1.05 }} className="card h-100 text-center" onClick={() => agregarProductoAVenta(p)} style={{ cursor: 'pointer' }}>
-                    <div className="card-body d-flex flex-column justify-content-center pt-4">
-                      <h5 className="card-title">{p.nombre}</h5>
-                      <p className="card-text">${Number(p.precio).toFixed(2)}</p>
-                    </div>
-                  </motion.div>
-                </div>
-              ))}
+              {productos.map(p => {
+                const tieneOferta = p.oferta_activa && p.porcentaje_descuento > 0;
+                let precioFinal = parseFloat(p.precio);
+                if (tieneOferta) {
+                  precioFinal -= precioFinal * (p.porcentaje_descuento / 100);
+                }
+
+                return (
+                  <div key={p.id} className="col-md-4 col-lg-3">
+                    <motion.div 
+                      whileHover={{ scale: 1.05 }} 
+                      className={`card h-100 text-center ${tieneOferta ? 'border-danger' : ''}`}
+                      onClick={() => agregarProductoAVenta(p)} 
+                      style={{ cursor: 'pointer', position: 'relative' }}
+                    >
+                      {tieneOferta && (
+                        <span 
+                          className="badge bg-danger" 
+                          style={{ position: 'absolute', top: '10px', right: '10px' }}
+                        >
+                          -{p.porcentaje_descuento}%
+                        </span>
+                      )}
+                      <div className="card-body d-flex flex-column justify-content-center pt-4">
+                        <h5 className="card-title">{p.nombre}</h5>
+                        {tieneOferta ? (
+                          <p className="card-text">
+                            <del className="text-muted me-2">${Number(p.precio).toFixed(2)}</del>
+                            <strong>${precioFinal.toFixed(2)}</strong>
+                          </p>
+                        ) : (
+                          <p className="card-text">${Number(p.precio).toFixed(2)}</p>
+                        )}
+                      </div>
+                    </motion.div>
+                  </div>
+                );
+              })}
             </div>
           </div>
           <div className="col-md-4">
@@ -240,50 +281,14 @@ function PosPage() {
                         <button className="btn btn-outline-secondary btn-sm" onClick={() => incrementarCantidad(item.id)}>+</button>
                       </div>
                       <span className="mx-3" style={{ minWidth: '60px', textAlign: 'right' }}>
-                        ${(item.cantidad * Number(item.precio)).toFixed(2)}
+                        ${(item.cantidad * Number(item.precioFinal)).toFixed(2)}
                       </span>
                       <button className="btn btn-outline-danger btn-sm" onClick={() => eliminarProducto(item.id)}>&times;</button>
                     </li>
                   ))}
                 </ul>
                 <hr />
-                
-                {/* --- SECCIÓN NUEVA DE DESCUENTOS --- */}
-                <div className="mb-3">
-                    <label htmlFor="recompensa-select" className="form-label">Aplicar Descuento</label>
-                    <select 
-                        id="recompensa-select" 
-                        className="form-select"
-                        value={recompensaAplicada ? recompensaAplicada.id : ""}
-                        onChange={handleRecompensaChange}
-                        disabled={ventaActual.length === 0}
-                    >
-                        <option value="">Sin descuento</option>
-                        {recompensas.map(rec => (
-                            <option key={rec.id} value={rec.id}>
-                                {rec.descripcion} ({rec.porcentaje_descuento}%)
-                            </option>
-                        ))}
-                    </select>
-                </div>
-                
-                {/* --- CÁLCULOS DE TOTALES --- */}
-                <p className="d-flex justify-content-between">
-                    <span>Subtotal:</span>
-                    <span>${subtotal.toFixed(2)}</span>
-                </p>
-                {recompensaAplicada && (
-                    <p className="d-flex justify-content-between text-danger">
-                        <span>Descuento ({recompensaAplicada.porcentaje_descuento}%):</span>
-                        <span>-${montoDescuento.toFixed(2)}</span>
-                    </p>
-                )}
-                <hr/>
-                <h4 className="d-flex justify-content-between">
-                    <span>Total:</span>
-                    <span>${totalVenta.toFixed(2)}</span>
-                </h4>
-                
+                <h4>Total: ${totalVenta.toFixed(2)}</h4>
                 <div className="d-grid gap-2 mt-3">
                   <button className="btn btn-success" onClick={handleCobrar}>Cobrar</button>
                   <button className="btn btn-danger" onClick={limpiarVenta}>Cancelar</button>
@@ -339,3 +344,4 @@ function PosPage() {
 }
 
 export default PosPage;
+
