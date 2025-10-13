@@ -8,10 +8,65 @@ import CheckoutForm from '../components/CheckoutForm';
 import MapSelector from '../components/MapSelector';
 
 // --- CONFIGURACIÓN GLOBAL DE AXIOS ---
-axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'https://tito-cafe-backend.onrender.com';
+// Corregido para evitar errores de compilación
+axios.defaults.baseURL = 'https://tito-cafe-backend.onrender.com';
 // ------------------------------------
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
+const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY || "TU_LLAVE_PUBLICA_DE_STRIPE");
+
+
+// --- ESTILOS CSS PARA LOS CUPONES DE RECOMPENSAS ---
+const styles = {
+  recompensasContainer: {
+    padding: '1rem 0',
+  },
+  noRecompensas: {
+    backgroundColor: '#2c2c2c',
+    color: '#a0a0a0',
+    padding: '2rem',
+    borderRadius: '8px',
+    textAlign: 'center',
+    border: '1px dashed #444',
+  },
+  cupon: {
+    backgroundColor: '#2a9d8f',
+    color: 'white',
+    borderRadius: '15px',
+    padding: '1.5rem 2rem',
+    display: 'flex',
+    alignItems: 'center',
+    boxShadow: '0 10px 20px rgba(0,0,0,0.2)',
+    borderLeft: '10px dashed #264653',
+    position: 'relative',
+    marginBottom: '1rem'
+  },
+  cuponIcon: {
+    fontSize: '3.5rem',
+    marginRight: '2rem',
+  },
+  cuponBody: {
+    flexGrow: 1,
+  },
+  cuponTitle: {
+    margin: '0',
+    fontSize: '1.5rem',
+    fontWeight: 'bold',
+  },
+  cuponDescription: {
+    margin: '0.25rem 0 0',
+    fontSize: '1rem',
+    opacity: 0.9,
+  },
+  cuponCantidad: {
+    fontSize: '1.2rem',
+    fontWeight: 'bold',
+    backgroundColor: '#e9c46a',
+    color: '#264653',
+    padding: '0.5rem 1rem',
+    borderRadius: '20px',
+  },
+};
+
 
 function ClientePage() {
   const [activeTab, setActiveTab] = useState('crear');
@@ -330,19 +385,28 @@ function ClientePage() {
         </motion.div>
       )}
 
+      {/* --- SECCIÓN DE RECOMPENSAS CON NUEVO DISEÑO --- */}
       {!loading && activeTab === 'recompensas' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          <h2>Mis Recompensas</h2>
-          {misRecompensas?.length === 0 ? (<p className="text-center">Aún no tienes recompensas.</p>) : (
+          <h2 className="mb-4">Mis Recompensas</h2>
+          {misRecompensas?.length === 0 ? (
+            <div style={styles.noRecompensas}>
+              <h3>Aún no tienes recompensas</h3>
+              <p>¡Sigue comprando para ganar bebidas gratis y más sorpresas!</p>
+            </div>
+          ) : (
             <div className="row g-4">
               {misRecompensas?.map(recompensa => (
-                <div key={recompensa.id} className="col-md-6 col-lg-4">
-                  <div className="recompensa-card">
-                    <h5 className="card-title" style={{ fontWeight: 'bold' }}>🎁 ¡Cupón Ganado! 🎁</h5>
-                    <p className="card-text">{recompensa.descripcion}</p><hr/>
-                    <div className="id-cupon"><p className="h3 mb-0">ID del Cupón: {recompensa.id}</p></div>
-                    <p className="card-text mt-2"><small>Muéstrale este ID al empleado para canjear tu premio.</small></p>
-                    <p className="card-text mt-2"><small className="text-muted">Ganado el: {new Date(recompensa.fecha_creacion).toLocaleDateString()}</small></p>
+                <div key={recompensa.id} className="col-12">
+                  <div style={styles.cupon}>
+                    <div style={styles.cuponIcon}>🎁</div>
+                    <div style={styles.cuponBody}>
+                      <h4 style={styles.cuponTitle}>{recompensa.nombre}</h4>
+                      <p style={styles.cuponDescription}>{recompensa.descripcion}</p>
+                    </div>
+                    <div style={styles.cuponCantidad}>
+                      Tienes {recompensa.cantidad}
+                    </div>
                   </div>
                 </div>
               ))}
