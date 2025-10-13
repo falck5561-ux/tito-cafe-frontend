@@ -51,11 +51,12 @@ function PosPage() {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedOrderDetails, setSelectedOrderDetails] = useState(null);
 
-  // --- ESTADOS PARA LA BÚSQUEDA DE RECOMPENSAS ---
+  // --- ESTADOS PARA LA BÚSQUEDA Y APLICACIÓN DE RECOMPENSAS ---
   const [emailCliente, setEmailCliente] = useState('');
-  const [clienteEncontrado, setClienteEncontrado] = useState(null);
-  const [recompensaAplicadaId, setRecompensaAplicadaId] = useState(null);
+  const [clienteEncontrado, setClienteEncontrado] = useState(null); // Guarda info del cliente y sus recompensas
+  const [recompensaAplicadaId, setRecompensaAplicadaId] = useState(null); // ID de la recompensa usada en el ticket actual
 
+  // --- FUNCIÓN PARA CARGAR DATOS DE LAS PESTAÑAS ---
   const fetchData = async () => {
     setLoading(true);
     setError('');
@@ -76,38 +77,46 @@ function PosPage() {
     } finally { setLoading(false); }
   };
 
+  // --- EFECTO PARA RECARGAR DATOS AL CAMBIAR DE PESTAÑA ---
   useEffect(() => { fetchData(); }, [activeTab]);
 
+  // --- EFECTO PARA CALCULAR EL TOTAL DE LA VENTA CUANDO CAMBIA EL TICKET ---
   useEffect(() => {
     const nuevoTotal = ventaActual.reduce((sum, item) => sum + (item.cantidad * Number(item.precioFinal)), 0);
     setTotalVenta(nuevoTotal);
   }, [ventaActual]);
 
+  // --- FUNCIÓN PARA AGREGAR PRODUCTOS AL TICKET ---
   const agregarProductoAVenta = (producto) => {
     let precioFinal = parseFloat(producto.precio);
+    // Calcula el precio final si el producto tiene una oferta activa
     if (producto.oferta_activa && producto.porcentaje_descuento > 0) {
       const descuento = precioFinal * (producto.porcentaje_descuento / 100);
       precioFinal -= descuento;
     }
     
     setVentaActual(prevVenta => {
-      // Modificación para agrupar solo si no es una recompensa
+      // Intenta encontrar el producto en el ticket actual (sin contar los que ya son recompensas)
       const productoExistente = prevVenta.find(item => item.id === producto.id && !item.esRecompensa);
       
       if (productoExistente) {
+        // Si existe y no es una recompensa, incrementa la cantidad
         return prevVenta.map(item =>
           item.id === producto.id && !item.esRecompensa ? { ...item, cantidad: item.cantidad + 1 } : item
         );
       }
       
+      // Si no existe, lo añade con cantidad 1 y su precioFinal calculado
       return [...prevVenta, { 
         ...producto, 
         cantidad: 1, 
-        precioFinal: precioFinal.toFixed(2)
+        precioFinal: precioFinal.toFixed(2),
+        esRecompensa: false // Flag para saber si este item ya es una recompensa
       }];
     });
   };
 
+  // --- FUNCIONES PARA MANEJAR CANTIDAD DE PRODUCTOS EN EL TICKET ---
   const incrementarCantidad = (productoId) => {
     setVentaActual(prev =>
       prev.map(item =>
@@ -120,8 +129,10 @@ function PosPage() {
     setVentaActual(prev => {
       const producto = prev.find(item => item.id === productoId);
       if (producto.cantidad === 1) {
+        // Si la cantidad es 1, lo elimina del ticket
         return prev.filter(item => item.id !== productoId);
       }
+      // Si no es 1, decrementa la cantidad
       return prev.map(item =>
         item.id === productoId ? { ...item, cantidad: item.cantidad - 1 } : item
       );
@@ -132,6 +143,7 @@ function PosPage() {
     setVentaActual(prev => prev.filter(item => item.id !== productoId));
   };
   
+  // --- FUNCIÓN PARA LIMPIAR EL TICKET Y REINICIAR ESTADOS DE RECOMPENSAS ---
   const limpiarVenta = () => {
     setVentaActual([]);
     setEmailCliente('');
@@ -139,21 +151,23 @@ function PosPage() {
     setRecompensaAplicadaId(null);
   };
   
+  // --- FUNCIÓN PARA COBRAR LA VENTA ---
   const handleCobrar = async () => {
     if (ventaActual.length === 0) return toast.error('El ticket está vacío.');
     
     const productosParaEnviar = ventaActual.map(({ id, cantidad, precioFinal, nombre }) => ({ 
       id, 
       cantidad, 
-      precio: Number(precioFinal),
+      precio: Number(precioFinal), // Aseguramos que el precio sea un número
       nombre 
     }));
     
+    // --- DATOS A ENVIAR AL BACKEND AL COBRAR ---
     const ventaData = { 
       total: totalVenta, 
       metodo_pago: 'Efectivo', 
       productos: productosParaEnviar,
-      // Se envían los datos del cliente y la recompensa si se usaron
+      // Incluimos el ID del cliente y de la recompensa si se usó
       clienteId: clienteEncontrado ? clienteEncontrado.cliente.id : null,
       recompensaUsadaId: recompensaAplicadaId
     };
@@ -161,7 +175,8 @@ function PosPage() {
     try {
       await axios.post('/api/ventas', ventaData);
       toast.success('¡Venta registrada con éxito!');
-      limpiarVenta();
+      limpiarVenta(); // Limpia el ticket y estados después de cobrar
+      // Si estamos en la pestaña de historial, la recargamos para ver la nueva venta
       if (activeTab === 'historial') {
         fetchData();
       }
@@ -171,6 +186,7 @@ function PosPage() {
     }
   };
   
+  // --- FUNCIONES PARA GESTIÓN DE PEDIDOS EN LÍNEA (SE MANTIENEN IGUAL) ---
   const handleUpdateStatus = async (pedidoId, nuevoEstado) => {
     try {
       await axios.put(`/api/pedidos/${pedidoId}/estado`, { estado: nuevoEstado });
@@ -189,34 +205,35 @@ function PosPage() {
     setSelectedOrderDetails(null);
   };
   
-  // --- LÓGICA PARA BUSCAR Y APLICAR RECOMPENSAS ---
+  // --- LÓGICA PARA BUSCAR CLIENTE Y SUS RECOMPENSAS ---
   const handleBuscarCliente = async (e) => {
-    e.preventDefault();
+    e.preventDefault(); // Previene el recargo de la página
     if (!emailCliente) return toast.error('Por favor, ingresa un correo.');
     
     try {
       const { data } = await axios.post('/api/recompensas/buscar-por-email', { email: emailCliente });
-      setClienteEncontrado(data);
+      setClienteEncontrado(data); // Guarda la info del cliente y sus recompensas
       if (data.recompensas.length > 0) {
         toast.success(`${data.cliente.nombre} tiene recompensas disponibles.`);
       } else {
         toast.error(`${data.cliente.nombre} no tiene recompensas por el momento.`);
       }
     } catch (err) {
-      setClienteEncontrado(null);
+      setClienteEncontrado(null); // Resetea si no se encuentra o hay error
       toast.error(err.response?.data?.msg || 'Error al buscar cliente.');
     }
   };
 
+  // --- LÓGICA PARA APLICAR UNA RECOMPENSA AL TICKET ---
   const handleAplicarRecompensa = (recompensa) => {
-    const productosElegibles = ['Café Americano', 'Frappe Coffee'];
+    const productosElegibles = ['Café Americano', 'Frappe Coffee']; // Productos que pueden ser gratis
     let itemParaDescontar = null;
     let precioMaximo = -1;
 
-    // Busca el producto elegible más caro que AÚN NO sea una recompensa
+    // Busca el producto elegible más caro en el ticket que AÚN NO haya sido marcado como recompensa
     ventaActual.forEach(item => {
-      if (productosElegibles.includes(item.nombre) && Number(item.precio) > precioMaximo && !item.esRecompensa) {
-        precioMaximo = Number(item.precio);
+      if (productosElegibles.includes(item.nombre) && Number(item.precioFinal) > precioMaximo && !item.esRecompensa) {
+        precioMaximo = Number(item.precioFinal);
         itemParaDescontar = item;
       }
     });
@@ -225,20 +242,23 @@ function PosPage() {
       return toast.error('Añade un Café o Frappe al ticket para aplicar la recompensa.');
     }
     
+    // Modifica el item encontrado para que su precio sea 0 y lo marca como recompensa
     setVentaActual(prevVenta => prevVenta.map(item => 
-      item.id === itemParaDescontar.id 
+      item.id === itemParaDescontar.id && !item.esRecompensa
         ? { ...item, precioFinal: "0.00", nombre: `${item.nombre} (Recompensa)`, esRecompensa: true }
         : item
     ));
 
-    setRecompensaAplicadaId(recompensa.id);
+    setRecompensaAplicadaId(recompensa.id); // Guarda el ID de la recompensa aplicada
     toast.success('¡Recompensa aplicada!');
   };
 
+  // --- RENDERIZADO DEL CONTENIDO DE CADA PESTAÑA ---
   const renderContenido = () => {
     if (loading) return <div className="text-center"><div className="spinner-border" role="status"></div></div>;
     if (error) return <div className="alert alert-danger">{error}</div>;
 
+    // --- Contenido de la pestaña "Pedidos en Línea" ---
     if (activeTab === 'pedidos') {
       return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
@@ -277,10 +297,11 @@ function PosPage() {
       );
     }
 
+    // --- Contenido de la pestaña "Punto de Venta" ---
     if (activeTab === 'pos') {
       return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="row">
-          <div className="col-md-7">
+          <div className="col-md-7"> {/* Columna de Menú de Productos */}
             <h2>Menú de Productos</h2>
             <div className="row g-3">
               {productos.map(p => {
@@ -298,6 +319,7 @@ function PosPage() {
                       onClick={() => agregarProductoAVenta(p)} 
                       style={{ cursor: 'pointer', position: 'relative' }}
                     >
+                      {/* Badge de descuento */}
                       {tieneOferta && (
                         <span className="badge bg-danger" style={{ position: 'absolute', top: '10px', right: '10px' }}>
                           -{p.porcentaje_descuento}%
@@ -305,6 +327,7 @@ function PosPage() {
                       )}
                       <div className="card-body d-flex flex-column justify-content-center pt-4">
                         <h5 className="card-title">{p.nombre}</h5>
+                        {/* Muestra precio original tachado y precio con descuento */}
                         {tieneOferta ? (
                           <p className="card-text">
                             <del className="text-muted me-2">${Number(p.precio).toFixed(2)}</del>
@@ -320,12 +343,12 @@ function PosPage() {
               })}
             </div>
           </div>
-          <div className="col-md-5">
+          <div className="col-md-5"> {/* Columna de Ticket de Venta */}
             <div className="card">
               <div className="card-body">
                 <h3 className="card-title text-center">Ticket de Venta</h3>
                 <hr />
-                {/* --- SECCIÓN PARA BUSCAR RECOMPENSAS --- */}
+                {/* --- SECCIÓN PARA BUSCAR CLIENTE Y RECOMPENSAS --- */}
                 <form onSubmit={handleBuscarCliente} className="d-flex mb-3">
                   <input
                     type="email"
@@ -337,7 +360,7 @@ function PosPage() {
                   <button type="submit" className="btn btn-info">Buscar</button>
                 </form>
 
-                {/* --- SECCIÓN PARA MOSTRAR RECOMPENSAS --- */}
+                {/* --- Muestra información del cliente y sus recompensas --- */}
                 {clienteEncontrado && (
                   <div className="alert alert-secondary">
                     <p className="mb-1"><strong>Cliente:</strong> {clienteEncontrado.cliente.nombre}</p>
@@ -348,7 +371,7 @@ function PosPage() {
                           <button
                             className="btn btn-sm btn-success w-100"
                             onClick={() => handleAplicarRecompensa(rec)}
-                            disabled={recompensaAplicadaId === rec.id}
+                            disabled={recompensaAplicadaId === rec.id} // Deshabilita si ya se aplicó
                           >
                             {recompensaAplicadaId === rec.id ? 'Recompensa Aplicada' : `Aplicar ${rec.nombre}`}
                           </button>
@@ -361,6 +384,7 @@ function PosPage() {
                 )}
                 
                 <hr />
+                {/* --- Lista de productos en el ticket --- */}
                 <ul className="list-group list-group-flush">
                   {ventaActual.length === 0 && <li className="list-group-item text-center text-muted">El ticket está vacío</li>}
                   {ventaActual.map((item) => (
@@ -391,6 +415,7 @@ function PosPage() {
       );
     }
 
+    // --- Contenido de la pestaña "Ventas del Día (POS)" ---
     if (activeTab === 'historial') {
       return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
@@ -416,14 +441,16 @@ function PosPage() {
 
   return (
     <div>
+      {/* --- Navegación de Pestañas Principal --- */}
       <ul className="nav nav-tabs mb-4">
         <li className="nav-item"><button className={`nav-link ${activeTab === 'pedidos' ? 'active' : ''}`} onClick={() => setActiveTab('pedidos')}>Pedidos en Línea</button></li>
         <li className="nav-item"><button className={`nav-link ${activeTab === 'pos' ? 'active' : ''}`} onClick={() => setActiveTab('pos')}>Punto de Venta</button></li>
         <li className="nav-item"><button className={`nav-link ${activeTab === 'historial' ? 'active' : ''}`} onClick={() => setActiveTab('historial')}>Ventas del Día (POS)</button></li>
       </ul>
       
-      {renderContenido()}
+      {renderContenido()} {/* Renderiza el contenido de la pestaña activa */}
       
+      {/* --- Modal para detalles de pedidos (si se usa) --- */}
       {showDetailsModal && (
         <DetallesPedidoModal
           pedido={selectedOrderDetails}
