@@ -1,4 +1,4 @@
-/* Archivo: src/App.css (Versión Final y Corregida) */
+/* Archivo: src/App.css (Versión Limpia y Corregida) */
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Lato:wght@400;700&display=swap');
 
 /* === PALETA DE COLORES Y TEMAS === */
@@ -42,8 +42,13 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
   padding-top: 80px;
 }
-h1, h2, h3, h4, h5, .navbar-brand, .display-4 { font-family: 'Playfair Display', serif; }
-.section-padding { padding-top: 4rem; padding-bottom: 4rem; }
+h1, h2, h3, h4, h5, .navbar-brand, .display-4 {
+  font-family: 'Playfair Display', serif;
+}
+.section-padding {
+  padding-top: 4rem;
+  padding-bottom: 4rem;
+}
 
 /* === NAVBAR ELEGANTE === */
 .navbar {
@@ -51,82 +56,205 @@ h1, h2, h3, h4, h5, .navbar-brand, .display-4 { font-family: 'Playfair Display',
   backdrop-filter: blur(10px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
-.navbar-brand span { font-family: 'Playfair Display', serif; }
-.nav-link {
-  color: #c0c0c0 !important; font-weight: 500; margin: 0 0.5rem;
-  position: relative; transition: color 0.3s;
+.navbar-brand span {
+  font-family: 'Playfair Display', serif;
 }
-.nav-link:hover, .nav-link.active { color: white !important; }
+.nav-link {
+  color: #c0c0c0 !important;
+  font-weight: 500;
+  margin: 0 0.5rem;
+  position: relative;
+  transition: color 0.3s;
+}
+.nav-link:hover, .nav-link.active {
+  color: white !important;
+}
 .nav-link.active::after {
-  content: ''; position: absolute; bottom: 0; left: 0;
-  width: 100%; height: 2px; background-color: var(--cafe-medium);
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: var(--cafe-medium);
 }
 
-/* === PESTAÑAS (TABS) EN MODO CLARO (CORREGIDO) === */
+/* === PESTAÑAS (TABS) EN MODO CLARO === */
 [data-bs-theme="light"] .nav-tabs {
-    border-bottom-color: var(--cafe-light);
+  border-bottom-color: var(--cafe-light);
 }
 [data-bs-theme="light"] .nav-tabs .nav-link {
-    color: var(--cafe-medium) !important; /* Corrige el contraste del texto inactivo */
-    font-weight: 500;
-    border-color: transparent;
-    border-bottom: 3px solid transparent;
+  color: var(--cafe-medium) !important;
+  font-weight: 500;
+  border-color: transparent;
+  border-bottom: 3px solid transparent;
 }
 [data-bs-theme="light"] .nav-tabs .nav-link.active {
-    color: var(--texto-principal) !important; /* Corrige el contraste del texto activo */
-    font-weight: bold;
-    border-color: var(--cafe-light) var(--cafe-light) var(--bs-body-bg);
-    border-bottom-color: var(--cafe-medium);
+  color: var(--texto-principal) !important;
+  font-weight: bold;
+  border-color: var(--cafe-light) var(--cafe-light) var(--bs-body-bg);
+  border-bottom-color: var(--cafe-medium);
 }
 
-/* === ESTILOS PARA TARJETAS === */
+/* === ESTILOS PARA TARJETAS GENERALES === */
 .card {
   background-color: var(--bs-card-bg);
   border: 1px solid var(--bs-border-color);
-  border-radius: 15px; overflow: hidden;
+  border-radius: 15px;
+  overflow: hidden;
   transition: all 0.2s ease-in-out;
 }
-.card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
-.card.en-oferta { border: 2px solid #dc3545; }
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+.card.en-oferta {
+  border: 2px solid #dc3545;
+}
 .discount-badge {
-    position: absolute; top: 10px; right: 10px; z-index: 10;
-    background-color: #dc3545; color: white; padding: 0.35em 0.65em;
-    font-size: .8em; font-weight: 700; border-radius: 50rem;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 10;
+  background-color: #dc3545;
+  color: white;
+  padding: 0.35em 0.65em;
+  font-size: .8em;
+  font-weight: 700;
+  border-radius: 50rem;
 }
 
-/* === TABLA DE ADMIN EN MODO CLARO (CORREGIDO) === */
+/* === TABLA DE ADMIN === */
 .table {
-    --bs-table-bg: var(--bs-card-bg);
-    --bs-table-color: var(--bs-body-color);
-    --bs-table-border-color: var(--bs-border-color);
-    --bs-table-hover-bg: var(--bs-tertiary-bg);
-    --bs-table-striped-bg: var(--bs-tertiary-bg);
+  --bs-table-bg: var(--bs-card-bg);
+  --bs-table-color: var(--bs-body-color);
+  --bs-table-border-color: var(--bs-border-color);
+  --bs-table-hover-bg: var(--bs-tertiary-bg);
+  --bs-table-striped-bg: var(--bs-tertiary-bg);
 }
 [data-bs-theme="light"] .table-dark {
-    --bs-table-bg: var(--bs-card-bg);
-    --bs-table-color: var(--bs-body-color);
-    --bs-table-border-color: var(--bs-border-color);
-    --bs-table-hover-bg: var(--bs-tertiary-bg);
-    --bs-table-striped-bg: var(--bs-tertiary-bg);
+  --bs-table-bg: var(--bs-card-bg);
+  --bs-table-color: var(--bs-body-color);
+  --bs-table-border-color: var(--bs-border-color);
+  --bs-table-hover-bg: var(--bs-tertiary-bg);
+  --bs-table-striped-bg: var(--bs-tertiary-bg);
 }
 .table-dark thead th,
 [data-bs-theme="light"] .table-dark thead th {
-   background-color: var(--cafe-dark);
-   color: var(--crema);
-   border-color: var(--cafe-medium);
+  background-color: var(--cafe-dark);
+  color: var(--crema);
+  border-color: var(--cafe-medium);
 }
 
-/* === UNIFICACIÓN DE COLORES DE BOTONES Y PRECIOS === */
-.btn-primary { background-color: var(--cafe-medium); border-color: var(--cafe-medium); }
-.btn-primary:hover { background-color: var(--cafe-dark); border-color: var(--cafe-dark); }
-.card-text.fw-bold.fs-5, .price-area .discounted-price { color: var(--cafe-dark) !important; }
-[data-bs-theme="dark"] .card-text.fw-bold.fs-5, [data-bs-theme="dark"] .price-area .discounted-price { color: #a5d6a7 !important; }
+/* === BOTONES Y PRECIOS === */
+.btn-primary {
+  background-color: var(--cafe-medium);
+  border-color: var(--cafe-medium);
+}
+.btn-primary:hover {
+  background-color: var(--cafe-dark);
+  border-color: var(--cafe-dark);
+}
+.card-text.fw-bold.fs-5 {
+  color: var(--cafe-dark) !important;
+}
+[data-bs-theme="dark"] .card-text.fw-bold.fs-5 {
+  color: #a5d6a7 !important;
+}
 
 /* === OTROS ESTILOS === */
 .hero-logo {
-  width: 120px; height: 120px; border-radius: 50%; object-fit: cover;
-  background-color: #fff; padding: 10px;
-  border: 4px solid var(--cafe-light); box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  background-color: #fff;
+  padding: 10px;
+  border: 4px solid var(--cafe-light);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
 }
-.pac-container { z-index: 9999 !important; }
-    
+.pac-container {
+  z-index: 9999 !important;
+}
+
+/* === ESTILOS PARA TARJETA DE PRODUCTOS Y COMBOS === */
+.product-card {
+  background-color: var(--bs-card-bg);
+  border: 1px solid var(--bs-border-color);
+  border-radius: 15px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+  transition: all 0.2s ease-in-out;
+  height: 100%;
+}
+
+.product-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.card-image-container {
+  position: relative;
+}
+
+.product-card img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.product-card .card-body {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.product-card .card-title {
+  font-size: 1.75rem;
+  margin-bottom: 0.75rem;
+  color: var(--texto-principal);
+}
+
+.card-price {
+  margin: 1rem 0;
+}
+
+.original-price {
+  text-decoration: line-through;
+  color: var(--texto-secundario);
+  opacity: 0.7;
+  margin-right: 0.75rem;
+  font-size: 1.1rem;
+}
+
+.discounted-price {
+  font-weight: bold;
+  font-size: 1.8rem;
+  color: #28a745;
+}
+
+[data-bs-theme="dark"] .discounted-price {
+  color: #a5d6a7;
+}
+
+.btn-buy {
+  background-color: var(--cafe-medium);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  width: 100%;
+  font-size: 1.1rem;
+  font-weight: bold;
+  margin-top: auto;
+  transition: background-color 0.2s;
+}
+
+.btn-buy:hover {
+  background-color: var(--cafe-dark);
+}
+
