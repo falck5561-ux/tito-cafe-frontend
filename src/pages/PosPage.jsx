@@ -4,7 +4,6 @@ import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 
 // --- CONFIGURACIÓN DE AXIOS ---
-// Se corrigió el error de 'import.meta' usando la URL directamente.
 axios.defaults.baseURL = 'https://tito-cafe-backend.onrender.com';
 const token = localStorage.getItem('token');
 if (token) {
@@ -12,8 +11,7 @@ if (token) {
 }
 // ---------------------------------------------
 
-// --- COMPONENTE MODAL INTEGRADO PARA EVITAR ERROR DE IMPORTACIÓN ---
-// Este componente se usa cuando haces clic en "Ver Pedido" en la pestaña de Pedidos en Línea.
+// --- COMPONENTE MODAL INTEGRADO ---
 const DetallesPedidoModal = ({ pedido, onClose }) => {
   if (!pedido) return null;
 
@@ -53,6 +51,11 @@ function PosPage() {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedOrderDetails, setSelectedOrderDetails] = useState(null);
 
+  // --- ESTADOS PARA LA BÚSQUEDA DE RECOMPENSAS ---
+  const [emailCliente, setEmailCliente] = useState('');
+  const [clienteEncontrado, setClienteEncontrado] = useState(null);
+  const [recompensaAplicadaId, setRecompensaAplicadaId] = useState(null);
+
   const fetchData = async () => {
     setLoading(true);
     setError('');
@@ -88,11 +91,12 @@ function PosPage() {
     }
     
     setVentaActual(prevVenta => {
-      const productoExistente = prevVenta.find(item => item.id === producto.id);
+      // Modificación para agrupar solo si no es una recompensa
+      const productoExistente = prevVenta.find(item => item.id === producto.id && !item.esRecompensa);
       
       if (productoExistente) {
         return prevVenta.map(item =>
-          item.id === producto.id ? { ...item, cantidad: item.cantidad + 1 } : item
+          item.id === producto.id && !item.esRecompensa ? { ...item, cantidad: item.cantidad + 1 } : item
         );
       }
       
@@ -128,7 +132,12 @@ function PosPage() {
     setVentaActual(prev => prev.filter(item => item.id !== productoId));
   };
   
-  const limpiarVenta = () => setVentaActual([]);
+  const limpiarVenta = () => {
+    setVentaActual([]);
+    setEmailCliente('');
+    setClienteEncontrado(null);
+    setRecompensaAplicadaId(null);
+  };
   
   const handleCobrar = async () => {
     if (ventaActual.length === 0) return toast.error('El ticket está vacío.');
@@ -143,7 +152,10 @@ function PosPage() {
     const ventaData = { 
       total: totalVenta, 
       metodo_pago: 'Efectivo', 
-      productos: productosParaEnviar 
+      productos: productosParaEnviar,
+      // Se envían los datos del cliente y la recompensa si se usaron
+      clienteId: clienteEncontrado ? clienteEncontrado.cliente.id : null,
+      recompensaUsadaId: recompensaAplicadaId
     };
 
     try {
@@ -158,7 +170,7 @@ function PosPage() {
       console.error(err); 
     }
   };
-
+  
   const handleUpdateStatus = async (pedidoId, nuevoEstado) => {
     try {
       await axios.put(`/api/pedidos/${pedidoId}/estado`, { estado: nuevoEstado });
@@ -175,6 +187,52 @@ function PosPage() {
   const handleCloseDetailsModal = () => {
     setShowDetailsModal(false);
     setSelectedOrderDetails(null);
+  };
+  
+  // --- LÓGICA PARA BUSCAR Y APLICAR RECOMPENSAS ---
+  const handleBuscarCliente = async (e) => {
+    e.preventDefault();
+    if (!emailCliente) return toast.error('Por favor, ingresa un correo.');
+    
+    try {
+      const { data } = await axios.post('/api/recompensas/buscar-por-email', { email: emailCliente });
+      setClienteEncontrado(data);
+      if (data.recompensas.length > 0) {
+        toast.success(`${data.cliente.nombre} tiene recompensas disponibles.`);
+      } else {
+        toast.error(`${data.cliente.nombre} no tiene recompensas por el momento.`);
+      }
+    } catch (err) {
+      setClienteEncontrado(null);
+      toast.error(err.response?.data?.msg || 'Error al buscar cliente.');
+    }
+  };
+
+  const handleAplicarRecompensa = (recompensa) => {
+    const productosElegibles = ['Café Americano', 'Frappe Coffee'];
+    let itemParaDescontar = null;
+    let precioMaximo = -1;
+
+    // Busca el producto elegible más caro que AÚN NO sea una recompensa
+    ventaActual.forEach(item => {
+      if (productosElegibles.includes(item.nombre) && Number(item.precio) > precioMaximo && !item.esRecompensa) {
+        precioMaximo = Number(item.precio);
+        itemParaDescontar = item;
+      }
+    });
+
+    if (!itemParaDescontar) {
+      return toast.error('Añade un Café o Frappe al ticket para aplicar la recompensa.');
+    }
+    
+    setVentaActual(prevVenta => prevVenta.map(item => 
+      item.id === itemParaDescontar.id 
+        ? { ...item, precioFinal: "0.00", nombre: `${item.nombre} (Recompensa)`, esRecompensa: true }
+        : item
+    ));
+
+    setRecompensaAplicadaId(recompensa.id);
+    toast.success('¡Recompensa aplicada!');
   };
 
   const renderContenido = () => {
@@ -222,7 +280,7 @@ function PosPage() {
     if (activeTab === 'pos') {
       return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="row">
-          <div className="col-md-8">
+          <div className="col-md-7">
             <h2>Menú de Productos</h2>
             <div className="row g-3">
               {productos.map(p => {
@@ -241,10 +299,7 @@ function PosPage() {
                       style={{ cursor: 'pointer', position: 'relative' }}
                     >
                       {tieneOferta && (
-                        <span 
-                          className="badge bg-danger" 
-                          style={{ position: 'absolute', top: '10px', right: '10px' }}
-                        >
+                        <span className="badge bg-danger" style={{ position: 'absolute', top: '10px', right: '10px' }}>
                           -{p.porcentaje_descuento}%
                         </span>
                       )}
@@ -265,10 +320,46 @@ function PosPage() {
               })}
             </div>
           </div>
-          <div className="col-md-4">
+          <div className="col-md-5">
             <div className="card">
               <div className="card-body">
                 <h3 className="card-title text-center">Ticket de Venta</h3>
+                <hr />
+                {/* --- SECCIÓN PARA BUSCAR RECOMPENSAS --- */}
+                <form onSubmit={handleBuscarCliente} className="d-flex mb-3">
+                  <input
+                    type="email"
+                    className="form-control me-2"
+                    placeholder="Buscar cliente por correo..."
+                    value={emailCliente}
+                    onChange={(e) => setEmailCliente(e.target.value)}
+                  />
+                  <button type="submit" className="btn btn-info">Buscar</button>
+                </form>
+
+                {/* --- SECCIÓN PARA MOSTRAR RECOMPENSAS --- */}
+                {clienteEncontrado && (
+                  <div className="alert alert-secondary">
+                    <p className="mb-1"><strong>Cliente:</strong> {clienteEncontrado.cliente.nombre}</p>
+                    {clienteEncontrado.recompensas.length > 0 ? (
+                      clienteEncontrado.recompensas.map(rec => (
+                        <div key={rec.id}>
+                          <p className="mb-1">{rec.descripcion}</p>
+                          <button
+                            className="btn btn-sm btn-success w-100"
+                            onClick={() => handleAplicarRecompensa(rec)}
+                            disabled={recompensaAplicadaId === rec.id}
+                          >
+                            {recompensaAplicadaId === rec.id ? 'Recompensa Aplicada' : `Aplicar ${rec.nombre}`}
+                          </button>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="mb-0">No hay recompensas disponibles.</p>
+                    )}
+                  </div>
+                )}
+                
                 <hr />
                 <ul className="list-group list-group-flush">
                   {ventaActual.length === 0 && <li className="list-group-item text-center text-muted">El ticket está vacío</li>}
