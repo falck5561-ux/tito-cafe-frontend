@@ -74,6 +74,7 @@ function ClientePage() {
   const [referencia, setReferencia] = useState('');
   const [showCartModal, setShowCartModal] = useState(false);
   const [modalView, setModalView] = useState('cart');
+  const [datosParaCheckout, setDatosParaCheckout] = useState(null);
 
   const totalFinal = subtotal + costoEnvio;
 
@@ -194,25 +195,40 @@ function ClientePage() {
 
   const usarDireccionGuardada = () => { if (direccionGuardada) { handleLocationSelect(direccionGuardada); if (direccionGuardada.referencia) { setReferencia(direccionGuardada.referencia); } toast.success('Usando dirección guardada.'); } };
   
-  const handleProcederAlPago = async () => {
-    if (totalFinal <= 0) return;
-    if (tipoOrden === 'domicilio' && !direccion) { return toast.error('Por favor, selecciona o escribe tu ubicación.'); }
-    if (calculandoEnvio) { return toast.error('Espera a que termine el cálculo del envío.'); }
-    setPaymentLoading(true);
-    try {
-      const res = await apiClient.post('/payments/create-payment-intent', { amount: totalFinal });
-      
-      setShowCartModal(false);
-      setModalView('cart');
+const handleProcederAlPago = async () => {
+    if (totalFinal <= 0) return;
+    if (tipoOrden === 'domicilio' && !direccion) { return toast.error('Por favor, selecciona o escribe tu ubicación.'); }
+    if (calculandoEnvio) { return toast.error('Espera a que termine el cálculo del envío.'); }
+    setPaymentLoading(true);
+    try {
+      // ▼▼▼ BLOQUE AÑADIDO ▼▼▼
+      const productosParaEnviar = pedidoActual.map(({ id, cantidad, precio, nombre }) => ({ id, cantidad, precio: Number(precio), nombre }));
+      const pedidoData = { 
+        total: totalFinal, 
+        productos: productosParaEnviar, 
+        tipo_orden: tipoOrden, 
+        costo_envio: costoEnvio, 
+        direccion_entrega: tipoOrden === 'domicilio' ? direccion?.description : null, 
+        latitude: tipoOrden === 'domicilio' ? direccion?.lat : null, 
+        longitude: tipoOrden === 'domicilio' ? direccion?.lng : null, 
+        referencia: tipoOrden === 'domicilio' ? referencia : null 
+      };
+      setDatosParaCheckout(pedidoData);
+      // ▲▲▲ FIN DEL BLOQUE AÑADIDO ▲▲▲
 
-      setClientSecret(res.data.clientSecret);
-      setShowPaymentModal(true);
-    } catch (err) {
-      toast.error('No se pudo iniciar el proceso de pago.');
-    } finally {
-      setPaymentLoading(false);
-    }
-  };
+      const res = await apiClient.post('/payments/create-payment-intent', { amount: totalFinal });
+      
+      setShowCartModal(false);
+      setModalView('cart');
+
+      setClientSecret(res.data.clientSecret);
+      setShowPaymentModal(true);
+    } catch (err) {
+      toast.error('No se pudo iniciar el proceso de pago.');
+    } finally {
+      setPaymentLoading(false);
+    }
+  };
 
   const handleContinue = () => {
     if (tipoOrden !== 'domicilio') {
@@ -414,20 +430,27 @@ function ClientePage() {
         </motion.div>
       )}
       
-      {showPaymentModal && clientSecret && (
-        <div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <motion.div initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="modal-dialog">
-            <div className="modal-content">
-              <div className="modal-header"><h5 className="modal-title">Finalizar Compra</h5><button type="button" className="btn-close" onClick={() => setShowPaymentModal(false)}></button></div>
-              <div className="modal-body">
-                <Elements stripe={stripePromise} options={{ clientSecret }}>
-                  <CheckoutForm handleSuccess={handleSuccessfulPayment} total={totalFinal} />
-                </Elements>
-              </div>
-            </div>
-          </motion.div>
+{showPaymentModal && clientSecret && (
+  <div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+    <motion.div initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="modal-dialog">
+      <div className="modal-content">
+        <div className="modal-header">
+            <h5 className="modal-title">Finalizar Compra</h5>
+            <button type="button" className="btn-close" onClick={() => setShowPaymentModal(false)}></button>
         </div>
-      )}
+        <div className="modal-body">
+          <Elements stripe={stripePromise} options={{ clientSecret }}>
+            <CheckoutForm 
+              handleSuccess={handleSuccessfulPayment} 
+              total={totalFinal}
+              datosPedido={datosParaCheckout} // <-- ¡ESTA ES LA LÍNEA CLAVE!
+            />
+          </Elements>
+        </div>
+      </div>
+    </motion.div>
+  </div>
+)}
 
       {pedidoActual.length > 0 && (
         <button className="boton-carrito-flotante d-md-none" onClick={() => setShowCartModal(true)}>
