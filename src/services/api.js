@@ -1,61 +1,30 @@
-// routes/pedidosRoutes.js
+// Archivo: src/services/api.js
 
-const express = require('express');
-const router = express.Router();
-const pedidosController = require('../controllers/pedidosController');
-const authMiddleware = require('../middlewares/authMiddleware');
-const roleMiddleware = require('../middlewares/roleMiddleware');
+import axios from 'axios';
 
-/*==================================
-=         RUTAS PARA CLIENTES        =
-==================================*/
-// POST /api/pedidos -> Para crear un nuevo pedido
-router.post(
-    '/',
-    [authMiddleware, roleMiddleware(['Cliente'])],
-    pedidosController.crearPedido
+// Creamos una instancia de Axios con la URL base de tu backend
+const apiClient = axios.create({
+  baseURL: 'https://tito-cafe-backend.onrender.com/api'
+});
+
+// Este interceptor añade el token a TODAS las peticiones que salgan
+// usando 'apiClient'. Es más seguro que axios.defaults.
+apiClient.interceptors.request.use(
+  (config) => {
+    // Lee el token directamente de localStorage en el momento de la petición
+    const token = localStorage.getItem('token');
+    
+    // Si el token existe, lo añade al encabezado
+    if (token) {
+      config.headers['x-auth-token'] = token;
+    }
+    
+    return config; // Devuelve la configuración para que la petición continúe
+  },
+  (error) => {
+    // Maneja errores en la configuración de la petición
+    return Promise.reject(error);
+  }
 );
 
-// GET /api/pedidos/mis-pedidos -> Para ver su historial de pedidos
-router.get(
-    '/mis-pedidos',
-    [authMiddleware, roleMiddleware(['Cliente'])],
-    pedidosController.obtenerMisPedidos
-);
-
-// POST /api/pedidos/calcular-envio -> Para calcular el costo de envío
-router.post(
-    '/calcular-envio',
-    [authMiddleware, roleMiddleware(['Cliente'])],
-    pedidosController.calcularCostoEnvio
-);
-
-/*=============================================
-=         RUTAS PARA EMPLEADOS Y JEFES        =
-=============================================*/
-// GET /api/pedidos -> Para ver TODOS los pedidos
-router.get(
-    '/',
-    // ✅ <-- CAMBIO REALIZADO AQUÍ: Se añadió 'Cliente' a la lista
-    [authMiddleware, roleMiddleware(['EMPLEADO', 'JEFE', 'Cliente'])],
-    pedidosController.obtenerPedidos
-);
-
-// PATCH /api/pedidos/:id/estado -> Para actualizar el estado de un pedido
-router.patch(
-    '/:id/estado',
-    [authMiddleware, roleMiddleware(['EMPLEADO', 'JEFE'])],
-    pedidosController.actualizarEstadoPedido
-);
-
-/*========================================
-=            RUTA SOLO PARA JEFE           =
-========================================*/
-// DELETE /api/pedidos/purgar -> Para borrar PERMANENTEMENTE todos los pedidos
-router.delete(
-    '/purgar',
-    [authMiddleware, roleMiddleware(['JEFE'])],
-    pedidosController.purgarPedidos
-);
-
-module.exports = router;
+export default apiClient;
