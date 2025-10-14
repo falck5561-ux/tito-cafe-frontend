@@ -1,4 +1,4 @@
-// Archivo: src/services/api.js
+// Archivo: src/services/api.js (Versión Final)
 
 import axios from 'axios';
 
@@ -8,7 +8,7 @@ const apiClient = axios.create({
 });
 
 // Este interceptor añade el token a TODAS las peticiones que salgan
-// usando 'apiClient'. Es más seguro que axios.defaults.
+// usando 'apiClient'.
 apiClient.interceptors.request.use(
   (config) => {
     // Lee el token directamente de localStorage en el momento de la petición
@@ -26,5 +26,13 @@ apiClient.interceptors.request.use(
     return Promise.reject(error);
   }
 );
+
+// =======================================================
+// ▼▼▼ ESTA ES LA FUNCIÓN QUE NECESITAS AÑADIR ▼▼▼
+// =======================================================
+export const crearPedidoAPI = async (datosPedido) => {
+  const { data } = await apiClient.post('/pedidos', datosPedido);
+  return data;
+};
 
 export default apiClient;
