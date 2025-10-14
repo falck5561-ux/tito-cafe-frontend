@@ -13,14 +13,6 @@ const styles = {
   recompensasContainer: {
     padding: '1rem 0',
   },
-  noRecompensas: {
-    backgroundColor: '#2c2c2c',
-    color: '#a0a0a0',
-    padding: '2rem',
-    borderRadius: '8px',
-    textAlign: 'center',
-    border: '1px dashed #444',
-  },
   cupon: {
     backgroundColor: '#2a9d8f',
     color: 'white',
@@ -90,7 +82,6 @@ function ClientePage() {
       setLoading(true);
       setError('');
       try {
-        // Usamos Promise.allSettled para que si una petición falla, la otra no se cancele.
         const results = await Promise.allSettled([
           apiClient.get('/productos'),
           apiClient.get('/usuarios/mi-direccion')
@@ -99,25 +90,20 @@ function ClientePage() {
         const productosResult = results[0];
         const direccionResult = results[1];
 
-        // Manejar el resultado de los productos (esencial para la página)
         if (productosResult.status === 'fulfilled') {
           setProductos(productosResult.value.data);
         } else {
-          // Si los productos fallan, es un error crítico.
           console.error("Error cargando productos:", productosResult.reason);
           throw new Error('No se pudieron cargar los productos. Por favor, intenta más tarde.');
         }
 
-        // Manejar el resultado de la dirección (opcional)
         if (direccionResult.status === 'fulfilled' && direccionResult.value.data) {
           setDireccionGuardada(direccionResult.value.data);
         } else if (direccionResult.status === 'rejected') {
-          // Si la dirección falla (ej. 401), no es crítico. Lo mostramos en consola.
           console.warn("No se pudo cargar la dirección guardada:", direccionResult.reason.response?.data?.msg || direccionResult.reason.message);
         }
 
       } catch (err) {
-        // Este catch ahora solo se activará si la carga de productos falla.
         setError(err.message);
       } finally {
         setLoading(false);
@@ -406,7 +392,7 @@ function ClientePage() {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <h2 className="mb-4">Mis Recompensas</h2>
           {misRecompensas?.length === 0 ? (
-            <div style={styles.noRecompensas}>
+            <div className="no-recompensas-box">
               <h3>Aún no tienes recompensas</h3>
               <p>¡Sigue comprando para ganar bebidas gratis y más sorpresas!</p>
             </div>
