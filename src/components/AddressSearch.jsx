@@ -1,4 +1,4 @@
-// Archivo: src/components/AddressSearch.jsx (Versión sin @reach/combobox)
+// Archivo: src/components/AddressSearch.jsx
 
 import React from 'react';
 import usePlacesAutocomplete, { getGeocode, getLatLng } from 'use-places-autocomplete';
@@ -7,7 +7,7 @@ const AddressSearch = ({ onSelect }) => {
   const {
     ready,
     value,
-    suggestions: { status, data },
+    suggestions: { status, data = [] }, // 👈 valor por defecto: arreglo vacío
     setValue,
     clearSuggestions,
   } = usePlacesAutocomplete({
@@ -41,12 +41,16 @@ const AddressSearch = ({ onSelect }) => {
         className="form-control"
         placeholder="Ej: Calle 10, Colonia Centro..."
       />
+
       {/* Lista de sugerencias */}
-      {status === "OK" && (
-        <ul className="list-group" style={{ position: 'absolute', zIndex: 1000, width: '100%' }}>
+      {status === "OK" && Array.isArray(data) && data.length > 0 && (
+        <ul
+          className="list-group"
+          style={{ position: 'absolute', zIndex: 1000, width: '100%' }}
+        >
           {data.map(({ place_id, description }) => (
-            <li 
-              key={place_id} 
+            <li
+              key={place_id}
               onClick={() => handleSelect(description)}
               className="list-group-item list-group-item-action"
               style={{ cursor: 'pointer' }}
