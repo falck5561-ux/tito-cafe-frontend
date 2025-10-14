@@ -215,4 +215,3 @@ exports.purgarPedidos = async (req, res) => {
   }
 };
 
-export default AdminPage;
