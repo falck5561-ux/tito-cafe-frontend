@@ -223,29 +223,26 @@ function ClientePage() {
   };
 
   const handleSuccessfulPayment = async () => {
-    if (guardarDireccion && direccion) {
-      try {
-        const datosParaGuardar = { ...direccion, referencia };
-        await apiClient.put('/usuarios/mi-direccion', datosParaGuardar);
-        toast.success('Dirección y referencia guardadas.');
-        setDireccionGuardada(datosParaGuardar);
-      } catch (err) {
-        toast.error('No se pudo guardar la dirección y referencia.');
-      }
-    }
-    const productosParaEnviar = pedidoActual.map(({ id, cantidad, precio, nombre }) => ({ id, cantidad, precio: Number(precio), nombre }));
-    const pedidoData = { total: totalFinal, productos: productosParaEnviar, tipo_orden: tipoOrden, costo_envio: costoEnvio, direccion_entrega: tipoOrden === 'domicilio' ? direccion?.description : null, latitude: tipoOrden === 'domicilio' ? direccion?.lat : null, longitude: tipoOrden === 'domicilio' ? direccion?.lng : null, referencia: tipoOrden === 'domicilio' ? referencia : null };
-    try {
-      const res = await apiClient.post('/pedidos', pedidoData);
-      if (res.data.recompensaGenerada) { toast.success('¡Felicidades! Ganaste un premio.', { duration: 6000, icon: '🎁' }); } else { toast.success('¡Pedido realizado y pagado con éxito!'); }
-      limpiarPedido();
-      setShowPaymentModal(false);
-      setClientSecret('');
-      setActiveTab('ver');
-    } catch (err) {
-      toast.error(err.response?.data?.msg || 'Hubo un error al registrar tu pedido.');
-    }
-  };
+    // La lógica de guardar la dirección puede quedarse aquí, es una acción separada.
+    if (guardarDireccion && direccion) {
+      try {
+        const datosParaGuardar = { ...direccion, referencia };
+        await apiClient.put('/usuarios/mi-direccion', datosParaGuardar);
+        toast.success('Dirección y referencia guardadas.');
+        setDireccionGuardada(datosParaGuardar);
+      } catch (err) {
+        toast.error('No se pudo guardar la dirección y referencia.');
+      }
+    }
+
+    // La creación del pedido ya se hizo en CheckoutForm.
+    // Aquí solo limpiamos la interfaz y actualizamos el estado.
+    toast.success('¡Pedido realizado y pagado con éxito!');
+    limpiarPedido();
+    setShowPaymentModal(false);
+    setClientSecret('');
+    setActiveTab('ver'); // Redirigimos al usuario a la pestaña de "Mis Pedidos"
+  };
 
   const getStatusBadge = (estado) => { switch (estado) { case 'Pendiente': return 'bg-warning text-dark'; case 'En Preparacion': return 'bg-info text-dark'; case 'Listo para Recoger': return 'bg-success text-white'; case 'Completado': return 'bg-secondary text-white'; case 'En Camino': return 'bg-primary text-white'; default: return 'bg-light text-dark'; } };
   const handleToggleDetalle = (pedidoId) => { setOrdenExpandida(ordenExpandida === pedidoId ? null : pedidoId); };
