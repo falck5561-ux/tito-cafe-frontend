@@ -16,7 +16,7 @@ apiClient.interceptors.request.use(
     
     // Si el token existe, lo añade al encabezado
     if (token) {
-      config.headers['x-auth-token'] = token;
+      config.headers['Authorization'] = `Bearer ${token}`;
     }
     
     return config; // Devuelve la configuración para que la petición continúe
