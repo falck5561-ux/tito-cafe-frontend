@@ -5,7 +5,6 @@ import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 import CheckoutForm from '../components/CheckoutForm';
 import MapSelector from '../components/MapSelector';
-// Se importa el apiClient centralizado
 import apiClient from '../services/api';
 
 const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY || "pk_test_51SFnF0ROWvZ0m785J38J20subms9zeVw92xxsdct2OVzHbIXF8Kueajcp4jxJblwBhozD1xDljC2UG1qDNOGOxTX00UiDpoLCI");
@@ -91,16 +90,35 @@ function ClientePage() {
       setLoading(true);
       setError('');
       try {
-        const [productosRes, direccionRes] = await Promise.all([
+        // Usamos Promise.allSettled para que si una petición falla, la otra no se cancele.
+        const results = await Promise.allSettled([
           apiClient.get('/productos'),
           apiClient.get('/usuarios/mi-direccion')
         ]);
-        setProductos(productosRes.data);
-        if (direccionRes.data) {
-          setDireccionGuardada(direccionRes.data);
+
+        const productosResult = results[0];
+        const direccionResult = results[1];
+
+        // Manejar el resultado de los productos (esencial para la página)
+        if (productosResult.status === 'fulfilled') {
+          setProductos(productosResult.value.data);
+        } else {
+          // Si los productos fallan, es un error crítico.
+          console.error("Error cargando productos:", productosResult.reason);
+          throw new Error('No se pudieron cargar los productos. Por favor, intenta más tarde.');
         }
+
+        // Manejar el resultado de la dirección (opcional)
+        if (direccionResult.status === 'fulfilled' && direccionResult.value.data) {
+          setDireccionGuardada(direccionResult.value.data);
+        } else if (direccionResult.status === 'rejected') {
+          // Si la dirección falla (ej. 401), no es crítico. Lo mostramos en consola.
+          console.warn("No se pudo cargar la dirección guardada:", direccionResult.reason.response?.data?.msg || direccionResult.reason.message);
+        }
+
       } catch (err) {
-        setError('No se pudieron cargar los datos iniciales.');
+        // Este catch ahora solo se activará si la carga de productos falla.
+        setError(err.message);
       } finally {
         setLoading(false);
       }
