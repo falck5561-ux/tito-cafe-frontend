@@ -214,3 +214,5 @@ exports.purgarPedidos = async (req, res) => {
     res.status(500).send('Error del Servidor al intentar purgar los pedidos.');
   }
 };
+
+export default AdminPage;
