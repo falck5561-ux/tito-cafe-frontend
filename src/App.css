@@ -142,6 +142,8 @@ h1, h2, h3, h4, h5, .navbar-brand, .display-4 {
   --bs-table-border-color: var(--bs-border-color);
   --bs-table-hover-bg: var(--bs-tertiary-bg);
   --bs-table-striped-bg: var(--bs-tertiary-bg);
+  /* SOLUCIÓN: Define el color del texto para el hover, usando la variable del tema. */
+  --bs-table-hover-color: var(--texto-principal) !important;
 }
 
 .table thead th {
@@ -155,15 +157,6 @@ h1, h2, h3, h4, h5, .navbar-brand, .display-4 {
 
 [data-bs-theme="dark"] .table thead th {
   color: var(--texto-principal);
-}
-
-/* MEJORA: Color de texto al pasar el cursor para asegurar contraste */
-[data-bs-theme="dark"] .table-hover > tbody > tr:hover {
-  color: var(--texto-principal) !important;
-}
-
-[data-bs-theme="light"] .table-hover > tbody > tr:hover {
-  color: var(--texto-principal) !important;
 }
 
 /* ======================= */
