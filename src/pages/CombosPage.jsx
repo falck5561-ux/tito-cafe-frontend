@@ -17,7 +17,6 @@ function CombosPage() {
   useEffect(() => {
     const fetchCombos = async () => {
       try {
-        // Llama a la ruta pública que solo trae combos activos
         const response = await apiClient.get('/combos'); 
         setCombos(response.data);
       } catch (err) {
@@ -32,20 +31,22 @@ function CombosPage() {
 
   const handleOrdenarClick = (combo) => {
     if (!user) {
-      // Si no hay usuario, lo mandamos a login
       toast.error('Por favor, inicia sesión para añadir al carrito.');
       navigate('/login');
       return;
     }
     
-    // Creamos un objeto similar a un producto para añadirlo al carrito
     const itemParaCarrito = {
-      id: `combo-${combo.id}`, // ID único para evitar colisiones con productos
+      id: `combo-${combo.id}`,
       nombre: combo.titulo,
-      precio: combo.precio_oferta > 0 ? combo.precio_oferta : combo.precio,
-      // No necesita más propiedades para el carrito
+      precio: combo.precio_oferta > 0 && Number(combo.precio_oferta) < Number(combo.precio) ? combo.precio_oferta : combo.precio,
     };
+    
+    // 1. Añade el producto al carrito global
     agregarProductoAPedido(itemParaCarrito);
+    
+    // 2. ¡LA LÍNEA QUE FALTABA! Navega a la página del cliente
+    navigate('/cliente');
   };
 
   return (
@@ -70,7 +71,7 @@ function CombosPage() {
       {!loading && !error && combos.length > 0 && (
         <div className="row g-4">
           {combos.map((combo, index) => {
-            const precioFinal = combo.precio_oferta > 0 ? combo.precio_oferta : combo.precio;
+            const precioFinal = combo.precio_oferta > 0 && Number(combo.precio_oferta) < Number(combo.precio) ? combo.precio_oferta : combo.precio;
             const displayImage = (combo.imagenes && combo.imagenes.length > 0) 
               ? combo.imagenes[0] 
               : `https://placehold.co/400x300/d7ccc8/4a2c2a?text=${encodeURIComponent(combo.titulo)}`;
@@ -87,16 +88,16 @@ function CombosPage() {
                   <img 
                     src={displayImage}
                     className="card-img-top" 
-                    alt={combo.titulo} // <-- CORRECCIÓN: Usar 'titulo'
+                    alt={combo.titulo}
                     style={{ height: '220px', objectFit: 'cover' }}
                   />
                   <div className="card-body d-flex flex-column">
-                    <h4 className="card-title flex-grow-1">{combo.titulo}</h4> {/* <-- CORRECCIÓN: Usar 'titulo' */}
-                    <p className="card-text">{combo.descripcion}</p> {/* <-- CORRECCIÓN: Usar 'descripcion' */}
+                    <h4 className="card-title flex-grow-1">{combo.titulo}</h4>
+                    <p className="card-text">{combo.descripcion}</p>
                   </div>
                   <div className="card-footer bg-transparent border-top-0 pb-3 d-flex justify-content-between align-items-center">
                     <div>
-                      {combo.precio_oferta > 0 ? (
+                      {combo.precio_oferta > 0 && Number(combo.precio_oferta) < Number(combo.precio) ? (
                         <>
                           <span className="text-muted text-decoration-line-through me-2">${Number(combo.precio).toFixed(2)}</span>
                           <span className="fw-bold fs-4 text-success">${Number(precioFinal).toFixed(2)}</span>
