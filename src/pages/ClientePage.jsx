@@ -6,13 +6,12 @@ import { Elements } from '@stripe/react-stripe-js';
 import CheckoutForm from '../components/CheckoutForm';
 import MapSelector from '../components/MapSelector';
 import apiClient from '../services/api';
+import { useCart } from '../context/CartContext'; // 1. Importar el hook del carrito global
 
 const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY || "pk_test_51SFnF0ROWvZ0m785J38J20subms9zeVw92xxsdct2OVzHbIXF8Kueajcp4jxJblwBhozD1xDljC2UG1qDNOGOxTX00UiDpoLCI");
 
 const styles = {
-  recompensasContainer: {
-    padding: '1rem 0',
-  },
+  recompensasContainer: { padding: '1rem 0' },
   cupon: {
     backgroundColor: '#2a9d8f',
     color: 'white',
@@ -25,23 +24,10 @@ const styles = {
     position: 'relative',
     marginBottom: '1rem'
   },
-  cuponIcon: {
-    fontSize: '3.5rem',
-    marginRight: '2rem',
-  },
-  cuponBody: {
-    flexGrow: 1,
-  },
-  cuponTitle: {
-    margin: '0',
-    fontSize: '1.5rem',
-    fontWeight: 'bold',
-  },
-  cuponDescription: {
-    margin: '0.25rem 0 0',
-    fontSize: '1rem',
-    opacity: 0.9,
-  },
+  cuponIcon: { fontSize: '3.5rem', marginRight: '2rem' },
+  cuponBody: { flexGrow: 1 },
+  cuponTitle: { margin: '0', fontSize: '1.5rem', fontWeight: 'bold' },
+  cuponDescription: { margin: '0.25rem 0 0', fontSize: '1rem', opacity: 0.9 },
   cuponCantidad: {
     fontSize: '1.2rem',
     fontWeight: 'bold',
@@ -53,11 +39,21 @@ const styles = {
 };
 
 function ClientePage() {
+  // 2. OBTENER TODO LO DEL CARRITO DESDE EL CONTEXTO GLOBAL
+  const { 
+    pedidoActual, 
+    subtotal, 
+    incrementarCantidad, 
+    decrementarCantidad, 
+    eliminarProducto, 
+    limpiarPedido,
+    agregarProductoAPedido // <- Importamos esta también
+  } = useCart();
+
+  // 3. MANTENER SOLO LOS ESTADOS QUE PERTENECEN A ESTA PÁGINA
   const [activeTab, setActiveTab] = useState('crear');
   const [ordenExpandida, setOrdenExpandida] = useState(null);
-  const [productos, setProductos] = useState([]);
-  const [pedidoActual, setPedidoActual] = useState([]);
-  const [subtotal, setSubtotal] = useState(0);
+  const [productos, setProductos] = useState([]); // Para mostrar el menú de "Elige tus productos"
   const [tipoOrden, setTipoOrden] = useState('llevar');
   const [direccion, setDireccion] = useState(null);
   const [costoEnvio, setCostoEnvio] = useState(0);
@@ -87,23 +83,19 @@ function ClientePage() {
           apiClient.get('/productos'),
           apiClient.get('/usuarios/mi-direccion')
         ]);
-
         const productosResult = results[0];
         const direccionResult = results[1];
-
         if (productosResult.status === 'fulfilled') {
           setProductos(productosResult.value.data);
         } else {
           console.error("Error cargando productos:", productosResult.reason);
           throw new Error('No se pudieron cargar los productos. Por favor, intenta más tarde.');
         }
-
         if (direccionResult.status === 'fulfilled' && direccionResult.value.data) {
           setDireccionGuardada(direccionResult.value.data);
         } else if (direccionResult.status === 'rejected') {
           console.warn("No se pudo cargar la dirección guardada:", direccionResult.reason.response?.data?.msg || direccionResult.reason.message);
         }
-
       } catch (err) {
         setError(err.message);
       } finally {
@@ -116,7 +108,6 @@ function ClientePage() {
   useEffect(() => {
     const fetchTabData = async () => {
       if (activeTab === 'crear') return;
-      
       setLoading(true);
       setError('');
       try {
@@ -137,39 +128,17 @@ function ClientePage() {
   }, [activeTab]);
 
   useEffect(() => {
-    const nuevoSubtotal = pedidoActual.reduce((sum, item) => sum + item.cantidad * Number(item.precio), 0);
-    setSubtotal(nuevoSubtotal);
-  }, [pedidoActual]);
-
-  useEffect(() => {
     if (tipoOrden !== 'domicilio') {
       setCostoEnvio(0);
       setDireccion(null);
     }
   }, [tipoOrden]);
 
-  const agregarProductoAPedido = (producto) => {
-    let precioFinal = Number(producto.precio);
-    if (producto.en_oferta && producto.descuento_porcentaje > 0) {
-      precioFinal = precioFinal * (1 - producto.descuento_porcentaje / 100);
-    }
-    setPedidoActual(prev => {
-      const existe = prev.find(item => item.id === producto.id);
-      if (existe) {
-        return prev.map(item =>
-          item.id === producto.id ? { ...item, cantidad: item.cantidad + 1 } : item
-        );
-      }
-      return [...prev, { ...producto, cantidad: 1, precio: precioFinal }];
-    });
-  };
+  // 4. Se eliminan las funciones del carrito (agregarProductoAPedido, etc.)
+  // porque ahora se usan las del 'useCart()'.
 
-  const incrementarCantidad = (productoId) => { setPedidoActual(prev => prev.map(item => item.id === productoId ? { ...item, cantidad: item.cantidad + 1 } : item)); };
-  const decrementarCantidad = (productoId) => { setPedidoActual(prev => { const producto = prev.find(item => item.id === productoId); if (producto.cantidad === 1) { return prev.filter(item => item.id !== productoId); } return prev.map(item => item.id === productoId ? { ...item, cantidad: item.cantidad - 1 } : item); }); };
-  const eliminarProducto = (productoId) => { setPedidoActual(prev => prev.filter(item => item.id !== productoId)); };
-  
-  const limpiarPedido = () => {
-    setPedidoActual([]);
+  const limpiarPedidoCompleto = () => {
+    limpiarPedido(); // Llama a la función del contexto
     setCostoEnvio(0);
     setDireccion(null);
     setGuardarDireccion(false);
@@ -195,13 +164,12 @@ function ClientePage() {
 
   const usarDireccionGuardada = () => { if (direccionGuardada) { handleLocationSelect(direccionGuardada); if (direccionGuardada.referencia) { setReferencia(direccionGuardada.referencia); } toast.success('Usando dirección guardada.'); } };
   
-const handleProcederAlPago = async () => {
-    if (totalFinal <= 0) return;
-    if (tipoOrden === 'domicilio' && !direccion) { return toast.error('Por favor, selecciona o escribe tu ubicación.'); }
-    if (calculandoEnvio) { return toast.error('Espera a que termine el cálculo del envío.'); }
-    setPaymentLoading(true);
-    try {
-      // ▼▼▼ BLOQUE AÑADIDO ▼▼▼
+  const handleProcederAlPago = async () => {
+    if (totalFinal <= 0) return;
+    if (tipoOrden === 'domicilio' && !direccion) { return toast.error('Por favor, selecciona o escribe tu ubicación.'); }
+    if (calculandoEnvio) { return toast.error('Espera a que termine el cálculo del envío.'); }
+    setPaymentLoading(true);
+    try {
       const productosParaEnviar = pedidoActual.map(({ id, cantidad, precio, nombre }) => ({ id, cantidad, precio: Number(precio), nombre }));
       const pedidoData = { 
         total: totalFinal, 
@@ -214,21 +182,20 @@ const handleProcederAlPago = async () => {
         referencia: tipoOrden === 'domicilio' ? referencia : null 
       };
       setDatosParaCheckout(pedidoData);
-      // ▲▲▲ FIN DEL BLOQUE AÑADIDO ▲▲▲
+      
+      const res = await apiClient.post('/payments/create-payment-intent', { amount: totalFinal });
+      
+      setShowCartModal(false);
+      setModalView('cart');
 
-      const res = await apiClient.post('/payments/create-payment-intent', { amount: totalFinal });
-      
-      setShowCartModal(false);
-      setModalView('cart');
-
-      setClientSecret(res.data.clientSecret);
-      setShowPaymentModal(true);
-    } catch (err) {
-      toast.error('No se pudo iniciar el proceso de pago.');
-    } finally {
-      setPaymentLoading(false);
-    }
-  };
+      setClientSecret(res.data.clientSecret);
+      setShowPaymentModal(true);
+    } catch (err) {
+      toast.error('No se pudo iniciar el proceso de pago.');
+    } finally {
+      setPaymentLoading(false);
+    }
+  };
 
   const handleContinue = () => {
     if (tipoOrden !== 'domicilio') {
@@ -239,26 +206,23 @@ const handleProcederAlPago = async () => {
   };
 
   const handleSuccessfulPayment = async () => {
-    // La lógica de guardar la dirección puede quedarse aquí, es una acción separada.
-    if (guardarDireccion && direccion) {
-      try {
-        const datosParaGuardar = { ...direccion, referencia };
-        await apiClient.put('/usuarios/mi-direccion', datosParaGuardar);
-        toast.success('Dirección y referencia guardadas.');
-        setDireccionGuardada(datosParaGuardar);
-      } catch (err) {
-        toast.error('No se pudo guardar la dirección y referencia.');
-      }
-    }
+    if (guardarDireccion && direccion) {
+      try {
+        const datosParaGuardar = { ...direccion, referencia };
+        await apiClient.put('/usuarios/mi-direccion', datosParaGuardar);
+        toast.success('Dirección y referencia guardadas.');
+        setDireccionGuardada(datosParaGuardar);
+      } catch (err) {
+        toast.error('No se pudo guardar la dirección y referencia.');
+      }
+    }
 
-    // La creación del pedido ya se hizo en CheckoutForm.
-    // Aquí solo limpiamos la interfaz y actualizamos el estado.
     toast.success('¡Pedido realizado y pagado con éxito!');
-    limpiarPedido();
-    setShowPaymentModal(false);
-    setClientSecret('');
-    setActiveTab('ver'); // Redirigimos al usuario a la pestaña de "Mis Pedidos"
-  };
+    limpiarPedidoCompleto();
+    setShowPaymentModal(false);
+    setClientSecret('');
+    setActiveTab('ver');
+  };
 
   const getStatusBadge = (estado) => { switch (estado) { case 'Pendiente': return 'bg-warning text-dark'; case 'En Preparacion': return 'bg-info text-dark'; case 'Listo para Recoger': return 'bg-success text-white'; case 'Completado': return 'bg-secondary text-white'; case 'En Camino': return 'bg-primary text-white'; default: return 'bg-light text-dark'; } };
   const handleToggleDetalle = (pedidoId) => { setOrdenExpandida(ordenExpandida === pedidoId ? null : pedidoId); };
@@ -286,14 +250,12 @@ const handleProcederAlPago = async () => {
                   <div key={p.id} className="col-md-4 col-lg-3">
                     <div 
                       className={`card h-100 text-center shadow-sm position-relative ${p.en_oferta ? 'en-oferta' : ''}`}
-                      onClick={() => agregarProductoAPedido(p)} 
+                      onClick={() => agregarProductoAPedido(p)} // <-- Usa la función del contexto
                       style={{ cursor: 'pointer' }}
                     >
                       {p.en_oferta && <span className="discount-badge">-{p.descuento_porcentaje}%</span>}
-                      
                       <div className="card-body d-flex flex-column justify-content-center pt-4">
                         <h5 className="card-title">{p.nombre}</h5>
-                        
                         {p.en_oferta && p.descuento_porcentaje > 0 ? (
                           <div>
                             <span className="text-muted text-decoration-line-through me-2">${Number(p.precio).toFixed(2)}</span>
@@ -358,46 +320,11 @@ const handleProcederAlPago = async () => {
                 <h4>Total: ${totalFinal.toFixed(2)}</h4>
                 <div className="d-grid gap-2 mt-3">
                   <button className="btn btn-primary" onClick={handleProcederAlPago} disabled={pedidoActual.length === 0 || paymentLoading || calculandoEnvio}>{paymentLoading ? 'Iniciando...' : 'Proceder al Pago'}</button>
-                  <button className="btn btn-outline-danger" onClick={limpiarPedido}>Vaciar Carrito</button>
+                  <button className="btn btn-outline-danger" onClick={limpiarPedidoCompleto}>Vaciar Carrito</button>
                 </div>
               </div>
             </div>
           </div>
-        </motion.div>
-      )}
-
-      {!loading && activeTab === 'ver' && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          <h2>Mis Pedidos</h2>
-          {misPedidos?.length === 0 ? <p className="text-center">No has realizado ningún pedido.</p> : (
-            <div className="table-responsive">
-              <table className="table table-hover">
-                <thead><tr><th>ID</th><th>Fecha</th><th>Tipo</th><th>Estado</th><th className="text-end">Total</th></tr></thead>
-                <tbody>
-                  {misPedidos?.map(p => (
-                    <React.Fragment key={p.id}>
-                      <tr style={{ cursor: 'pointer' }} onClick={() => handleToggleDetalle(p.id)}>
-                        <td>#{p.id}</td><td>{new Date(p.fecha).toLocaleString('es-MX')}</td><td>{p.tipo_orden}</td>
-                        <td><span className={`badge ${getStatusBadge(p.estado)}`}>{p.estado}</span></td>
-                        <td className="text-end">${Number(p.total).toFixed(2)}</td>
-                      </tr>
-                      {ordenExpandida === p.id && (
-                        <tr>
-                          <td colSpan="5">
-                            <motion.div className="detalle-pedido-productos" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} transition={{ duration: 0.3 }}>
-                              <h5 className="mb-3">Detalle del Pedido #{p.id}</h5>
-                              {p.productos?.map(producto => (<div key={`${p.id}-${producto.nombre}`} className="detalle-pedido-item"><span>{producto.cantidad}x {producto.nombre}</span><span>${(producto.cantidad * Number(producto.precio)).toFixed(2)}</span></div>))}
-                              {p.costo_envio > 0 && (<div className="detalle-pedido-item mt-2 pt-2 border-top"><span className="fw-bold">Costo de Envío</span><span className="fw-bold">${Number(p.costo_envio).toFixed(2)}</span></div>)}
-                            </motion.div>
-                          </td>
-                        </tr>
-                      )}
-                    </React.Fragment>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
         </motion.div>
       )}
 

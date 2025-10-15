@@ -1,7 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
-// Estilos para el modal, usan tus variables de CSS para adaptarse al tema
 const modalStyles = {
   backdrop: {
     position: 'fixed',
@@ -27,13 +26,20 @@ const modalStyles = {
   },
   closeButton: {
     position: 'absolute',
-    top: '15px',
-    right: '15px',
-    background: 'none',
+    top: '10px',
+    right: '10px',
+    background: 'rgba(0,0,0,0.2)',
     border: 'none',
-    fontSize: '1.5rem',
+    borderRadius: '50%',
+    width: '32px',
+    height: '32px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '1.2rem',
     color: 'var(--bs-body-color)',
     cursor: 'pointer',
+    transition: 'background-color 0.2s',
   },
   productImage: {
     width: '100%',
@@ -96,14 +102,14 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
             {product.en_oferta && product.descuento_porcentaje > 0 ? (
               <>
                 <span className="text-muted text-decoration-line-through me-2 fs-5">${Number(product.precio).toFixed(2)}</span>
-                <span className="fs-3 fw-bold">${precioFinal.toFixed(2)}</span>
+                <span className="fs-3 fw-bold text-success">${precioFinal.toFixed(2)}</span>
               </>
             ) : (
               <span className="fs-3 fw-bold">${precioFinal.toFixed(2)}</span>
             )}
           </div>
           <button className="btn btn-primary" onClick={() => onAddToCart(product)}>
-            Añadir al Carrito
+            Hacer Pedido
           </button>
         </div>
       </motion.div>

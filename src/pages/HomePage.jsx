@@ -4,18 +4,20 @@ import { motion } from 'framer-motion';
 import { useMenuData } from '../hooks/useMenuData';
 import ProductCard from '../components/ProductCard';
 import AuthContext from '../context/AuthContext';
-import ProductDetailModal from '../components/ProductDetailModal'; // Importar el modal
+import ProductDetailModal from '../components/ProductDetailModal';
+import { useCart } from '../context/CartContext'; // 1. Importar el hook del carrito global
 
 function HomePage() {
   const { productos, loading, error } = useMenuData();
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
+  const { agregarProductoAPedido } = useCart(); // 2. Obtener la función para añadir al carrito global
 
-  // Estados para manejar el modal
+  // Estados para manejar el modal (esto ya lo tenías y está perfecto)
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
 
-  // Funciones para abrir/cerrar el modal
+  // Funciones para abrir/cerrar el modal (también correctas)
   const handleShowDetails = (product) => {
     setSelectedProduct(product);
     setShowDetailModal(true);
@@ -26,17 +28,27 @@ function HomePage() {
     setSelectedProduct(null);
   };
 
-  // Función para determinar a dónde ir al hacer clic en "Hacer Pedido"
-  const handleGoToOrder = () => {
-    if (!user) {
-      navigate("/login");
-      return;
+  // 3. NUEVA FUNCIÓN: Añade al carrito Y LUEGO navega
+  const handleAddToCartAndNavigate = (product) => {
+    // Primero, añade el producto al carrito global
+    agregarProductoAPedido(product);
+    
+    // Luego, navega a la página correcta (cliente o login)
+    if (user) {
+      navigate('/cliente');
+    } else {
+      navigate('/login');
     }
+  };
+
+  // Tu función para el botón principal del Hero (se mantiene igual)
+  const getPedidoUrl = () => {
+    if (!user) return "/login";
     switch (user.rol) {
-      case 'Cliente': navigate("/cliente"); break;
-      case 'Jefe': navigate("/admin"); break;
-      case 'Empleado': navigate("/pos"); break;
-      default: navigate("/login"); break;
+      case 'Cliente': return "/cliente";
+      case 'Jefe': return "/admin";
+      case 'Empleado': return "/pos";
+      default: return "/login";
     }
   };
 
@@ -52,7 +64,7 @@ function HomePage() {
         <motion.img src="/logo-inicio.png" alt="Tito Café Logo" className="hero-logo mb-4" initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2, type: 'spring' }} />
         <h1 className="display-4 fw-bold">El Sabor de la Tradición en cada Taza</h1>
         <p className="fs-4">Descubre nuestra selección de cafés de especialidad, postres artesanales y un ambiente único.</p>
-        <button onClick={handleGoToOrder} className="btn btn-primary btn-lg mt-3">Haz tu Pedido</button>
+        <Link to={getPedidoUrl()} className="btn btn-primary btn-lg mt-3">Haz tu Pedido</Link>
       </div>
 
       {loading && <div className="text-center my-5"><div className="spinner-border" role="status"></div></div>}
@@ -67,7 +79,6 @@ function HomePage() {
                 key={producto.id} 
                 product={producto} 
                 index={index}
-                // Le pasamos la función para que el ProductCard pueda abrir el modal
                 onCardClick={handleShowDetails} 
               />
             ))}
@@ -80,7 +91,8 @@ function HomePage() {
         <ProductDetailModal
           product={selectedProduct}
           onClose={handleCloseDetails}
-          onAddToCart={handleGoToOrder} // El botón del modal ahora lleva a la página de pedido
+          // 4. CAMBIO CLAVE: El botón del modal ahora usa la nueva función
+          onAddToCart={handleAddToCartAndNavigate} 
         />
       )}
     </motion.div>

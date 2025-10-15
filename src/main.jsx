@@ -1,5 +1,3 @@
-// Archivo: src/main.jsx (Versión Final y Completa)
-
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css'; 
 import React from 'react';
@@ -7,14 +5,13 @@ import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
 import { AuthProvider } from './context/AuthContext.jsx';
 import { ThemeProvider } from './context/ThemeContext.jsx';
-import axios from 'axios'; // <-- 1. IMPORTAMOS AXIOS
+import { CartProvider } from './context/CartContext.jsx'; // 1. IMPORTAR EL CARTPROVIDER
+import axios from 'axios';
 
-// --- 2. ESTABLECEMOS LA URL BASE PARA TODAS LAS PETICIONES ---
-// Esto solucionará los errores 404 en Render.
+// Establecemos la URL base para todas las peticiones
 axios.defaults.baseURL = 'https://tito-cafe-backend.onrender.com';
 
-// --- 3. CONFIGURAMOS AXIOS PARA QUE ENVÍE EL TOKEN EN CADA PETICIÓN ---
-// Esto simplificará tu código en otras partes de la app.
+// Configuramos Axios para que envíe el token en cada petición
 axios.interceptors.request.use(config => {
   const token = localStorage.getItem('token');
   if (token) {
@@ -30,7 +27,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <AuthProvider>
       <ThemeProvider>
-        <App />
+        <CartProvider> {/* 2. ENVOLVER LA APP CON EL CARRITO */}
+          <App />
+        </CartProvider>
       </ThemeProvider>
     </AuthProvider>
   </React.StrictMode>,
