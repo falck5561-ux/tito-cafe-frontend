@@ -1,53 +1,51 @@
-// Archivo: src/pages/CombosPage.jsx (Versión Corregida y con Debugging)
-
-import React, { useEffect } from 'react'; // Importamos useEffect para el debugging
+import React, { useState, useEffect, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { useMenuData } from '../hooks/useMenuData';
-import ComboCard from '../components/ComboCard';
+import apiClient from '../services/api';
+import AuthContext from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
+import toast from 'react-hot-toast';
 
 function CombosPage() {
-  const { combos, loading, error } = useMenuData();
+  const [combos, setCombos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const { user } = useContext(AuthContext);
+  const { agregarProductoAPedido } = useCart();
+  const navigate = useNavigate();
 
-  // --- PASO DE DEBUGGING ---
-  // Este código es para ayudarte a ver el problema real.
-  // Abre la consola de tu navegador (presiona F12) y verás qué datos están llegando.
   useEffect(() => {
-    if (!loading) {
-      console.log('Datos de combos recibidos desde la API:', combos);
-    }
-  }, [combos, loading]);
+    const fetchCombos = async () => {
+      try {
+        // Llama a la ruta pública que solo trae combos activos
+        const response = await apiClient.get('/combos'); 
+        setCombos(response.data);
+      } catch (err) {
+        setError('No se pudieron cargar los combos en este momento.');
+        console.error("Error en CombosPage:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCombos();
+  }, []);
 
-  // --- FUNCIÓN PARA RENDERIZAR EL CONTENIDO ---
-  // Esto hace el código más limpio y fácil de leer.
-  const renderContent = () => {
-    if (loading) {
-      return <div className="text-center my-5"><div className="spinner-border" role="status"></div></div>;
-    }
-
-    if (error) {
-      return <div className="alert alert-danger">{error}</div>;
+  const handleOrdenarClick = (combo) => {
+    if (!user) {
+      // Si no hay usuario, lo mandamos a login
+      toast.error('Por favor, inicia sesión para añadir al carrito.');
+      navigate('/login');
+      return;
     }
     
-    // --- VALIDACIÓN DE DATOS ---
-    // Si 'combos' no existe o es un array vacío, mostramos un mensaje amigable.
-    // Esto evita que la página se vea rota o en blanco.
-    if (!combos || combos.length === 0) {
-      return (
-        <div className="text-center my-5">
-          <p className="lead">No hay combos especiales disponibles en este momento.</p>
-        </div>
-      );
-    }
-
-    // Si llegamos aquí, significa que hay datos y podemos mostrarlos.
-    return (
-      <div className="row row-cols-1 row-cols-md-2 g-4">
-        {combos.map((combo) => (
-          // Nos aseguramos de que cada combo tenga un ID antes de intentar mostrarlo.
-          combo && combo.id ? <ComboCard key={combo.id} combo={combo} /> : null
-        ))}
-      </div>
-    );
+    // Creamos un objeto similar a un producto para añadirlo al carrito
+    const itemParaCarrito = {
+      id: `combo-${combo.id}`, // ID único para evitar colisiones con productos
+      nombre: combo.titulo,
+      precio: combo.precio_oferta > 0 ? combo.precio_oferta : combo.precio,
+      // No necesita más propiedades para el carrito
+    };
+    agregarProductoAPedido(itemParaCarrito);
   };
 
   return (
@@ -57,10 +55,66 @@ function CombosPage() {
       animate={{ opacity: 1 }} 
       transition={{ duration: 0.5 }}
     >
-      <h1 className="text-center display-4 mb-5">Nuestros Combos Especiales</h1>
-      
-      {renderContent()}
+      <h1 className="text-center mb-5">Nuestros Combos Especiales</h1>
 
+      {loading && <div className="text-center"><div className="spinner-border"></div></div>}
+      {error && <div className="alert alert-danger">{error}</div>}
+      
+      {!loading && !error && combos.length === 0 && (
+        <div className="text-center p-5 rounded" style={{backgroundColor: 'var(--bs-tertiary-bg)'}}>
+          <h3>No hay combos especiales disponibles por el momento.</h3>
+          <p>¡Vuelve pronto para ver nuestras nuevas ofertas!</p>
+        </div>
+      )}
+
+      {!loading && !error && combos.length > 0 && (
+        <div className="row g-4">
+          {combos.map((combo, index) => {
+            const precioFinal = combo.precio_oferta > 0 ? combo.precio_oferta : combo.precio;
+            const displayImage = (combo.imagenes && combo.imagenes.length > 0) 
+              ? combo.imagenes[0] 
+              : `https://placehold.co/400x300/d7ccc8/4a2c2a?text=${encodeURIComponent(combo.titulo)}`;
+
+            return (
+              <motion.div 
+                key={combo.id} 
+                className="col-md-6 col-lg-4"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <div className="card h-100 shadow-sm overflow-hidden">
+                  <img 
+                    src={displayImage}
+                    className="card-img-top" 
+                    alt={combo.titulo} // <-- CORRECCIÓN: Usar 'titulo'
+                    style={{ height: '220px', objectFit: 'cover' }}
+                  />
+                  <div className="card-body d-flex flex-column">
+                    <h4 className="card-title flex-grow-1">{combo.titulo}</h4> {/* <-- CORRECCIÓN: Usar 'titulo' */}
+                    <p className="card-text">{combo.descripcion}</p> {/* <-- CORRECCIÓN: Usar 'descripcion' */}
+                  </div>
+                  <div className="card-footer bg-transparent border-top-0 pb-3 d-flex justify-content-between align-items-center">
+                    <div>
+                      {combo.precio_oferta > 0 ? (
+                        <>
+                          <span className="text-muted text-decoration-line-through me-2">${Number(combo.precio).toFixed(2)}</span>
+                          <span className="fw-bold fs-4 text-success">${Number(precioFinal).toFixed(2)}</span>
+                        </>
+                      ) : (
+                        <span className="fw-bold fs-4">${Number(precioFinal).toFixed(2)}</span>
+                      )}
+                    </div>
+                    <button onClick={() => handleOrdenarClick(combo)} className="btn btn-primary">
+                      ¡Lo Quiero!
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      )}
     </motion.div>
   );
 }
