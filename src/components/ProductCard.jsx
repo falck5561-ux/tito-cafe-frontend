@@ -3,10 +3,10 @@ import { motion } from 'framer-motion';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination } from 'swiper/modules';
 
-function ProductCard({ product, index }) {
-  const precioConDescuento = Number(product.precio) * (1 - product.descuento_porcentaje / 100);
+// 1. Aceptar 'onCardClick' como prop
+function ProductCard({ product, index, onCardClick }) {
+  const precioConDescuento = Number(product.precio) * (1 - (product.descuento_porcentaje || 0) / 100);
   
-  // --- CORRECCIÓN: Nos aseguramos de que 'imagenes' sea siempre un arreglo ---
   const images = Array.isArray(product.imagenes) ? product.imagenes : [];
   const hasImages = images.length > 0;
   const hasMultipleImages = images.length > 1;
@@ -20,30 +20,44 @@ function ProductCard({ product, index }) {
   };
 
   return (
-    <motion.div key={product.id} className="col" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
-      <div className={`card h-100 shadow-sm position-relative ${product.en_oferta ? 'en-oferta' : ''}`}>
+    <motion.div 
+      key={product.id} 
+      className="col" 
+      initial={{ opacity: 0, y: 20 }} 
+      animate={{ opacity: 1, y: 0 }} 
+      transition={{ delay: index * 0.05 }}
+    >
+      {/* 2. Añadir el evento onClick aquí, pasando el 'product' completo */}
+      <div 
+        className={`card h-100 shadow-sm position-relative ${product.en_oferta ? 'en-oferta' : ''}`}
+        onClick={() => onCardClick(product)}
+        style={{ cursor: 'pointer' }} // Mantener el cursor para indicar que es clickeable
+      >
         {product.en_oferta && (<span className="discount-badge">-{product.descuento_porcentaje}%</span>)}
+        
         {hasMultipleImages ? (
           <Swiper modules={[Navigation, Pagination]} spaceBetween={0} slidesPerView={1} navigation pagination={{ clickable: true }} className="card-img-top" style={{ height: '200px' }}>
-            {/* Usamos el arreglo seguro 'images' */}
             {images.map((url, i) => (<SwiperSlide key={i}><img src={url} className="img-fluid" alt={`${product.nombre} ${i + 1}`} style={{ height: '200px', width: '100%', objectFit: 'cover' }} /></SwiperSlide>))}
           </Swiper>
         ) : (
           <img src={hasImages ? images[0] : getPlaceholderImage(product.categoria)} className="card-img-top" alt={product.nombre} style={{ height: '200px', objectFit: 'cover' }} />
         )}
+        
         <div className="card-body d-flex flex-column">
           <h5 className="card-title text-center flex-grow-1">{product.nombre}</h5>
         </div>
+        
         <div className="card-footer bg-transparent border-top-0 pb-3 text-center">
           {product.en_oferta && product.descuento_porcentaje > 0 ? (
             <div>
               <span className="text-muted text-decoration-line-through me-2">${Number(product.precio).toFixed(2)}</span>
               <span className="fw-bold fs-5" style={{color: '#28a745'}}>${precioConDescuento.toFixed(2)}</span>
             </div>
-          ) : (<span className="fw-bold fs-5" style={{color: '#28a745'}}>${Number(product.precio).toFixed(2)}</span>)}
+          ) : (<span className="fw-bold fs-5">${Number(product.precio).toFixed(2)}</span>)}
         </div>
-      </div>                    
+      </div>
     </motion.div>
   );
 }
+
 export default ProductCard;
