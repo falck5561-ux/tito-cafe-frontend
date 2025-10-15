@@ -6,6 +6,7 @@ import { Elements } from '@stripe/react-stripe-js';
 import CheckoutForm from '../components/CheckoutForm';
 import MapSelector from '../components/MapSelector';
 import apiClient from '../services/api';
+import ProductDetailModal from '../components/ProductDetailModal'; // 1. Importar el nuevo modal
 
 const stripePromise = loadStripe(
   process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY ||
@@ -64,9 +65,12 @@ function ClientePage() {
   const [modalView, setModalView] = useState('cart');
   const [datosParaCheckout, setDatosParaCheckout] = useState(null);
 
+  // 2. Añadir estados para manejar el modal de detalles
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+
   const totalFinal = subtotal + costoEnvio;
 
-  // ==== Cargar productos y dirección inicial ====
   useEffect(() => {
     const fetchInitialData = async () => {
       setLoading(true);
@@ -102,7 +106,6 @@ function ClientePage() {
     fetchInitialData();
   }, []);
 
-  // ==== Cargar datos de pestañas (pedidos/recompensas) ====
   useEffect(() => {
     const fetchTabData = async () => {
       if (activeTab === 'crear') return;
@@ -126,7 +129,6 @@ function ClientePage() {
     fetchTabData();
   }, [activeTab]);
 
-  // ==== Calcular subtotal ====
   useEffect(() => {
     const nuevoSubtotal = pedidoActual.reduce((sum, item) => sum + item.cantidad * Number(item.precio), 0);
     setSubtotal(nuevoSubtotal);
@@ -139,7 +141,23 @@ function ClientePage() {
     }
   }, [tipoOrden]);
 
-  // ==== Funciones de carrito ====
+  // 3. Añadir funciones para abrir y cerrar el modal
+  const handleShowDetails = (product) => {
+    setSelectedProduct(product);
+    setShowDetailModal(true);
+  };
+
+  const handleCloseDetails = () => {
+    setShowDetailModal(false);
+    setSelectedProduct(null);
+  };
+
+  const handleAddToCartFromModal = (product) => {
+    agregarProductoAPedido(product);
+    handleCloseDetails();
+    toast.success(`${product.nombre} añadido al carrito!`);
+  };
+
   const agregarProductoAPedido = (producto) => {
     let precioFinal = Number(producto.precio);
     if (producto.en_oferta && producto.descuento_porcentaje > 0) {
@@ -183,7 +201,6 @@ function ClientePage() {
     setShowCartModal(false);
   };
 
-  // ==== Funciones de dirección ====
   const handleLocationSelect = async (location) => {
     setDireccion(location);
     setCalculandoEnvio(true);
@@ -210,7 +227,6 @@ function ClientePage() {
     }
   };
 
-  // ==== Pago ====
   const handleProcederAlPago = async () => {
     if (totalFinal <= 0) return;
     if (tipoOrden === 'domicilio' && !direccion) return toast.error('Por favor, selecciona o escribe tu ubicación.');
@@ -218,7 +234,6 @@ function ClientePage() {
 
     setPaymentLoading(true);
     try {
-      // Preparar datos para checkout
       const productosParaEnviar = pedidoActual.map(({ id, cantidad, precio, nombre }) => ({ id, cantidad, precio: Number(precio), nombre }));
       const pedidoData = { 
         total: totalFinal, 
@@ -286,7 +301,6 @@ function ClientePage() {
 
   return (
     <div>
-      {/* ==== Tabs ==== */}
       <ul className="nav nav-tabs mb-4">
         <li className="nav-item"><button className={`nav-link ${activeTab === 'crear' ? 'active' : ''}`} onClick={() => setActiveTab('crear')}>Hacer un Pedido</button></li>
         <li className="nav-item"><button className={`nav-link ${activeTab === 'ver' ? 'active' : ''}`} onClick={() => setActiveTab('ver')}>Mis Pedidos</button></li>
@@ -296,7 +310,6 @@ function ClientePage() {
       {loading && <div className="text-center"><div className="spinner-border" role="status"></div></div>}
       {error && <div className="alert alert-danger">{error}</div>}
 
-      {/* ==== Crear Pedido ==== */}
       {!loading && activeTab === 'crear' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="row">
           <div className="col-md-8">
@@ -308,7 +321,7 @@ function ClientePage() {
                   <div key={p.id} className="col-md-4 col-lg-3">
                     <div 
                       className={`card h-100 text-center shadow-sm position-relative ${p.en_oferta ? 'en-oferta' : ''}`}
-                      onClick={() => agregarProductoAPedido(p)} 
+                      onClick={() => handleShowDetails(p)} // 4. CAMBIO CLAVE: El onClick ahora abre el modal
                       style={{ cursor: 'pointer' }}
                     >
                       {p.en_oferta && <span className="discount-badge">-{p.descuento_porcentaje}%</span>}
@@ -356,7 +369,6 @@ function ClientePage() {
                 <div className="form-check"><input className="form-check-input" type="radio" name="tipoOrden" id="local" value="local" checked={tipoOrden === 'local'} onChange={(e) => setTipoOrden(e.target.value)} /><label className="form-check-label" htmlFor="local">Para Comer Aquí</label></div>
                 <div className="form-check"><input className="form-check-input" type="radio" name="tipoOrden" id="domicilio" value="domicilio" checked={tipoOrden === 'domicilio'} onChange={(e) => setTipoOrden(e.target.value)} /><label className="form-check-label" htmlFor="domicilio">Entrega a Domicilio</label></div>
                 
-                {/* Dirección Domicilio */}
                 {tipoOrden === 'domicilio' && (
                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-3">
                     {direccionGuardada && (<button className="btn btn-outline-info w-100 mb-3" onClick={usarDireccionGuardada}>Usar mi dirección guardada</button>)}
@@ -393,7 +405,6 @@ function ClientePage() {
         </motion.div>
       )}
 
-      {/* ==== Mis Pedidos ==== */}
       {!loading && activeTab === 'ver' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <h2>Mis Pedidos</h2>
@@ -443,7 +454,6 @@ function ClientePage() {
         </motion.div>
       )}
 
-      {/* ==== Mis Recompensas ==== */}
       {!loading && activeTab === 'recompensas' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <h2 className="mb-4">Mis Recompensas</h2>
@@ -471,7 +481,6 @@ function ClientePage() {
         </motion.div>
       )}
 
-      {/* ==== Modal de Pago ==== */}
       {showPaymentModal && clientSecret && (
         <div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
           <motion.div initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="modal-dialog">
@@ -494,7 +503,6 @@ function ClientePage() {
         </div>
       )}
 
-      {/* ==== Botón flotante carrito ==== */}
       {pedidoActual.length > 0 && (
         <button className="boton-carrito-flotante d-md-none" onClick={() => setShowCartModal(true)}>
           🛒
@@ -502,15 +510,23 @@ function ClientePage() {
         </button>
       )}
 
-      {/* ==== Modal Carrito / Dirección ==== */}
       {showCartModal && (
         <div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
           <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="modal-dialog modal-dialog-scrollable">
             <div className="modal-content">
-              {/* CONTENIDO DEL MODAL OMITIDO POR BREVEDAD */}
+              {/* Contenido del modal del carrito */}
             </div>
           </motion.div>
         </div>
+      )}
+
+      {/* 5. AÑADIR ESTO AL FINAL: Renderiza el modal cuando sea necesario */}
+      {showDetailModal && (
+        <ProductDetailModal
+          product={selectedProduct}
+          onClose={handleCloseDetails}
+          onAddToCart={handleAddToCartFromModal}
+        />
       )}
 
     </div>
@@ -518,3 +534,4 @@ function ClientePage() {
 }
 
 export default ClientePage;
+
