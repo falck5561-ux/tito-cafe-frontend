@@ -1,41 +1,60 @@
-// src/services/productService.js
+// En: src/services/productService.js
 
-// 1. Importa solo el apiClient. No más axios directo.
 import apiClient from './api';
 
 /**
  * Obtiene todos los productos del backend.
+ * Devuelve directamente el array de productos.
  */
-export const getProducts = () => {
-  // El apiClient ya sabe la URL base
-  return apiClient.get('/productos');
+export const getProducts = async () => {
+  try {
+    const response = await apiClient.get('/productos');
+    return response.data; // CORRECTO: Devuelve solo los datos (el array)
+  } catch (error) {
+    console.error("Error al obtener productos:", error);
+    return []; // Devuelve un array vacío si hay un error para que no se rompa la app
+  }
 };
 
 /**
  * Crea un nuevo producto.
- * @param {FormData} productData - Se recomienda FormData para subir imágenes.
+ * @param {object} productData - Datos del producto a crear.
  */
-export const createProduct = (productData) => {
-  // No necesitas pasar el token. El apiClient lo añade solo.
-  // La cabecera 'Content-Type' para FormData se establece automáticamente.
-  return apiClient.post('/productos', productData);
+export const createProduct = async (productData) => {
+  try {
+    const response = await apiClient.post('/productos', productData);
+    return response.data; // Devuelve el nuevo producto creado
+  } catch (error) {
+    console.error("Error al crear producto:", error);
+    throw error; // Lanza el error para que el componente lo pueda manejar
+  }
 };
 
 /**
  * Actualiza un producto existente.
  * @param {string} productId - El ID del producto a actualizar.
- * @param {FormData} productData - Los datos actualizados.
+ * @param {object} productData - Los datos actualizados.
  */
-export const updateProduct = (productId, productData) => {
-  // Tampoco necesitas el token aquí.
-  return apiClient.put(`/productos/${productId}`, productData);
+export const updateProduct = async (productId, productData) => {
+  try {
+    const response = await apiClient.put(`/productos/${productId}`, productData);
+    return response.data; // Devuelve el producto actualizado
+  } catch (error) {
+    console.error("Error al actualizar producto:", error);
+    throw error;
+  }
 };
 
 /**
  * Elimina un producto.
  * @param {string} productId - El ID del producto a eliminar.
  */
-export const deleteProduct = (productId) => {
-  // Ni aquí. El interceptor se encarga de la seguridad.
-  return apiClient.delete(`/productos/${productId}`);
+export const deleteProduct = async (productId) => {
+  try {
+    const response = await apiClient.delete(`/productos/${productId}`);
+    return response.data; // Devuelve el mensaje de confirmación
+  } catch (error) {
+    console.error("Error al eliminar producto:", error);
+    throw error;
+  }
 };
