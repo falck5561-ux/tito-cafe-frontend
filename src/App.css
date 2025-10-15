@@ -186,7 +186,8 @@ h1, h2, h3, h4, h5, .navbar-brand, .display-4 {
   z-index: 9999 !important;
 }
 
-[data-bs-theme="light"] .no-recompensas-box {
+/* --- Caja "Sin Recompensas" (Modo Claro) --- */
+.no-recompensas-box {
   background-color: #f8f9fa;
   color: var(--texto-secundario);
   border: 2px dashed var(--cafe-light);
@@ -195,10 +196,23 @@ h1, h2, h3, h4, h5, .navbar-brand, .display-4 {
   text-align: center;
 }
 
-[data-bs-theme="light"] .no-recompensas-box h3 {
+.no-recompensas-box h3 {
   color: var(--texto-principal);
 }
 
+/* --- CORRECCIÓN: Estilos para "Sin Recompensas" en Modo Oscuro --- */
+[data-bs-theme="dark"] .no-recompensas-box {
+  background-color: var(--bs-tertiary-bg);
+  color: var(--texto-secundario);
+  border: 2px dashed var(--bs-border-color);
+}
+
+[data-bs-theme="dark"] .no-recompensas-box h3 {
+  color: var(--texto-principal);
+}
+
+
+/* --- Detalle del Pedido --- */
 .detalle-pedido-productos {
   background-color: var(--bs-tertiary-bg);
   padding: 1.5rem;
