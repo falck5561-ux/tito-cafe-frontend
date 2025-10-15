@@ -4,7 +4,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
 import { AuthProvider } from './context/AuthContext.jsx';
-import { ThemeProvider } from './context/ThemeProvider.jsx';
+import { ThemeProvider } from './context/ThemeContext.jsx'; // CORREGIDO: Usando 'ThemeContext.jsx'
 import { CartProvider } from './context/CartContext.jsx'; 
 import axios from 'axios';
 
