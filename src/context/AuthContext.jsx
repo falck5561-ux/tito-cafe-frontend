@@ -1,76 +1,28 @@
-import React, { createContext, useState, useEffect } from 'react';
-import axios from 'axios';
-import { jwtDecode } from 'jwt-decode';
+// En: middlewares/authMiddleware.js
 
-const AuthContext = createContext();
+const jwt = require('jsonwebtoken');
+require('dotenv').config();
 
-export const AuthProvider = ({ children }) => {
-  const [token, setToken] = useState(localStorage.getItem('token'));
-  const [user, setUser] = useState(null);
+module.exports = function(req, res, next) {
+  // 1. Obtener la cabecera 'Authorization'
+  const authHeader = req.header('Authorization');
 
-  useEffect(() => {
-    if (token) {
-      try {
-        const decodedUser = jwtDecode(token);
-        setUser(decodedUser.user);
-        // --- CAMBIO: Volvemos a usar 'x-auth-token' como lo espera tu backend ---
-        axios.defaults.headers.common['x-auth-token'] = token;
-      } catch (error) {
-        console.error("Token inválido:", error);
-        logout();
-      }
-    } else {
-      setUser(null);
-      delete axios.defaults.headers.common['x-auth-token'];
-    }
-  }, [token]);
+  // 2. Verificar si existe y tiene el formato 'Bearer <token>'
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ msg: 'No hay token o el formato es incorrecto, permiso denegado' });
+  }
 
-  const login = async (email, password) => {
-    try {
-      const res = await axios.post('https://tito-cafe-backend.onrender.com/api/usuarios/login', {
-        email,
-        password,
-      });
-      const newToken = res.data.token;
-      localStorage.setItem('token', newToken);
-      setToken(newToken);
-      const decodedUser = jwtDecode(newToken);
-      return decodedUser.user;
-    } catch (error) {
-      console.error('Error en el login:', error.response?.data?.msg || 'Error de conexión');
-      logout();
-      return null;
-    }
-  };
-  
-  const register = async (nombre, email, password) => {
-    try {
-      const res = await axios.post('https://tito-cafe-backend.onrender.com/api/usuarios/register', {
-        nombre,
-        email,
-        password,
-      });
-      const newToken = res.data.token;
-      localStorage.setItem('token', newToken);
-      setToken(newToken);
-      return true;
-    } catch (error) {
-      console.error('Error en el registro:', error.response?.data?.msg || 'Error de conexión');
-      logout();
-      return false;
-    }
-  };
+  try {
+    // 3. Extraer el token (quitando "Bearer " del inicio)
+    const token = authHeader.split(' ')[1];
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    setToken(null);
-  };
+    // 4. Verificar el token con la clave secreta
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded.user; // Añadir el usuario del token a la petición
+    next(); // Permitir que la petición continúe
 
-  return (
-    <AuthContext.Provider value={{ token, user, login, logout, register }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  } catch (err) {
+    // Si el token no es válido o expiró
+    res.status(401).json({ msg: 'Token no es válido' });
+  }
 };
-
-export default AuthContext;
