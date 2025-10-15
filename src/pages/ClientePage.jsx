@@ -65,12 +65,13 @@ function ClientePage() {
   const [modalView, setModalView] = useState('cart');
   const [datosParaCheckout, setDatosParaCheckout] = useState(null);
 
-  // 2. Añadir estados para manejar el modal de detalles
+  // 2. Estados para manejar el modal de detalles
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
 
   const totalFinal = subtotal + costoEnvio;
 
+  // ==== Cargar productos y dirección inicial ====
   useEffect(() => {
     const fetchInitialData = async () => {
       setLoading(true);
@@ -106,6 +107,7 @@ function ClientePage() {
     fetchInitialData();
   }, []);
 
+  // ==== Cargar datos de pestañas (pedidos/recompensas) ====
   useEffect(() => {
     const fetchTabData = async () => {
       if (activeTab === 'crear') return;
@@ -129,6 +131,7 @@ function ClientePage() {
     fetchTabData();
   }, [activeTab]);
 
+  // ==== Calcular subtotal ====
   useEffect(() => {
     const nuevoSubtotal = pedidoActual.reduce((sum, item) => sum + item.cantidad * Number(item.precio), 0);
     setSubtotal(nuevoSubtotal);
@@ -141,7 +144,7 @@ function ClientePage() {
     }
   }, [tipoOrden]);
 
-  // 3. Añadir funciones para abrir y cerrar el modal
+  // 3. Funciones para abrir y cerrar el modal de detalles
   const handleShowDetails = (product) => {
     setSelectedProduct(product);
     setShowDetailModal(true);
@@ -158,6 +161,7 @@ function ClientePage() {
     toast.success(`${product.nombre} añadido al carrito!`);
   };
 
+  // ==== Funciones de carrito ====
   const agregarProductoAPedido = (producto) => {
     let precioFinal = Number(producto.precio);
     if (producto.en_oferta && producto.descuento_porcentaje > 0) {
@@ -201,6 +205,7 @@ function ClientePage() {
     setShowCartModal(false);
   };
 
+  // ==== Funciones de dirección ====
   const handleLocationSelect = async (location) => {
     setDireccion(location);
     setCalculandoEnvio(true);
@@ -227,6 +232,7 @@ function ClientePage() {
     }
   };
 
+  // ==== Pago ====
   const handleProcederAlPago = async () => {
     if (totalFinal <= 0) return;
     if (tipoOrden === 'domicilio' && !direccion) return toast.error('Por favor, selecciona o escribe tu ubicación.');
@@ -301,6 +307,7 @@ function ClientePage() {
 
   return (
     <div>
+      {/* ==== Tabs ==== */}
       <ul className="nav nav-tabs mb-4">
         <li className="nav-item"><button className={`nav-link ${activeTab === 'crear' ? 'active' : ''}`} onClick={() => setActiveTab('crear')}>Hacer un Pedido</button></li>
         <li className="nav-item"><button className={`nav-link ${activeTab === 'ver' ? 'active' : ''}`} onClick={() => setActiveTab('ver')}>Mis Pedidos</button></li>
@@ -310,6 +317,7 @@ function ClientePage() {
       {loading && <div className="text-center"><div className="spinner-border" role="status"></div></div>}
       {error && <div className="alert alert-danger">{error}</div>}
 
+      {/* ==== Crear Pedido ==== */}
       {!loading && activeTab === 'crear' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="row">
           <div className="col-md-8">
@@ -405,6 +413,7 @@ function ClientePage() {
         </motion.div>
       )}
 
+      {/* ==== Mis Pedidos ==== */}
       {!loading && activeTab === 'ver' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <h2>Mis Pedidos</h2>
@@ -454,6 +463,7 @@ function ClientePage() {
         </motion.div>
       )}
 
+      {/* ==== Mis Recompensas ==== */}
       {!loading && activeTab === 'recompensas' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <h2 className="mb-4">Mis Recompensas</h2>
@@ -481,6 +491,7 @@ function ClientePage() {
         </motion.div>
       )}
 
+      {/* ==== Modal de Pago ==== */}
       {showPaymentModal && clientSecret && (
         <div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
           <motion.div initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="modal-dialog">
@@ -503,6 +514,7 @@ function ClientePage() {
         </div>
       )}
 
+      {/* ==== Botón flotante carrito ==== */}
       {pedidoActual.length > 0 && (
         <button className="boton-carrito-flotante d-md-none" onClick={() => setShowCartModal(true)}>
           🛒
@@ -510,11 +522,12 @@ function ClientePage() {
         </button>
       )}
 
+      {/* ==== Modal Carrito / Dirección ==== */}
       {showCartModal && (
         <div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
           <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="modal-dialog modal-dialog-scrollable">
             <div className="modal-content">
-              {/* Contenido del modal del carrito */}
+              {/* Omitido por brevedad, tu código del carrito va aquí */}
             </div>
           </motion.div>
         </div>
