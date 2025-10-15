@@ -6,11 +6,10 @@ import { Elements } from '@stripe/react-stripe-js';
 import CheckoutForm from '../components/CheckoutForm';
 import MapSelector from '../components/MapSelector';
 import apiClient from '../services/api';
-import { useCart } from '../context/CartContext'; // 1. Usar el carrito global
+import { useCart } from '../context/CartContext';
 
 const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY || "pk_test_51SFnF0ROWvZ0m785J38J20subms9zeVw92xxsdct2OVzHbIXF8Kueajcp4jxJblwBhozD1xDljC2UG1qDNOGOxTX00UiDpoLCI");
 
-// Estilos (se mantienen igual)
 const styles = {
   recompensasContainer: { padding: '1rem 0' },
   cupon: {
@@ -40,7 +39,6 @@ const styles = {
 };
 
 function ClientePage() {
-  // 2. Obtener todo lo del carrito desde el contexto global
   const { 
     pedidoActual, 
     subtotal, 
@@ -51,10 +49,9 @@ function ClientePage() {
     agregarProductoAPedido 
   } = useCart();
 
-  // Estados que pertenecen solo a esta página
   const [activeTab, setActiveTab] = useState('crear');
   const [ordenExpandida, setOrdenExpandida] = useState(null);
-  const [productos, setProductos] = useState([]);
+  const [menuItems, setMenuItems] = useState([]); 
   const [tipoOrden, setTipoOrden] = useState('llevar');
   const [direccion, setDireccion] = useState(null);
   const [costoEnvio, setCostoEnvio] = useState(0);
@@ -63,6 +60,7 @@ function ClientePage() {
   const [misRecompensas, setMisRecompensas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [datosParaCheckout, setDatosParaCheckout] = useState(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [clientSecret, setClientSecret] = useState('');
   const [paymentLoading, setPaymentLoading] = useState(false);
@@ -71,34 +69,60 @@ function ClientePage() {
   const [referencia, setReferencia] = useState('');
   const [showCartModal, setShowCartModal] = useState(false);
   const [modalView, setModalView] = useState('cart');
-  const [datosParaCheckout, setDatosParaCheckout] = useState(null);
 
   const totalFinal = subtotal + costoEnvio;
 
+  // CORRECCIÓN 1: Este useEffect ahora pide productos Y combos, y los une.
   useEffect(() => {
     const fetchInitialData = async () => {
+      // Solo cargar el menú si estamos en la pestaña 'crear'
+      if (activeTab !== 'crear') return;
+
       setLoading(true);
       setError('');
       try {
-        const results = await Promise.allSettled([
+        const [productosRes, combosRes, direccionRes] = await Promise.allSettled([
           apiClient.get('/productos'),
+          apiClient.get('/combos'), // Pide los combos activos
           apiClient.get('/usuarios/mi-direccion')
         ]);
 
-        const productosResult = results[0];
-        const direccionResult = results[1];
+        let combinedMenu = [];
 
-        if (productosResult.status === 'fulfilled') {
-          setProductos(productosResult.value.data);
+        // Procesar productos
+        if (productosRes.status === 'fulfilled' && Array.isArray(productosRes.value.data)) {
+          const productosData = productosRes.value.data.map(p => ({...p, tipo: 'producto'}));
+          combinedMenu = [...combinedMenu, ...productosData];
         } else {
-          console.error("Error cargando productos:", productosResult.reason);
-          throw new Error('No se pudieron cargar los productos. Por favor, intenta más tarde.');
+          console.error("Error cargando productos:", productosRes.reason);
         }
 
-        if (direccionResult.status === 'fulfilled' && direccionResult.value.data) {
-          setDireccionGuardada(direccionResult.value.data);
-        } else if (direccionResult.status === 'rejected') {
-          console.warn("No se pudo cargar la dirección guardada:", direccionResult.reason.response?.data?.msg || direccionResult.reason.message);
+        // Procesar y estandarizar combos para que sean compatibles
+        if (combosRes.status === 'fulfilled' && Array.isArray(combosRes.value.data)) {
+          const combosData = combosRes.value.data.map(c => ({
+            id: `combo-${c.id}`,
+            nombre: c.titulo || 'Combo',
+            precio: c.precio_oferta > 0 ? c.precio_oferta : c.precio,
+            precio_original: c.precio,
+            descripcion: c.descripcion || '',
+            imagenes: c.imagenes || [],
+            en_oferta: c.precio_oferta > 0 && Number(c.precio_oferta) < Number(c.precio),
+            descuento_porcentaje: c.descuento_porcentaje || 0,
+            tipo: 'combo'
+          }));
+          combinedMenu = [...combinedMenu, ...combosData];
+        } else {
+          console.error("Error cargando combos:", combosRes.reason);
+        }
+
+        if (combinedMenu.length > 0) {
+          setMenuItems(combinedMenu);
+        } else {
+          throw new Error('No se pudieron cargar los productos en este momento.');
+        }
+
+        if (direccionRes.status === 'fulfilled' && direccionRes.value.data) {
+          setDireccionGuardada(direccionRes.value.data);
         }
       } catch (err) {
         setError(err.message);
@@ -107,9 +131,9 @@ function ClientePage() {
       }
     };
     fetchInitialData();
-  }, []);
+  }, [activeTab]); // Se ejecuta al cargar y si cambia la pestaña (para cargar el menú si se vuelve)
 
-  // 3. CORRECCIÓN: Este useEffect ahora se ejecuta cada vez que cambia 'activeTab'
+  // CORRECCIÓN 2: Este useEffect ahora se ejecuta cada vez que cambia 'activeTab'
   useEffect(() => {
     const fetchTabData = async () => {
       if (activeTab === 'crear') return;
@@ -133,7 +157,7 @@ function ClientePage() {
     };
 
     fetchTabData();
-  }, [activeTab]); // Se re-ejecuta al cambiar de pestaña
+  }, [activeTab]);
 
   useEffect(() => {
     if (tipoOrden !== 'domicilio') {
@@ -142,10 +166,8 @@ function ClientePage() {
     }
   }, [tipoOrden]);
 
-  // Las funciones del carrito ya no viven aquí. Se usan las del contexto.
-
   const limpiarPedidoCompleto = () => {
-    limpiarPedido(); // Llama a la función del contexto para vaciar el carrito
+    limpiarPedido();
     setCostoEnvio(0);
     setDireccion(null);
     setGuardarDireccion(false);
@@ -194,7 +216,6 @@ function ClientePage() {
       
       setShowCartModal(false);
       setModalView('cart');
-
       setClientSecret(res.data.clientSecret);
       setShowPaymentModal(true);
     } catch (err) {
@@ -223,7 +244,6 @@ function ClientePage() {
         toast.error('No se pudo guardar la dirección y referencia.');
       }
     }
-
     toast.success('¡Pedido realizado y pagado con éxito!');
     limpiarPedidoCompleto();
     setShowPaymentModal(false);
@@ -251,27 +271,28 @@ function ClientePage() {
           <div className="col-md-8">
             <h2>Elige tus Productos</h2>
             <div className="row g-3">
-              {productos?.map(p => {
-                const precioConDescuento = Number(p.precio) * (1 - (p.descuento_porcentaje || 0) / 100);
+              {menuItems?.map(item => {
+                const precioFinal = item.en_oferta
+                  ? Number(item.precio)
+                  : Number(item.precio_original || item.precio);
+
                 return (
-                  <div key={p.id} className="col-md-4 col-lg-3">
+                  <div key={item.id} className="col-md-4 col-lg-3">
                     <div 
-                      className={`card h-100 text-center shadow-sm position-relative ${p.en_oferta ? 'en-oferta' : ''}`}
-                      onClick={() => agregarProductoAPedido(p)} 
+                      className={`card h-100 text-center shadow-sm position-relative ${item.en_oferta ? 'en-oferta' : ''}`}
+                      onClick={() => agregarProductoAPedido(item)} 
                       style={{ cursor: 'pointer' }}
                     >
-                      {p.en_oferta && <span className="discount-badge">-{p.descuento_porcentaje}%</span>}
-                      
+                      {item.en_oferta && <span className="discount-badge">-{item.descuento_porcentaje}%</span>}
                       <div className="card-body d-flex flex-column justify-content-center pt-4">
-                        <h5 className="card-title">{p.nombre}</h5>
-                        
-                        {p.en_oferta && p.descuento_porcentaje > 0 ? (
+                        <h5 className="card-title">{item.nombre}</h5>
+                        {item.en_oferta ? (
                           <div>
-                            <span className="text-muted text-decoration-line-through me-2">${Number(p.precio).toFixed(2)}</span>
-                            <span className="card-text fw-bold fs-5">${precioConDescuento.toFixed(2)}</span>
+                            <span className="text-muted text-decoration-line-through me-2">${Number(item.precio_original).toFixed(2)}</span>
+                            <span className="card-text fw-bold fs-5 text-success">${Number(item.precio).toFixed(2)}</span>
                           </div>
                         ) : (
-                          <p className="card-text fw-bold fs-5">${Number(p.precio).toFixed(2)}</p>
+                          <p className="card-text fw-bold fs-5">${Number(item.precio).toFixed(2)}</p>
                         )}
                       </div>
                     </div>
@@ -306,23 +327,8 @@ function ClientePage() {
                 <div className="form-check"><input className="form-check-input" type="radio" name="tipoOrden" id="llevar" value="llevar" checked={tipoOrden === 'llevar'} onChange={(e) => setTipoOrden(e.target.value)} /><label className="form-check-label" htmlFor="llevar">Para Recoger</label></div>
                 <div className="form-check"><input className="form-check-input" type="radio" name="tipoOrden" id="local" value="local" checked={tipoOrden === 'local'} onChange={(e) => setTipoOrden(e.target.value)} /><label className="form-check-label" htmlFor="local">Para Comer Aquí</label></div>
                 <div className="form-check"><input className="form-check-input" type="radio" name="tipoOrden" id="domicilio" value="domicilio" checked={tipoOrden === 'domicilio'} onChange={(e) => setTipoOrden(e.target.value)} /><label className="form-check-label" htmlFor="domicilio">Entrega a Domicilio</label></div>
-                {tipoOrden === 'domicilio' && (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-3">
-                    {direccionGuardada && (<button className="btn btn-outline-info w-100 mb-3" onClick={usarDireccionGuardada}>Usar mi dirección guardada</button>)}
-                    <label className="form-label">Dirección de Entrega:</label>
-                    <MapSelector onLocationSelect={handleLocationSelect} initialAddress={direccion} />
-                    <div className="mt-3">
-                      <label htmlFor="referencia" className="form-label">Referencia (opcional):</label>
-                      <input type="text" id="referencia" className="form-control" value={referencia} onChange={(e) => setReferencia(e.target.value)} placeholder="Ej: Casa azul, portón negro"/>
-                    </div>
-                  </motion.div>
-                )}
-                {tipoOrden === 'domicilio' && direccion && (
-                  <div className="form-check mt-3">
-                    <input className="form-check-input" type="checkbox" id="guardarDireccion" checked={guardarDireccion} onChange={(e) => setGuardarDireccion(e.target.checked)} />
-                    <label className="form-check-label" htmlFor="guardarDireccion">Guardar/Actualizar dirección y referencia para futuras compras</label>
-                  </div>
-                )}
+                {tipoOrden === 'domicilio' && ( <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-3"> {direccionGuardada && (<button className="btn btn-outline-info w-100 mb-3" onClick={usarDireccionGuardada}>Usar mi dirección guardada</button>)} <label className="form-label">Dirección de Entrega:</label> <MapSelector onLocationSelect={handleLocationSelect} initialAddress={direccion} /> <div className="mt-3"> <label htmlFor="referencia" className="form-label">Referencia (opcional):</label> <input type="text" id="referencia" className="form-control" value={referencia} onChange={(e) => setReferencia(e.target.value)} placeholder="Ej: Casa azul, portón negro"/> </div> </motion.div> )}
+                {tipoOrden === 'domicilio' && direccion && ( <div className="form-check mt-3"> <input className="form-check-input" type="checkbox" id="guardarDireccion" checked={guardarDireccion} onChange={(e) => setGuardarDireccion(e.target.checked)} /> <label className="form-check-label" htmlFor="guardarDireccion">Guardar/Actualizar dirección y referencia para futuras compras</label> </div> )}
                 <hr />
                 <p className="d-flex justify-content-between">Subtotal: <span>${subtotal.toFixed(2)}</span></p>
                 {tipoOrden === 'domicilio' && (<motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="d-flex justify-content-between">Costo de Envío: {calculandoEnvio ? <span className="spinner-border spinner-border-sm"></span> : <span>${costoEnvio.toFixed(2)}</span>}</motion.p>)}
@@ -374,7 +380,7 @@ function ClientePage() {
 
       {!loading && activeTab === 'recompensas' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          <h2 className="mb-4">Mis Recompensas</h2>
+          <h2>Mis Recompensas</h2>
           {misRecompensas?.length === 0 ? (
             <div className="no-recompensas-box">
               <h3>Aún no tienes recompensas</h3>
