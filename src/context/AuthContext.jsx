@@ -1,28 +1,74 @@
-// En: middlewares/authMiddleware.js
+import React, { createContext, useState, useEffect } from 'react';
+import { jwtDecode } from 'jwt-decode';
+import apiClient from '../services/api'; // Asegúrate que la ruta a api.js sea correcta
 
-const jwt = require('jsonwebtoken');
-require('dotenv').config();
+const AuthContext = createContext();
 
-module.exports = function(req, res, next) {
-  // 1. Obtener la cabecera 'Authorization'
-  const authHeader = req.header('Authorization');
+export const AuthProvider = ({ children }) => {
+  const [token, setToken] = useState(localStorage.getItem('token'));
+  const [user, setUser] = useState(null);
 
-  // 2. Verificar si existe y tiene el formato 'Bearer <token>'
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ msg: 'No hay token o el formato es incorrecto, permiso denegado' });
-  }
+  useEffect(() => {
+    if (token) {
+      try {
+        const decodedUser = jwtDecode(token);
+        setUser(decodedUser.user);
+      } catch (error) {
+        console.error("Token inválido al cargar:", error);
+        logout(); // Limpia si el token guardado es malo
+      }
+    } else {
+      setUser(null);
+    }
+  }, [token]);
 
-  try {
-    // 3. Extraer el token (quitando "Bearer " del inicio)
-    const token = authHeader.split(' ')[1];
+  const login = async (email, password) => {
+    try {
+      const res = await apiClient.post('/usuarios/login', {
+        email,
+        password,
+      });
+      const newToken = res.data.token;
+      localStorage.setItem('token', newToken);
+      setToken(newToken);
+      const decodedUser = jwtDecode(newToken);
+      return decodedUser.user;
+    } catch (error) {
+      console.error('Error en el login:', error.response?.data?.msg || 'Error de conexión');
+      logout();
+      return null;
+    }
+  };
+  
+  const register = async (nombre, email, password) => {
+    try {
+      const res = await apiClient.post('/usuarios/register', {
+        nombre,
+        email,
+        password,
+      });
+      const newToken = res.data.token;
+      localStorage.setItem('token', newToken);
+      setToken(newToken);
+      return true;
+    } catch (error) {
+      console.error('Error en el registro:', error.response?.data?.msg || 'Error de conexión');
+      logout();
+      return false;
+    }
+  };
 
-    // 4. Verificar el token con la clave secreta
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded.user; // Añadir el usuario del token a la petición
-    next(); // Permitir que la petición continúe
+  const logout = () => {
+    localStorage.removeItem('token');
+    setToken(null);
+  };
 
-  } catch (err) {
-    // Si el token no es válido o expiró
-    res.status(401).json({ msg: 'Token no es válido' });
-  }
+  return (
+    <AuthContext.Provider value={{ token, user, login, logout, register }}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
+
+// La línea clave que arregla el build
+export default AuthContext;
