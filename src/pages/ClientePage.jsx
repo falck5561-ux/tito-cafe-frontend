@@ -6,10 +6,11 @@ import { Elements } from '@stripe/react-stripe-js';
 import CheckoutForm from '../components/CheckoutForm';
 import MapSelector from '../components/MapSelector';
 import apiClient from '../services/api';
-import { useCart } from '../context/CartContext'; // 1. Importar el hook del carrito global
+import { useCart } from '../context/CartContext'; // 1. Usar el carrito global
 
 const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY || "pk_test_51SFnF0ROWvZ0m785J38J20subms9zeVw92xxsdct2OVzHbIXF8Kueajcp4jxJblwBhozD1xDljC2UG1qDNOGOxTX00UiDpoLCI");
 
+// Estilos (se mantienen igual)
 const styles = {
   recompensasContainer: { padding: '1rem 0' },
   cupon: {
@@ -39,7 +40,7 @@ const styles = {
 };
 
 function ClientePage() {
-  // 2. OBTENER TODO LO DEL CARRITO DESDE EL CONTEXTO GLOBAL
+  // 2. Obtener todo lo del carrito desde el contexto global
   const { 
     pedidoActual, 
     subtotal, 
@@ -47,13 +48,13 @@ function ClientePage() {
     decrementarCantidad, 
     eliminarProducto, 
     limpiarPedido,
-    agregarProductoAPedido // <- Importamos esta también
+    agregarProductoAPedido 
   } = useCart();
 
-  // 3. MANTENER SOLO LOS ESTADOS QUE PERTENECEN A ESTA PÁGINA
+  // Estados que pertenecen solo a esta página
   const [activeTab, setActiveTab] = useState('crear');
   const [ordenExpandida, setOrdenExpandida] = useState(null);
-  const [productos, setProductos] = useState([]); // Para mostrar el menú de "Elige tus productos"
+  const [productos, setProductos] = useState([]);
   const [tipoOrden, setTipoOrden] = useState('llevar');
   const [direccion, setDireccion] = useState(null);
   const [costoEnvio, setCostoEnvio] = useState(0);
@@ -83,14 +84,17 @@ function ClientePage() {
           apiClient.get('/productos'),
           apiClient.get('/usuarios/mi-direccion')
         ]);
+
         const productosResult = results[0];
         const direccionResult = results[1];
+
         if (productosResult.status === 'fulfilled') {
           setProductos(productosResult.value.data);
         } else {
           console.error("Error cargando productos:", productosResult.reason);
           throw new Error('No se pudieron cargar los productos. Por favor, intenta más tarde.');
         }
+
         if (direccionResult.status === 'fulfilled' && direccionResult.value.data) {
           setDireccionGuardada(direccionResult.value.data);
         } else if (direccionResult.status === 'rejected') {
@@ -105,27 +109,31 @@ function ClientePage() {
     fetchInitialData();
   }, []);
 
+  // 3. CORRECCIÓN: Este useEffect ahora se ejecuta cada vez que cambia 'activeTab'
   useEffect(() => {
     const fetchTabData = async () => {
       if (activeTab === 'crear') return;
+      
       setLoading(true);
       setError('');
       try {
         if (activeTab === 'ver') {
           const res = await apiClient.get('/pedidos/mis-pedidos');
-          setMisPedidos(res.data);
+          setMisPedidos(Array.isArray(res.data) ? res.data : []);
         } else if (activeTab === 'recompensas') {
           const res = await apiClient.get('/recompensas/mis-recompensas');
-          setMisRecompensas(res.data);
+          setMisRecompensas(Array.isArray(res.data) ? res.data : []);
         }
       } catch (err) {
         setError('No se pudieron cargar los datos de la pestaña.');
+        console.error("Error en fetchTabData:", err);
       } finally {
         setLoading(false);
       }
     };
+
     fetchTabData();
-  }, [activeTab]);
+  }, [activeTab]); // Se re-ejecuta al cambiar de pestaña
 
   useEffect(() => {
     if (tipoOrden !== 'domicilio') {
@@ -134,11 +142,10 @@ function ClientePage() {
     }
   }, [tipoOrden]);
 
-  // 4. Se eliminan las funciones del carrito (agregarProductoAPedido, etc.)
-  // porque ahora se usan las del 'useCart()'.
+  // Las funciones del carrito ya no viven aquí. Se usan las del contexto.
 
   const limpiarPedidoCompleto = () => {
-    limpiarPedido(); // Llama a la función del contexto
+    limpiarPedido(); // Llama a la función del contexto para vaciar el carrito
     setCostoEnvio(0);
     setDireccion(null);
     setGuardarDireccion(false);
@@ -245,17 +252,19 @@ function ClientePage() {
             <h2>Elige tus Productos</h2>
             <div className="row g-3">
               {productos?.map(p => {
-                const precioConDescuento = Number(p.precio) * (1 - p.descuento_porcentaje / 100);
+                const precioConDescuento = Number(p.precio) * (1 - (p.descuento_porcentaje || 0) / 100);
                 return (
                   <div key={p.id} className="col-md-4 col-lg-3">
                     <div 
                       className={`card h-100 text-center shadow-sm position-relative ${p.en_oferta ? 'en-oferta' : ''}`}
-                      onClick={() => agregarProductoAPedido(p)} // <-- Usa la función del contexto
+                      onClick={() => agregarProductoAPedido(p)} 
                       style={{ cursor: 'pointer' }}
                     >
                       {p.en_oferta && <span className="discount-badge">-{p.descuento_porcentaje}%</span>}
+                      
                       <div className="card-body d-flex flex-column justify-content-center pt-4">
                         <h5 className="card-title">{p.nombre}</h5>
+                        
                         {p.en_oferta && p.descuento_porcentaje > 0 ? (
                           <div>
                             <span className="text-muted text-decoration-line-through me-2">${Number(p.precio).toFixed(2)}</span>
@@ -328,6 +337,41 @@ function ClientePage() {
         </motion.div>
       )}
 
+      {!loading && activeTab === 'ver' && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+          <h2>Mis Pedidos</h2>
+          {(!Array.isArray(misPedidos) || misPedidos.length === 0) ? <p className="text-center">No has realizado ningún pedido.</p> : (
+            <div className="table-responsive">
+              <table className="table table-hover">
+                <thead><tr><th>ID</th><th>Fecha</th><th>Tipo</th><th>Estado</th><th className="text-end">Total</th></tr></thead>
+                <tbody>
+                  {misPedidos?.map(p => (
+                    <React.Fragment key={p.id}>
+                      <tr style={{ cursor: 'pointer' }} onClick={() => handleToggleDetalle(p.id)}>
+                        <td>#{p.id}</td><td>{new Date(p.fecha).toLocaleString('es-MX')}</td><td>{p.tipo_orden}</td>
+                        <td><span className={`badge ${getStatusBadge(p.estado)}`}>{p.estado}</span></td>
+                        <td className="text-end">${Number(p.total).toFixed(2)}</td>
+                      </tr>
+                      {ordenExpandida === p.id && (
+                        <tr>
+                          <td colSpan="5">
+                            <motion.div className="detalle-pedido-productos" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} transition={{ duration: 0.3 }}>
+                              <h5 className="mb-3">Detalle del Pedido #{p.id}</h5>
+                              {p.productos?.map(producto => (<div key={`${p.id}-${producto.nombre}`} className="detalle-pedido-item"><span>{producto.cantidad}x {producto.nombre}</span><span>${(producto.cantidad * Number(producto.precio)).toFixed(2)}</span></div>))}
+                              {p.costo_envio > 0 && (<div className="detalle-pedido-item mt-2 pt-2 border-top"><span className="fw-bold">Costo de Envío</span><span className="fw-bold">${Number(p.costo_envio).toFixed(2)}</span></div>)}
+                            </motion.div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </motion.div>
+      )}
+
       {!loading && activeTab === 'recompensas' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <h2 className="mb-4">Mis Recompensas</h2>
@@ -357,27 +401,27 @@ function ClientePage() {
         </motion.div>
       )}
       
-{showPaymentModal && clientSecret && (
-  <div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
-    <motion.div initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="modal-dialog">
-      <div className="modal-content">
-        <div className="modal-header">
-            <h5 className="modal-title">Finalizar Compra</h5>
-            <button type="button" className="btn-close" onClick={() => setShowPaymentModal(false)}></button>
+      {showPaymentModal && clientSecret && (
+        <div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <motion.div initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Finalizar Compra</h5>
+                <button type="button" className="btn-close" onClick={() => setShowPaymentModal(false)}></button>
+              </div>
+              <div className="modal-body">
+                <Elements stripe={stripePromise} options={{ clientSecret }}>
+                  <CheckoutForm 
+                    handleSuccess={handleSuccessfulPayment} 
+                    total={totalFinal}
+                    datosPedido={datosParaCheckout}
+                  />
+                </Elements>
+              </div>
+            </div>
+          </motion.div>
         </div>
-        <div className="modal-body">
-          <Elements stripe={stripePromise} options={{ clientSecret }}>
-            <CheckoutForm 
-              handleSuccess={handleSuccessfulPayment} 
-              total={totalFinal}
-              datosPedido={datosParaCheckout} // <-- ¡ESTA ES LA LÍNEA CLAVE!
-            />
-          </Elements>
-        </div>
-      </div>
-    </motion.div>
-  </div>
-)}
+      )}
 
       {pedidoActual.length > 0 && (
         <button className="boton-carrito-flotante d-md-none" onClick={() => setShowCartModal(true)}>
@@ -423,7 +467,7 @@ function ClientePage() {
                   </div>
                   <div className="modal-footer d-grid gap-2">
                     <button className="btn btn-primary" onClick={handleContinue} disabled={pedidoActual.length === 0 || paymentLoading}>{tipoOrden === 'domicilio' ? 'Siguiente' : 'Proceder al Pago'}</button>
-                    <button className="btn btn-outline-danger" onClick={limpiarPedido}>Vaciar Carrito</button>
+                    <button className="btn btn-outline-danger" onClick={limpiarPedidoCompleto}>Vaciar Carrito</button>
                   </div>
                 </>
               )}
@@ -459,3 +503,4 @@ function ClientePage() {
 }
 
 export default ClientePage;
+
