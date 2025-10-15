@@ -1,6 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Lato:wght@400;700&display=swap');
 
+/* =================================== */
 /* === PALETA DE COLORES Y TEMAS === */
+/* =================================== */
 :root {
   /* --- TEMA CLARO --- */
   --cafe-dark: #4a2c2a;
@@ -33,7 +35,9 @@
   --bs-tertiary-bg: #2a2a2a;
 }
 
+/* ============================ */
 /* === ESTILOS GENERALES === */
+/* ============================ */
 body {
   font-family: 'Lato', sans-serif;
   background-color: var(--bs-body-bg);
@@ -49,7 +53,9 @@ h1, h2, h3, h4, h5, .navbar-brand, .display-4 {
   padding-bottom: 4rem;
 }
 
+/* ================== */
 /* === NAVBAR === */
+/* ================== */
 .navbar {
   background: rgba(26, 26, 26, 0.85);
   backdrop-filter: blur(10px);
@@ -78,7 +84,9 @@ h1, h2, h3, h4, h5, .navbar-brand, .display-4 {
   background-color: var(--cafe-medium);
 }
 
+/* ===================== */
 /* === PESTAÑAS (TABS) === */
+/* ===================== */
 .nav-tabs {
   border-bottom-color: var(--bs-border-color);
 }
@@ -95,7 +103,9 @@ h1, h2, h3, h4, h5, .navbar-brand, .display-4 {
   border-bottom-color: var(--cafe-medium);
 }
 
-/* === TARJETAS GENERALES === */
+/* ======================= */
+/* === TARJETAS (CARDS) === */
+/* ======================= */
 .card {
   background-color: var(--bs-card-bg);
   border: 1px solid var(--bs-border-color);
@@ -123,7 +133,9 @@ h1, h2, h3, h4, h5, .navbar-brand, .display-4 {
   border-radius: 50rem;
 }
 
-/* === TABLA DE ADMIN === */
+/* ================= */
+/* === TABLAS === */
+/* ================= */
 .table {
   --bs-table-bg: var(--bs-card-bg);
   --bs-table-color: var(--bs-body-color);
@@ -145,7 +157,18 @@ h1, h2, h3, h4, h5, .navbar-brand, .display-4 {
   color: var(--texto-principal);
 }
 
-/* === BOTONES Y PRECIOS === */
+/* MEJORA: Color de texto al pasar el cursor para asegurar contraste */
+[data-bs-theme="dark"] .table-hover > tbody > tr:hover {
+  color: var(--texto-principal) !important;
+}
+
+[data-bs-theme="light"] .table-hover > tbody > tr:hover {
+  color: var(--texto-principal) !important;
+}
+
+/* ======================= */
+/* === OTROS ESTILOS === */
+/* ======================= */
 .btn-primary {
   background-color: var(--cafe-medium);
   border-color: var(--cafe-medium);
@@ -155,15 +178,6 @@ h1, h2, h3, h4, h5, .navbar-brand, .display-4 {
   border-color: var(--cafe-dark);
 }
 
-.card-text.fw-bold.fs-5 {
-  color: var(--texto-principal) !important;
-}
-
-[data-bs-theme="dark"] .card-text.fw-bold.fs-5 {
-  color: #a5d6a7 !important;
-}
-
-/* === OTROS ESTILOS === */
 .hero-logo {
   width: 120px;
   height: 120px;
@@ -174,21 +188,15 @@ h1, h2, h3, h4, h5, .navbar-brand, .display-4 {
   border: 4px solid var(--cafe-light);
   box-shadow: 0 4px 15px rgba(0,0,0,0.2);
 }
+
 .pac-container {
   z-index: 9999 !important;
 }
 
-/* ... (Estilos de product-card existentes) ... */
-
-/* ======================================================= */
-/* === CORRECCIONES DE ESTILO PARA MODO CLARO Y DETALLES === */
-/* ======================================================= */
-
-/* 1. Estilo para el cuadro "Sin Recompensas" en MODO CLARO */
 [data-bs-theme="light"] .no-recompensas-box {
-  background-color: #f8f9fa; /* Un fondo gris muy claro */
-  color: var(--texto-secundario); /* Texto oscuro para contraste */
-  border: 2px dashed var(--cafe-light); /* Borde punteado con color del tema */
+  background-color: #f8f9fa;
+  color: var(--texto-secundario);
+  border: 2px dashed var(--cafe-light);
   padding: 2rem;
   border-radius: 8px;
   text-align: center;
@@ -198,9 +206,8 @@ h1, h2, h3, h4, h5, .navbar-brand, .display-4 {
   color: var(--texto-principal);
 }
 
-/* 2. Estilo para el contenedor del "Detalle del Pedido" */
 .detalle-pedido-productos {
-  background-color: var(--bs-tertiary-bg); /* Fondo sutil para separarlo */
+  background-color: var(--bs-tertiary-bg);
   padding: 1.5rem;
   margin: 0.5rem 0;
   border-radius: 8px;
@@ -213,10 +220,9 @@ h1, h2, h3, h4, h5, .navbar-brand, .display-4 {
   border-bottom: 1px solid var(--bs-border-color);
 }
 
-/* Estilo para cada línea del detalle (ej. "1x Frappe Coffee...") */
 .detalle-pedido-item {
   display: flex;
-  justify-content: space-between; /* Alinea nombre a la izquierda y precio a la derecha */
+  justify-content: space-between;
   padding: 0.5rem 0;
   font-size: 0.95rem;
 }
