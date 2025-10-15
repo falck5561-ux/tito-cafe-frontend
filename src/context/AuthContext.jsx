@@ -1,6 +1,9 @@
+// En: src/context/AuthContext.jsx
+
 import React, { createContext, useState, useEffect } from 'react';
 import { jwtDecode } from 'jwt-decode';
-import apiClient from '../services/api'; // Asegúrate que la ruta a api.js sea correcta
+// Asegúrate que esta ruta a tu archivo api.js sea la correcta
+import apiClient from '../services/api'; 
 
 const AuthContext = createContext();
 
@@ -15,7 +18,7 @@ export const AuthProvider = ({ children }) => {
         setUser(decodedUser.user);
       } catch (error) {
         console.error("Token inválido al cargar:", error);
-        logout(); // Limpia si el token guardado es malo
+        logout();
       }
     } else {
       setUser(null);
@@ -70,5 +73,4 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-// La línea clave que arregla el build
 export default AuthContext;
