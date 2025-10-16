@@ -11,8 +11,6 @@ function CombosPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const { user } = useContext(AuthContext);
-  // --- CORRECCIÓN CLAVE ---
-  // Usamos el nombre REAL de la función que está en tu CartContext.
   const { agregarProductoAPedido } = useCart(); 
   const navigate = useNavigate();
 
@@ -40,15 +38,9 @@ function CombosPage() {
       return;
     }
     
-    // --- CORRECCIÓN CLAVE ---
-    // Llamamos a la función con su nombre correcto.
+    // Esta lógica ahora solo la ejecutarán los clientes
     agregarProductoAPedido(combo);
-    
-    // La notificación ya la dispara el contexto, pero podemos dejar esta si quieres un mensaje específico aquí.
-    // toast.success(`${combo.nombre || combo.titulo} añadido al carrito!`);
-    
-    // Redirige al usuario a la página del pedido
-    navigate('/hacer-un-pedido'); // Asegúrate que esta sea tu ruta correcta
+    navigate('/hacer-un-pedido');
   };
 
   if (loading) {
@@ -99,9 +91,15 @@ function CombosPage() {
                   </div>
                   <div className="card-footer bg-transparent border-top-0 pb-3 d-flex justify-content-between align-items-center">
                     <span className="fw-bold fs-4">${Number(combo.precio).toFixed(2)}</span>
-                    <button onClick={(e) => handleOrdenarClick(e, combo)} className="btn btn-primary">
-                      ¡Lo Quiero!
-                    </button>
+                    
+                    {/* --- CORRECCIÓN DE LÓGICA DE ROLES --- */}
+                    {/* El botón solo se muestra si NO hay usuario, o si el usuario es un 'Cliente'. */}
+                    {/* Esto lo oculta automáticamente para 'Jefe' y 'Empleado'. */}
+                    {(!user || user.rol === 'Cliente') && (
+                      <button onClick={(e) => handleOrdenarClick(e, combo)} className="btn btn-primary">
+                        ¡Lo Quiero!
+                      </button>
+                    )}
                   </div>
                 </div>
               </motion.div>
@@ -114,3 +112,4 @@ function CombosPage() {
 }
 
 export default CombosPage;
+
