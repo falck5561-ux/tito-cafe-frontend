@@ -227,7 +227,7 @@ function AdminPage() {
                 {combos.map((combo) => (
                   <tr key={combo.id}>
                     <td>{combo.id}</td>
-                        {/* AHORA: Mostramos 'nombre' en lugar de 'titulo' */}
+                        {/* AHORA: Mostramos 'nombre' en lugar del antiguo 'titulo' */}
                     <td>{combo.nombre}</td>
                     <td>${Number(combo.precio).toFixed(2)}</td>
                         {/* ANTES: Había una columna 'Estado' que ya no existe */}
