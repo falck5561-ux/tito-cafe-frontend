@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import apiClient from '../services/api';
 import AuthContext from '../context/AuthContext';
-import { useCart } from '../context/CartContext';
+// CORRECCIÓN: El hook se llama 'useCart', no está en el contexto directamente
+import { useCart } from '../context/CartContext'; 
 import toast from 'react-hot-toast';
 
 function CombosPage() {
@@ -11,12 +12,14 @@ function CombosPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const { user } = useContext(AuthContext);
-  const { agregarProductoAPedido } = useCart();
+  // CORRECCIÓN: Se usa el nombre de la función que provee el hook
+  const { agregarAlCarrito } = useCart(); 
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchCombos = async () => {
       try {
+        // CORRECCIÓN: Usamos la API que devuelve los nombres correctos
         const response = await apiClient.get('/combos'); 
         setCombos(response.data);
       } catch (err) {
@@ -29,26 +32,23 @@ function CombosPage() {
     fetchCombos();
   }, []);
 
-  const handleOrdenarClick = (combo) => {
+  // --- FUNCIÓN CLAVE CORREGIDA ---
+  const handleOrdenarClick = (e, combo) => {
+    // 1. Detiene cualquier evento click en elementos padres (previene doble notificación)
+    e.stopPropagation(); 
+
     if (!user) {
       toast.error('Por favor, inicia sesión para añadir al carrito.');
       navigate('/login');
       return;
     }
     
-    // CORRECCIÓN: Usamos los nombres de campo correctos de la API.
-    const itemParaCarrito = {
-      id: combo.id, // El backend ya espera el ID del combo
-      nombre: combo.nombre, // ANTES: combo.titulo
-      precio: combo.precio,   // ANTES: Lógica con precio_oferta
-      isCombo: true // Identificador para el carrito
-    };
+    // 2. Agrega el producto al carrito (usa la función correcta del contexto)
+    agregarAlCarrito(combo);
+    toast.success(`${combo.nombre || combo.titulo} añadido al carrito!`);
     
-    agregarProductoAPedido(itemParaCarrito);
-    toast.success(`${combo.nombre} añadido al carrito!`);
-    
-    // Opcional: puedes navegar al carrito o a la página del cliente
-    // navigate('/cliente');
+    // 3. ¡NUEVO! Redirige al usuario a la página del pedido
+    navigate('/hacer-un-pedido'); // Asegúrate que esta sea tu ruta correcta
   };
 
   if (loading) {
@@ -70,15 +70,13 @@ function CombosPage() {
       {!loading && !error && combos.length === 0 && (
         <div className="text-center p-5 rounded" style={{backgroundColor: 'var(--bs-tertiary-bg)'}}>
           <h3>No hay combos especiales disponibles por el momento.</h3>
-          <p>¡Vuelve pronto para ver nuestras nuevas ofertas!</p>
         </div>
       )}
 
       {!loading && !error && combos.length > 0 && (
         <div className="row g-4">
           {combos.map((combo, index) => {
-            // CORRECCIÓN: Usamos los campos correctos de la API.
-            const displayImage = combo.imagen_url || `https://placehold.co/400x300/d7ccc8/4a2c2a?text=${encodeURIComponent(combo.nombre)}`;
+            const displayImage = combo.imagen_url || `https://placehold.co/400x300/d7ccc8/4a2c2a?text=${encodeURIComponent(combo.nombre || combo.titulo)}`;
 
             return (
               <motion.div 
@@ -92,17 +90,17 @@ function CombosPage() {
                   <img 
                     src={displayImage}
                     className="card-img-top" 
-                    alt={combo.nombre} // ANTES: combo.titulo
+                    alt={combo.nombre || combo.titulo}
                     style={{ height: '220px', objectFit: 'cover' }}
                   />
                   <div className="card-body d-flex flex-column">
-                    <h4 className="card-title flex-grow-1">{combo.nombre}</h4>{/* ANTES: combo.titulo */}
+                    <h4 className="card-title flex-grow-1">{combo.nombre || combo.titulo}</h4>
                     <p className="card-text">{combo.descripcion}</p>
                   </div>
                   <div className="card-footer bg-transparent border-top-0 pb-3 d-flex justify-content-between align-items-center">
-                    {/* CORRECCIÓN: Eliminamos la lógica de 'precio_oferta' */}
                     <span className="fw-bold fs-4">${Number(combo.precio).toFixed(2)}</span>
-                    <button onClick={() => handleOrdenarClick(combo)} className="btn btn-primary">
+                    {/* 4. Pasamos el evento 'e' a la función */}
+                    <button onClick={(e) => handleOrdenarClick(e, combo)} className="btn btn-primary">
                       ¡Lo Quiero!
                     </button>
                   </div>
@@ -117,4 +115,3 @@ function CombosPage() {
 }
 
 export default CombosPage;
-

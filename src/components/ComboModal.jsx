@@ -17,7 +17,6 @@ function ComboModal({ show, handleClose, handleSave, comboActual }) {
         // Si estamos editando, llenamos el formulario con los datos existentes
         setFormData({
           id: comboActual.id,
-          // CORRECCIÓN: Usamos 'titulo' y 'descripcion'
           titulo: comboActual.titulo || '',
           descripcion: comboActual.descripcion || '',
           precio: comboActual.precio || '',
@@ -69,6 +68,7 @@ function ComboModal({ show, handleClose, handleSave, comboActual }) {
 
   const onSave = (e) => {
     e.preventDefault();
+    // Limpia las URLs de imagen vacías antes de guardar
     const cleanedData = {
       ...formData,
       imagenes: formData.imagenes.filter(url => url && url.trim() !== ''),
@@ -87,7 +87,6 @@ function ComboModal({ show, handleClose, handleSave, comboActual }) {
             </div>
             <div className="modal-body">
               <div className="mb-3">
-                {/* CORRECCIÓN: El 'name' del input ahora es 'titulo' */}
                 <label htmlFor="titulo" className="form-label">Título del Combo</label>
                 <input type="text" className="form-control" id="titulo" name="titulo" value={formData.titulo} onChange={handleChange} required />
               </div>
@@ -100,7 +99,7 @@ function ComboModal({ show, handleClose, handleSave, comboActual }) {
                 <input type="number" step="0.01" className="form-control" id="precio" name="precio" value={formData.precio} onChange={handleChange} required />
               </div>
 
-              {/* Sección de Imágenes (ya estaba bien) */}
+              {/* Sección de Imágenes */}
               <div className="p-3 mb-3 border rounded">
                 <h6 className="mb-3">Imágenes del Combo</h6>
                 {formData.imagenes.map((url, index) => (
