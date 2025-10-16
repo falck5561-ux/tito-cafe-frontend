@@ -36,18 +36,27 @@ function CombosPage() {
       return;
     }
     
+    // CORRECCIÓN: Usamos los nombres de campo correctos de la API.
     const itemParaCarrito = {
-      id: `combo-${combo.id}`,
-      nombre: combo.titulo,
-      precio: combo.precio_oferta > 0 && Number(combo.precio_oferta) < Number(combo.precio) ? combo.precio_oferta : combo.precio,
+      id: combo.id, // El backend ya espera el ID del combo
+      nombre: combo.nombre, // ANTES: combo.titulo
+      precio: combo.precio,   // ANTES: Lógica con precio_oferta
+      isCombo: true // Identificador para el carrito
     };
     
-    // 1. Añade el producto al carrito global
     agregarProductoAPedido(itemParaCarrito);
+    toast.success(`${combo.nombre} añadido al carrito!`);
     
-    // 2. ¡LA LÍNEA QUE FALTABA! Navega a la página del cliente
-    navigate('/cliente');
+    // Opcional: puedes navegar al carrito o a la página del cliente
+    // navigate('/cliente');
   };
+
+  if (loading) {
+    return <div className="text-center p-5"><div className="spinner-border"></div></div>;
+  }
+  if (error) {
+    return <div className="alert alert-danger text-center">{error}</div>;
+  }
 
   return (
     <motion.div 
@@ -57,9 +66,6 @@ function CombosPage() {
       transition={{ duration: 0.5 }}
     >
       <h1 className="text-center mb-5">Nuestros Combos Especiales</h1>
-
-      {loading && <div className="text-center"><div className="spinner-border"></div></div>}
-      {error && <div className="alert alert-danger">{error}</div>}
       
       {!loading && !error && combos.length === 0 && (
         <div className="text-center p-5 rounded" style={{backgroundColor: 'var(--bs-tertiary-bg)'}}>
@@ -71,10 +77,8 @@ function CombosPage() {
       {!loading && !error && combos.length > 0 && (
         <div className="row g-4">
           {combos.map((combo, index) => {
-            const precioFinal = combo.precio_oferta > 0 && Number(combo.precio_oferta) < Number(combo.precio) ? combo.precio_oferta : combo.precio;
-            const displayImage = (combo.imagenes && combo.imagenes.length > 0) 
-              ? combo.imagenes[0] 
-              : `https://placehold.co/400x300/d7ccc8/4a2c2a?text=${encodeURIComponent(combo.titulo)}`;
+            // CORRECCIÓN: Usamos los campos correctos de la API.
+            const displayImage = combo.imagen_url || `https://placehold.co/400x300/d7ccc8/4a2c2a?text=${encodeURIComponent(combo.nombre)}`;
 
             return (
               <motion.div 
@@ -88,24 +92,16 @@ function CombosPage() {
                   <img 
                     src={displayImage}
                     className="card-img-top" 
-                    alt={combo.titulo}
+                    alt={combo.nombre} // ANTES: combo.titulo
                     style={{ height: '220px', objectFit: 'cover' }}
                   />
                   <div className="card-body d-flex flex-column">
-                    <h4 className="card-title flex-grow-1">{combo.titulo}</h4>
+                    <h4 className="card-title flex-grow-1">{combo.nombre}</h4>{/* ANTES: combo.titulo */}
                     <p className="card-text">{combo.descripcion}</p>
                   </div>
                   <div className="card-footer bg-transparent border-top-0 pb-3 d-flex justify-content-between align-items-center">
-                    <div>
-                      {combo.precio_oferta > 0 && Number(combo.precio_oferta) < Number(combo.precio) ? (
-                        <>
-                          <span className="text-muted text-decoration-line-through me-2">${Number(combo.precio).toFixed(2)}</span>
-                          <span className="fw-bold fs-4 text-success">${Number(precioFinal).toFixed(2)}</span>
-                        </>
-                      ) : (
-                        <span className="fw-bold fs-4">${Number(precioFinal).toFixed(2)}</span>
-                      )}
-                    </div>
+                    {/* CORRECCIÓN: Eliminamos la lógica de 'precio_oferta' */}
+                    <span className="fw-bold fs-4">${Number(combo.precio).toFixed(2)}</span>
                     <button onClick={() => handleOrdenarClick(combo)} className="btn btn-primary">
                       ¡Lo Quiero!
                     </button>
@@ -121,3 +117,4 @@ function CombosPage() {
 }
 
 export default CombosPage;
+
