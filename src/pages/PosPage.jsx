@@ -3,12 +3,20 @@ import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import apiClient from '../services/api';
 
-// Componente Modal integrado para no tener que importarlo
+// --- COMPONENTE MODAL INTEGRADO ---
 const DetallesPedidoModal = ({ pedido, onClose }) => {
   if (!pedido) return null;
+
   return (
-    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1050 }} onClick={onClose}>
-      <div style={{ backgroundColor: '#2c2c2c', color: 'white', padding: '2rem', borderRadius: '0.5rem', width: '90%', maxWidth: '500px' }} onClick={e => e.stopPropagation()}>
+    <div style={{
+      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.7)', display: 'flex',
+      alignItems: 'center', justifyContent: 'center', zIndex: 1050
+    }} onClick={onClose}>
+      <div style={{
+        backgroundColor: 'var(--bs-card-bg)', color: 'var(--bs-body-color)', padding: '2rem',
+        borderRadius: '0.5rem', width: '90%', maxWidth: '500px'
+      }} onClick={e => e.stopPropagation()}>
         <h3>Detalles del Pedido #{pedido.id}</h3>
         <hr />
         <p><strong>Cliente:</strong> {pedido.nombre_cliente}</p>
@@ -22,9 +30,10 @@ const DetallesPedidoModal = ({ pedido, onClose }) => {
   );
 };
 
+
 function PosPage() {
   const [activeTab, setActiveTab] = useState('pos');
-  const [menuItems, setMenuItems] = useState([]);
+  const [menuItems, setMenuItems] = useState([]); // <-- Estado para el menú unificado
   const [ventaActual, setVentaActual] = useState([]);
   const [totalVenta, setTotalVenta] = useState(0);
   const [pedidos, setPedidos] = useState([]);
@@ -43,6 +52,7 @@ function PosPage() {
     setError('');
     try {
       if (activeTab === 'pos') {
+        // CORRECCIÓN: Pedir productos y combos a la vez
         const [productosRes, combosRes] = await Promise.allSettled([
           apiClient.get('/productos'),
           apiClient.get('/combos'), 
@@ -66,10 +76,10 @@ function PosPage() {
         setMenuItems(combinedMenu);
 
       } else if (activeTab === 'pedidos') {
-        const res = await apiClient.get('/pedidos');
+        const res = await apiClient.get('/pedidos'); // CORRECCIÓN: Usar apiClient y ruta corta
         setPedidos(res.data);
       } else if (activeTab === 'historial') {
-        const res = await apiClient.get('/ventas/hoy');
+        const res = await apiClient.get('/ventas/hoy'); // CORRECCIÓN: Usar apiClient y ruta corta
         setVentasDelDia(res.data);
       }
     } catch (err) {
@@ -112,43 +122,31 @@ function PosPage() {
   const handleCobrar = async () => {
     if (ventaActual.length === 0) return toast.error('El ticket está vacío.');
     
-    // --- CORRECCIÓN CLAVE AQUÍ ---
-    // Separamos los productos de los combos
     const productosParaEnviar = ventaActual
       .filter(item => item.tipo === 'producto')
       .map(({ id, cantidad, precioFinal, nombre }) => ({ id: Number(id), cantidad, precio: Number(precioFinal), nombre }));
 
     const combosParaEnviar = ventaActual
       .filter(item => item.tipo === 'combo')
-      .map(({ id, cantidad, precioFinal, nombre }) => ({ 
-        id: Number(id.replace('combo-', '')), // Enviamos solo el número del ID
-        cantidad, 
-        precio: Number(precioFinal), 
-        nombre 
-      }));
+      .map(({ id, cantidad, precioFinal, nombre }) => ({ id: Number(id.replace('combo-', '')), cantidad, precio: Number(precioFinal), nombre }));
     
     const ventaData = { 
       total: totalVenta, 
       metodo_pago: 'Efectivo', 
-      productos: productosParaEnviar, // Array solo de productos
-      combos: combosParaEnviar,       // Array solo de combos
+      productos: productosParaEnviar,
+      combos: combosParaEnviar,
       clienteId: clienteEncontrado ? clienteEncontrado.cliente.id : null,
       recompensaUsadaId: recompensaAplicadaId
     };
-
-    console.log("Enviando datos de venta:", ventaData);
     
     try {
-      await apiClient.post('/ventas', ventaData);
+      await apiClient.post('/ventas', ventaData); // CORRECCIÓN: Usar apiClient y ruta corta
       toast.success('¡Venta registrada con éxito!');
       limpiarVenta();
       if (activeTab === 'historial') {
         fetchData();
       }
-    } catch (err) { 
-      toast.error('Error al registrar la venta. Revisa los logs del servidor.'); 
-      console.error("Error del backend:", err.response || err); 
-    }
+    } catch (err) { toast.error('Error al registrar la venta.'); }
   };
   
   const handleUpdateStatus = async (pedidoId, nuevoEstado) => { try { await apiClient.put(`/pedidos/${pedidoId}/estado`, { estado: nuevoEstado }); fetchData(); toast.success(`Pedido #${pedidoId} actualizado.`); } catch (err) { toast.error('No se pudo actualizar el estado.'); } };
@@ -185,7 +183,7 @@ function PosPage() {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <h1 className="mb-4">Gestión de Pedidos en Línea</h1>
           <div className="table-responsive">
-            <table className="table table-dark table-hover align-middle">
+            <table className="table table-hover align-middle">
               <thead><tr><th>ID</th><th>Cliente</th><th>Fecha</th><th>Total</th><th>Tipo</th><th>Estado</th><th>Acciones</th></tr></thead>
               <tbody>
                 {pedidos.map((pedido) => (
