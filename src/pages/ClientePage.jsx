@@ -72,9 +72,6 @@ function ClientePage() {
 
   const totalFinal = subtotal + costoEnvio;
 
-  // ========================================================================
-  // INICIO DE LA CORRECCIÓN PRINCIPAL PARA LA PANTALLA EN BLANCO
-  // ========================================================================
   useEffect(() => {
     const fetchInitialData = async () => {
       if (activeTab !== 'crear') return;
@@ -82,39 +79,31 @@ function ClientePage() {
       setLoading(true);
       setError('');
       try {
-        // Pedimos todos los datos en paralelo
         const [productosRes, combosRes, direccionRes] = await Promise.all([
           apiClient.get('/productos'),
           apiClient.get('/combos'),
           apiClient.get('/usuarios/mi-direccion')
         ]);
 
-        // Función unificada para procesar CUALQUIER item (producto o combo)
-        // Esto garantiza que todos los objetos tengan la misma estructura y evita errores.
         const estandarizarItem = (item) => {
           const precioFinal = Number(item.precio);
           let precioOriginal = precioFinal;
 
-          // Si un item está en oferta, calculamos cuál era su precio original.
-          // Esto es crucial para que la vista pueda mostrar el precio tachado sin errores.
           if (item.en_oferta && item.descuento_porcentaje > 0) {
-            // Formula para revertir el descuento: Precio Original = Precio Final / (1 - (% Descuento / 100))
             precioOriginal = precioFinal / (1 - item.descuento_porcentaje / 100);
           }
 
           return {
             ...item,
             precio: precioFinal,
-            precio_original: precioOriginal, // Todos los items ahora tienen esta propiedad
-            nombre: item.nombre || item.titulo, // Acepta 'nombre' (de productos) o 'titulo' (de combos)
+            precio_original: precioOriginal,
+            nombre: item.nombre || item.titulo,
           };
         };
 
-        // Aplicamos la estandarización a ambos arreglos
         const productosEstandarizados = productosRes.data.map(estandarizarItem);
         const combosEstandarizados = combosRes.data.map(estandarizarItem);
         
-        // Unimos los productos y combos ya procesados en una sola lista para el menú
         setMenuItems([...productosEstandarizados, ...combosEstandarizados]);
 
         if (direccionRes.data) {
@@ -130,9 +119,6 @@ function ClientePage() {
     };
     fetchInitialData();
   }, [activeTab]);
-  // ========================================================================
-  // FIN DE LA CORRECCIÓN PRINCIPAL
-  // ========================================================================
 
   useEffect(() => {
     const fetchTabData = async () => {
@@ -255,6 +241,48 @@ function ClientePage() {
   const handleToggleDetalle = (pedidoId) => { setOrdenExpandida(ordenExpandida === pedidoId ? null : pedidoId); };
   const totalItemsEnCarrito = pedidoActual.reduce((sum, item) => sum + item.cantidad, 0);
 
+  // --- COMPONENTE INTERNO REUTILIZABLE PARA MOSTRAR EL CONTENIDO DEL CARRITO ---
+  const CarritoContent = ({ isModal }) => (
+    <>
+      <div className={isModal ? "modal-body" : "card-body"}>
+        {!isModal && (
+          <>
+            <h3 className="card-title text-center">Mi Pedido</h3>
+            <hr />
+          </>
+        )}
+        <ul className="list-group list-group-flush">
+          {pedidoActual.length === 0 && <li className="list-group-item text-center text-muted">Tu carrito está vacío</li>}
+          {pedidoActual.map((item) => (
+            <li key={item.id} className="list-group-item d-flex align-items-center justify-content-between p-1">
+              <span className="me-auto">{item.nombre}</span>
+              <div className="d-flex align-items-center">
+                <button className="btn btn-outline-secondary btn-sm" onClick={() => decrementarCantidad(item.id)}>-</button>
+                <span className="mx-2">{item.cantidad}</span>
+                <button className="btn btn-outline-secondary btn-sm" onClick={() => incrementarCantidad(item.id)}>+</button>
+              </div>
+              <span className="mx-3" style={{ minWidth: '60px', textAlign: 'right' }}>${(item.cantidad * Number(item.precio)).toFixed(2)}</span>
+              <button className="btn btn-outline-danger btn-sm" onClick={() => eliminarProducto(item.id)}>&times;</button>
+            </li>
+          ))}
+        </ul>
+        <hr />
+        <h5>Elige una opción:</h5>
+        <div className="form-check"><input className="form-check-input" type="radio" name={isModal ? "tipoOrdenModal" : "tipoOrden"} id={isModal ? "llevarModal" : "llevar"} value="llevar" checked={tipoOrden === 'llevar'} onChange={(e) => setTipoOrden(e.target.value)} /><label className="form-check-label" htmlFor={isModal ? "llevarModal" : "llevar"}>Para Recoger</label></div>
+        <div className="form-check"><input className="form-check-input" type="radio" name={isModal ? "tipoOrdenModal" : "tipoOrden"} id={isModal ? "localModal" : "local"} value="local" checked={tipoOrden === 'local'} onChange={(e) => setTipoOrden(e.target.value)} /><label className="form-check-label" htmlFor={isModal ? "localModal" : "local"}>Para Comer Aquí</label></div>
+        <div className="form-check"><input className="form-check-input" type="radio" name={isModal ? "tipoOrdenModal" : "tipoOrden"} id={isModal ? "domicilioModal" : "domicilio"} value="domicilio" checked={tipoOrden === 'domicilio'} onChange={(e) => setTipoOrden(e.target.value)} /><label className="form-check-label" htmlFor={isModal ? "domicilioModal" : "domicilio"}>Entrega a Domicilio</label></div>
+        <hr />
+        <p className="d-flex justify-content-between">Subtotal: <span>${subtotal.toFixed(2)}</span></p>
+        {tipoOrden === 'domicilio' && (<motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="d-flex justify-content-between">Costo de Envío: {calculandoEnvio ? <span className="spinner-border spinner-border-sm"></span> : <span>${costoEnvio.toFixed(2)}</span>}</motion.p>)}
+        <h4>Total: ${totalFinal.toFixed(2)}</h4>
+      </div>
+      <div className={isModal ? "modal-footer d-grid gap-2" : "card-footer d-grid gap-2 mt-auto"}>
+        <button className="btn btn-primary" onClick={handleContinue} disabled={pedidoActual.length === 0 || paymentLoading}>{tipoOrden === 'domicilio' ? 'Siguiente' : 'Proceder al Pago'}</button>
+        <button className="btn btn-outline-danger" onClick={limpiarPedidoCompleto}>Vaciar Carrito</button>
+      </div>
+    </>
+  );
+
   return (
     <div>
       <ul className="nav nav-tabs mb-4">
@@ -272,84 +300,97 @@ function ClientePage() {
             <h2>Elige tus Productos</h2>
             <div className="row g-3">
               {menuItems?.map(item => (
-                  <div key={item.id} className="col-md-4 col-lg-3">
-                    <div 
-                      className={`card h-100 text-center shadow-sm position-relative ${item.en_oferta ? 'en-oferta' : ''}`}
-                      onClick={() => agregarProductoAPedido(item)} 
-                      style={{ cursor: 'pointer' }}
-                    >
-                      {item.en_oferta && item.descuento_porcentaje > 0 && <span className="discount-badge">-{Number(item.descuento_porcentaje).toFixed(0)}%</span>}
-                      <div className="card-body d-flex flex-column justify-content-center pt-4">
-                        <h5 className="card-title">{item.nombre}</h5>
-                        {item.en_oferta ? (
-                          <div>
-                            <span className="text-muted text-decoration-line-through me-2">${Number(item.precio_original).toFixed(2)}</span>
-                            <span className="card-text fw-bold fs-5 text-success">${Number(item.precio).toFixed(2)}</span>
-                          </div>
-                        ) : (
-                          <p className="card-text fw-bold fs-5">${Number(item.precio).toFixed(2)}</p>
-                        )}
-                      </div>
+                <div key={item.id} className="col-6 col-md-4 col-lg-3">
+                  <div className="card h-100 text-center shadow-sm" onClick={() => agregarProductoAPedido(item)} style={{ cursor: 'pointer' }}>
+                    <div className="card-body d-flex flex-column justify-content-center pt-4">
+                      <h5 className="card-title">{item.nombre}</h5>
+                      {item.en_oferta ? (
+                        <div>
+                          <span className="text-muted text-decoration-line-through me-2">${Number(item.precio_original).toFixed(2)}</span>
+                          <span className="card-text fw-bold fs-5 text-success">${Number(item.precio).toFixed(2)}</span>
+                        </div>
+                      ) : (
+                        <p className="card-text fw-bold fs-5">${Number(item.precio).toFixed(2)}</p>
+                      )}
                     </div>
                   </div>
-                )
-              )}
+                </div>
+              ))}
             </div>
           </div>
           
-          <div className="col-md-4 columna-carrito-escritorio">
-            <div className="card shadow-sm">
-              <div className="card-body">
-                <h3 className="card-title text-center">Mi Pedido</h3>
-                <hr />
-                <ul className="list-group list-group-flush">
-                  {pedidoActual.length === 0 && <li className="list-group-item text-center text-muted">Tu carrito está vacío</li>}
-                  {pedidoActual.map((item) => (
-                    <li key={item.id} className="list-group-item d-flex align-items-center justify-content-between p-1">
-                      <span className="me-auto">{item.nombre}</span>
-                      <div className="d-flex align-items-center">
-                        <button className="btn btn-outline-secondary btn-sm" onClick={() => decrementarCantidad(item.id)}>-</button>
-                        <span className="mx-2">{item.cantidad}</span>
-                        <button className="btn btn-outline-secondary btn-sm" onClick={() => incrementarCantidad(item.id)}>+</button>
-                      </div>
-                      <span className="mx-3" style={{ minWidth: '60px', textAlign: 'right' }}>${(item.cantidad * Number(item.precio)).toFixed(2)}</span>
-                      <button className="btn btn-outline-danger btn-sm" onClick={() => eliminarProducto(item.id)}>&times;</button>
-                    </li>
-                  ))}
-                </ul>
-                <hr />
-                <h5>Elige una opción:</h5>
-                <div className="form-check"><input className="form-check-input" type="radio" name="tipoOrden" id="llevar" value="llevar" checked={tipoOrden === 'llevar'} onChange={(e) => setTipoOrden(e.target.value)} /><label className="form-check-label" htmlFor="llevar">Para Recoger</label></div>
-                <div className="form-check"><input className="form-check-input" type="radio" name="tipoOrden" id="local" value="local" checked={tipoOrden === 'local'} onChange={(e) => setTipoOrden(e.target.value)} /><label className="form-check-label" htmlFor="local">Para Comer Aquí</label></div>
-                <div className="form-check"><input className="form-check-input" type="radio" name="tipoOrden" id="domicilio" value="domicilio" checked={tipoOrden === 'domicilio'} onChange={(e) => setTipoOrden(e.target.value)} /><label className="form-check-label" htmlFor="domicilio">Entrega a Domicilio</label></div>
-                {tipoOrden === 'domicilio' && ( <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-3"> {direccionGuardada && (<button className="btn btn-outline-info w-100 mb-3" onClick={usarDireccionGuardada}>Usar mi dirección guardada</button>)} <label className="form-label">Dirección de Entrega:</label> <MapSelector onLocationSelect={handleLocationSelect} initialAddress={direccion} /> <div className="mt-3"> <label htmlFor="referencia" className="form-label">Referencia (opcional):</label> <input type="text" id="referencia" className="form-control" value={referencia} onChange={(e) => setReferencia(e.target.value)} placeholder="Ej: Casa azul, portón negro"/> </div> </motion.div> )}
-                {tipoOrden === 'domicilio' && direccion && ( <div className="form-check mt-3"> <input className="form-check-input" type="checkbox" id="guardarDireccion" checked={guardarDireccion} onChange={(e) => setGuardarDireccion(e.target.checked)} /> <label className="form-check-label" htmlFor="guardarDireccion">Guardar/Actualizar dirección y referencia para futuras compras</label> </div> )}
-                <hr />
-                <p className="d-flex justify-content-between">Subtotal: <span>${subtotal.toFixed(2)}</span></p>
-                {tipoOrden === 'domicilio' && (<motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="d-flex justify-content-between">Costo de Envío: {calculandoEnvio ? <span className="spinner-border spinner-border-sm"></span> : <span>${costoEnvio.toFixed(2)}</span>}</motion.p>)}
-                <h4>Total: ${totalFinal.toFixed(2)}</h4>
-                <div className="d-grid gap-2 mt-3">
-                  <button className="btn btn-primary" onClick={handleProcederAlPago} disabled={pedidoActual.length === 0 || paymentLoading || calculandoEnvio}>{paymentLoading ? 'Iniciando...' : 'Proceder al Pago'}</button>
-                  <button className="btn btn-outline-danger" onClick={limpiarPedidoCompleto}>Vaciar Carrito</button>
-                </div>
-              </div>
+          {/* --- COLUMNA DE CARRITO PARA ESCRITORIO (SE OCULTA EN MÓVIL) --- */}
+          <div className="col-md-4 d-none d-md-block">
+            <div className="card shadow-sm position-sticky" style={{top: '100px'}}>
+              <CarritoContent isModal={false} />
             </div>
           </div>
         </motion.div>
       )}
 
+      {/* --- BOTÓN DE CARRITO FLOTANTE (SOLO VISIBLE EN MÓVIL) --- */}
+      {activeTab === 'crear' && pedidoActual.length > 0 && (
+        <button className="boton-carrito-flotante d-md-none" onClick={() => setShowCartModal(true)}>
+          🛒 <span className="badge-carrito">{totalItemsEnCarrito}</span>
+        </button>
+      )}
+
+      {/* --- MODAL DEL CARRITO PARA MÓVIL --- */}
+      {showCartModal && (
+        <div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="modal-dialog modal-dialog-scrollable">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">{modalView === 'cart' ? 'Mi Pedido' : 'Dirección de Entrega'}</h5>
+                <button type="button" className="btn-close" onClick={() => { setShowCartModal(false); setModalView('cart'); }}></button>
+              </div>
+              {modalView === 'cart' ? (
+                <CarritoContent isModal={true} />
+              ) : (
+                <>
+                  <div className="modal-body">
+                    {direccionGuardada && (<button className="btn btn-outline-info w-100 mb-3" onClick={usarDireccionGuardada}>Usar mi dirección guardada</button>)}
+                    <label className="form-label">Busca tu dirección:</label>
+                    <MapSelector onLocationSelect={handleLocationSelect} initialAddress={direccion} />
+                    <div className="mt-3"><label htmlFor="referenciaModal" className="form-label">Referencia:</label><input type="text" id="referenciaModal" className="form-control" value={referencia} onChange={(e) => setReferencia(e.target.value)} /></div>
+                    <div className="form-check mt-3"><input className="form-check-input" type="checkbox" id="guardarDireccionModal" checked={guardarDireccion} onChange={(e) => setGuardarDireccion(e.target.checked)} /><label className="form-check-label" htmlFor="guardarDireccionModal">Guardar dirección</label></div>
+                  </div>
+                  <div className="modal-footer d-flex justify-content-between">
+                    <button className="btn btn-secondary" onClick={() => setModalView('cart')}>Volver</button>
+                    <button className="btn btn-primary" onClick={handleProcederAlPago} disabled={!direccion || paymentLoading || calculandoEnvio}>{paymentLoading ? 'Iniciando...' : 'Confirmar y Pagar'}</button>
+                  </div>
+                </>
+              )}
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* --- El resto del renderizado para las otras pestañas no cambia --- */}
       {!loading && activeTab === 'ver' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <h2>Mis Pedidos</h2>
-          {(!Array.isArray(misPedidos) || misPedidos.length === 0) ? <p className="text-center">No has realizado ningún pedido.</p> : (
+          {(!Array.isArray(misPedidos) || misPedidos.length === 0) ? (
+            <p className="text-center">No has realizado ningún pedido.</p>
+          ) : (
             <div className="table-responsive">
               <table className="table table-hover">
-                <thead><tr><th>ID</th><th>Fecha</th><th>Tipo</th><th>Estado</th><th className="text-end">Total</th></tr></thead>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Fecha</th>
+                    <th>Tipo</th>
+                    <th>Estado</th>
+                    <th className="text-end">Total</th>
+                  </tr>
+                </thead>
                 <tbody>
                   {misPedidos?.map(p => (
                     <React.Fragment key={p.id}>
                       <tr style={{ cursor: 'pointer' }} onClick={() => handleToggleDetalle(p.id)}>
-                        <td>#{p.id}</td><td>{new Date(p.fecha).toLocaleString('es-MX')}</td><td>{p.tipo_orden}</td>
+                        <td>#{p.id}</td>
+                        <td>{new Date(p.fecha).toLocaleString('es-MX')}</td>
+                        <td>{p.tipo_orden}</td>
                         <td><span className={`badge ${getStatusBadge(p.estado)}`}>{p.estado}</span></td>
                         <td className="text-end">${Number(p.total).toFixed(2)}</td>
                       </tr>
@@ -358,8 +399,18 @@ function ClientePage() {
                           <td colSpan="5">
                             <motion.div className="detalle-pedido-productos" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} transition={{ duration: 0.3 }}>
                               <h5 className="mb-3">Detalle del Pedido #{p.id}</h5>
-                              {p.productos?.map(producto => (<div key={`${p.id}-${producto.nombre}`} className="detalle-pedido-item"><span>{producto.cantidad}x {producto.nombre}</span><span>${(producto.cantidad * Number(producto.precio)).toFixed(2)}</span></div>))}
-                              {p.costo_envio > 0 && (<div className="detalle-pedido-item mt-2 pt-2 border-top"><span className="fw-bold">Costo de Envío</span><span className="fw-bold">${Number(p.costo_envio).toFixed(2)}</span></div>)}
+                              {p.productos?.map(producto => (
+                                <div key={`${p.id}-${producto.nombre}`} className="detalle-pedido-item">
+                                  <span>{producto.cantidad}x {producto.nombre}</span>
+                                  <span>${(producto.cantidad * Number(producto.precio)).toFixed(2)}</span>
+                                </div>
+                              ))}
+                              {p.costo_envio > 0 && (
+                                <div className="detalle-pedido-item mt-2 pt-2 border-top">
+                                  <span className="fw-bold">Costo de Envío</span>
+                                  <span className="fw-bold">${Number(p.costo_envio).toFixed(2)}</span>
+                                </div>
+                              )}
                             </motion.div>
                           </td>
                         </tr>
@@ -423,84 +474,9 @@ function ClientePage() {
           </motion.div>
         </div>
       )}
-
-      {pedidoActual.length > 0 && (
-        <button className="boton-carrito-flotante d-md-none" onClick={() => setShowCartModal(true)}>
-          🛒
-          <span className="badge-carrito">{totalItemsEnCarrito}</span>
-        </button>
-      )}
-
-      {showCartModal && (
-        <div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="modal-dialog modal-dialog-scrollable">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">{modalView === 'cart' ? 'Mi Pedido' : 'Dirección de Entrega'}</h5>
-                <button type="button" className="btn-close" onClick={() => { setShowCartModal(false); setModalView('cart'); }}></button>
-              </div>
-              {modalView === 'cart' && (
-                <>
-                  <div className="modal-body">
-                    <ul className="list-group list-group-flush">
-                      {pedidoActual.map((item) => (
-                        <li key={item.id} className="list-group-item d-flex align-items-center justify-content-between p-1">
-                          <span className="me-auto">{item.nombre}</span>
-                          <div className="d-flex align-items-center">
-                            <button className="btn btn-outline-secondary btn-sm" onClick={() => decrementarCantidad(item.id)}>-</button>
-                            <span className="mx-2">{item.cantidad}</span>
-                            <button className="btn btn-outline-secondary btn-sm" onClick={() => incrementarCantidad(item.id)}>+</button>
-                          </div>
-                          <span className="mx-3" style={{ minWidth: '60px', textAlign: 'right' }}>${(item.cantidad * Number(item.precio)).toFixed(2)}</span>
-                          <button className="btn btn-outline-danger btn-sm" onClick={() => eliminarProducto(item.id)}>&times;</button>
-                        </li>
-                      ))}
-                    </ul>
-                    <hr />
-                    <h5>Elige una opción:</h5>
-                    <div className="form-check"><input className="form-check-input" type="radio" name="tipoOrdenModal" id="llevarModal" value="llevar" checked={tipoOrden === 'llevar'} onChange={(e) => setTipoOrden(e.target.value)} /><label className="form-check-label" htmlFor="llevarModal">Para Recoger</label></div>
-                    <div className="form-check"><input className="form-check-input" type="radio" name="tipoOrdenModal" id="localModal" value="local" checked={tipoOrden === 'local'} onChange={(e) => setTipoOrden(e.target.value)} /><label className="form-check-label" htmlFor="localModal">Para Comer Aquí</label></div>
-                    <div className="form-check"><input className="form-check-input" type="radio" name="tipoOrdenModal" id="domicilioModal" value="domicilio" checked={tipoOrden === 'domicilio'} onChange={(e) => setTipoOrden(e.target.value)} /><label className="form-check-label" htmlFor="domicilioModal">Entrega a Domicilio</label></div>
-                    <hr />
-                    <p className="d-flex justify-content-between">Subtotal: <span>${subtotal.toFixed(2)}</span></p>
-                    {tipoOrden === 'domicilio' && (<motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="d-flex justify-content-between">Costo de Envío: {calculandoEnvio ? <span className="spinner-border spinner-border-sm"></span> : <span>${costoEnvio.toFixed(2)}</span>}</motion.p>)}
-                    <h4>Total: ${totalFinal.toFixed(2)}</h4>
-                  </div>
-                  <div className="modal-footer d-grid gap-2">
-                    <button className="btn btn-primary" onClick={handleContinue} disabled={pedidoActual.length === 0 || paymentLoading}>{tipoOrden === 'domicilio' ? 'Siguiente' : 'Proceder al Pago'}</button>
-                    <button className="btn btn-outline-danger" onClick={limpiarPedidoCompleto}>Vaciar Carrito</button>
-                  </div>
-                </>
-              )}
-              {modalView === 'address' && (
-                <>
-                  <div className="modal-body">
-                    {direccionGuardada && (<button className="btn btn-outline-info w-100 mb-3" onClick={usarDireccionGuardada}>Usar mi dirección guardada</button>)}
-                    <label className="form-label">Busca tu dirección en el mapa:</label>
-                    <MapSelector onLocationSelect={handleLocationSelect} initialAddress={direccion} />
-                    <div className="mt-3">
-                      <label htmlFor="referenciaModal" className="form-label">Referencia (opcional):</label>
-                      <input type="text" id="referenciaModal" className="form-control" value={referencia} onChange={(e) => setReferencia(e.target.value)} placeholder="Ej: Casa azul, portón negro"/>
-                    </div>
-                    <div className="form-check mt-3">
-                      <input className="form-check-input" type="checkbox" id="guardarDireccionModal" checked={guardarDireccion} onChange={(e) => setGuardarDireccion(e.target.checked)} />
-                      <label className="form-check-label" htmlFor="guardarDireccionModal">Guardar/Actualizar dirección</label>
-                    </div>
-                  </div>
-                  <div className="modal-footer d-flex justify-content-between">
-                    <button className="btn btn-secondary" onClick={() => setModalView('cart')}>Volver</button>
-                    <button className="btn btn-primary" onClick={handleProcederAlPago} disabled={!direccion || paymentLoading || calculandoEnvio}>
-                      {paymentLoading ? 'Iniciando...' : 'Confirmar y Pagar'}
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          </motion.div>
-        </div>
-      )}
     </div>
   );
 }
 
 export default ClientePage;
+
