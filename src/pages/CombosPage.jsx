@@ -38,7 +38,6 @@ function CombosPage() {
       return;
     }
     
-    // Esta lógica ahora solo la ejecutarán los clientes
     agregarProductoAPedido(combo);
     navigate('/hacer-un-pedido');
   };
@@ -68,6 +67,16 @@ function CombosPage() {
       {!loading && !error && combos.length > 0 && (
         <div className="row g-4">
           {combos.map((combo, index) => {
+            // --- INICIO DE LA LÓGICA DE DESCUENTO ---
+            const esOferta = combo.en_oferta && combo.descuento_porcentaje > 0;
+            const precioOriginal = Number(combo.precio);
+            let precioFinal = precioOriginal;
+
+            if (esOferta) {
+              precioFinal = precioOriginal * (1 - combo.descuento_porcentaje / 100);
+            }
+            // --- FIN DE LA LÓGICA DE DESCUENTO ---
+
             const displayImage = combo.imagen_url || `https://placehold.co/400x300/d7ccc8/4a2c2a?text=${encodeURIComponent(combo.nombre || combo.titulo)}`;
 
             return (
@@ -78,7 +87,14 @@ function CombosPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
               >
-                <div className="card h-100 shadow-sm overflow-hidden">
+                <div className="card h-100 shadow-sm overflow-hidden position-relative">
+                  {/* Badge de descuento que solo aparece si hay oferta */}
+                  {esOferta && (
+                    <span className="badge bg-danger" style={{ position: 'absolute', top: '10px', right: '10px', fontSize: '0.9rem' }}>
+                      -{combo.descuento_porcentaje}%
+                    </span>
+                  )}
+
                   <img 
                     src={displayImage}
                     className="card-img-top" 
@@ -90,11 +106,19 @@ function CombosPage() {
                     <p className="card-text">{combo.descripcion}</p>
                   </div>
                   <div className="card-footer bg-transparent border-top-0 pb-3 d-flex justify-content-between align-items-center">
-                    <span className="fw-bold fs-4">${Number(combo.precio).toFixed(2)}</span>
                     
-                    {/* --- CORRECCIÓN DE LÓGICA DE ROLES --- */}
-                    {/* El botón solo se muestra si NO hay usuario, o si el usuario es un 'Cliente'. */}
-                    {/* Esto lo oculta automáticamente para 'Jefe' y 'Empleado'. */}
+                    {/* --- VISUALIZACIÓN DEL PRECIO CON DESCUENTO --- */}
+                    <div>
+                      {esOferta ? (
+                        <>
+                          <span className="text-muted text-decoration-line-through me-2">${precioOriginal.toFixed(2)}</span>
+                          <span className="fw-bold fs-4 text-success">${precioFinal.toFixed(2)}</span>
+                        </>
+                      ) : (
+                        <span className="fw-bold fs-4">${precioOriginal.toFixed(2)}</span>
+                      )}
+                    </div>
+                    
                     {(!user || user.rol === 'Cliente') && (
                       <button onClick={(e) => handleOrdenarClick(e, combo)} className="btn btn-primary">
                         ¡Lo Quiero!
