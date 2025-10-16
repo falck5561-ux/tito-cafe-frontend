@@ -6,17 +6,9 @@ import apiClient from '../services/api';
 // --- COMPONENTE MODAL INTEGRADO ---
 const DetallesPedidoModal = ({ pedido, onClose }) => {
   if (!pedido) return null;
-
   return (
-    <div style={{
-      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.7)', display: 'flex',
-      alignItems: 'center', justifyContent: 'center', zIndex: 1050
-    }} onClick={onClose}>
-      <div style={{
-        backgroundColor: 'var(--bs-card-bg)', color: 'var(--bs-body-color)', padding: '2rem',
-        borderRadius: '0.5rem', width: '90%', maxWidth: '500px'
-      }} onClick={e => e.stopPropagation()}>
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1050 }} onClick={onClose}>
+      <div style={{ backgroundColor: 'var(--bs-card-bg)', color: 'var(--bs-body-color)', padding: '2rem', borderRadius: '0.5rem', width: '90%', maxWidth: '500px' }} onClick={e => e.stopPropagation()}>
         <h3>Detalles del Pedido #{pedido.id}</h3>
         <hr />
         <p><strong>Cliente:</strong> {pedido.nombre_cliente}</p>
@@ -30,7 +22,6 @@ const DetallesPedidoModal = ({ pedido, onClose }) => {
   );
 };
 
-
 function PosPage() {
   const [activeTab, setActiveTab] = useState('pos');
   const [menuItems, setMenuItems] = useState([]);
@@ -40,39 +31,46 @@ function PosPage() {
   const [ventasDelDia, setVentasDelDia] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedOrderDetails, setSelectedOrderDetails] = useState(null);
   const [emailCliente, setEmailCliente] = useState('');
   const [clienteEncontrado, setClienteEncontrado] = useState(null);
   const [recompensaAplicadaId, setRecompensaAplicadaId] = useState(null);
 
+  // ========================================================================
+  // INICIO DE LA CORRECCIÓN PRINCIPAL PARA EL ERROR 'NaN'
+  // ========================================================================
   const fetchData = async () => {
     setLoading(true);
     setError('');
     try {
       if (activeTab === 'pos') {
-        const [productosRes, combosRes] = await Promise.allSettled([
+        const [productosRes, combosRes] = await Promise.all([
           apiClient.get('/productos'),
-          apiClient.get('/combos'), 
+          apiClient.get('/combos'),
         ]);
 
-        let combinedMenu = [];
-        if (productosRes.status === 'fulfilled' && Array.isArray(productosRes.value.data)) {
-          combinedMenu.push(...productosRes.value.data.map(p => ({...p, tipo: 'producto'})));
-        }
-        if (combosRes.status === 'fulfilled' && Array.isArray(combosRes.value.data)) {
-          combinedMenu.push(...combosRes.value.data.map(c => ({
-            id: c.id, // Ya no es necesario el prefijo 'combo-' si la API lo devuelve bien
-            nombre: c.titulo || c.nombre,
-            precio: c.precio,
-            precio_original: c.precio_original || c.precio,
-            en_oferta: c.en_oferta,
-            descuento_porcentaje: c.descuento_porcentaje,
-            tipo: 'combo'
-          })));
-        }
-        setMenuItems(combinedMenu);
+        // Función unificada para procesar y estandarizar cualquier item.
+        const estandarizarItem = (item) => {
+          const precioFinal = Number(item.precio);
+          let precioOriginal = precioFinal;
+
+          if (item.en_oferta && item.descuento_porcentaje > 0) {
+            precioOriginal = precioFinal / (1 - item.descuento_porcentaje / 100);
+          }
+
+          return {
+            ...item,
+            precio: precioFinal,
+            precio_original: precioOriginal, // Asegura que todos los items tengan esta propiedad
+            nombre: item.nombre || item.titulo,
+          };
+        };
+
+        const productosEstandarizados = productosRes.data.map(estandarizarItem);
+        const combosEstandarizados = combosRes.data.map(estandarizarItem);
+        
+        setMenuItems([...productosEstandarizados, ...combosEstandarizados]);
 
       } else if (activeTab === 'pedidos') {
         const res = await apiClient.get('/pedidos');
@@ -86,17 +84,20 @@ function PosPage() {
       console.error(err);
     } finally { setLoading(false); }
   };
+  // ========================================================================
+  // FIN DE LA CORRECCIÓN PRINCIPAL
+  // ========================================================================
 
   useEffect(() => { fetchData(); }, [activeTab]);
 
   useEffect(() => {
-    // Usamos 'precioFinal' que ya está calculado para el total
     const nuevoTotal = ventaActual.reduce((sum, item) => sum + (item.cantidad * Number(item.precioFinal)), 0);
     setTotalVenta(nuevoTotal);
   }, [ventaActual]);
 
   const agregarProductoAVenta = (item) => {
-    const precioFinal = item.en_oferta ? item.precio : item.precio_original || item.precio;
+    // Usamos el 'precio' del item estandarizado, que ya es el precio final.
+    const precioFinal = item.precio;
 
     setVentaActual(prevVenta => {
       const productoExistente = prevVenta.find(p => p.id === item.id && !p.esRecompensa);
@@ -108,7 +109,7 @@ function PosPage() {
       return [...prevVenta, { 
         ...item, 
         cantidad: 1, 
-        precioFinal: parseFloat(precioFinal).toFixed(2), // Guardamos el precio correcto
+        precioFinal: parseFloat(precioFinal).toFixed(2),
         esRecompensa: false
       }];
     });
@@ -119,36 +120,27 @@ function PosPage() {
   const eliminarProducto = (productoId) => { setVentaActual(prev => prev.filter(item => item.id !== productoId)); };
   const limpiarVenta = () => { setVentaActual([]); setEmailCliente(''); setClienteEncontrado(null); setRecompensaAplicadaId(null); };
   
-  // ========================================================================
-  // INICIO DE LA CORRECCIÓN PRINCIPAL PARA EL ERROR 400
-  // ========================================================================
   const handleCobrar = async () => {
     if (ventaActual.length === 0) return toast.error('El ticket está vacío.');
     
-    // 1. Preparamos el arreglo 'items' en el formato correcto.
-    //    El backend ahora solo necesita 'id', 'cantidad' y 'precio'.
     const itemsParaEnviar = ventaActual.map(({ id, cantidad, precioFinal }) => ({
-        id, // El ID del producto o combo
+        id,
         cantidad,
-        precio: Number(precioFinal), // Usamos el precio final calculado
+        precio: Number(precioFinal),
     }));
     
-    // 2. Creamos el objeto 'ventaData' con el nuevo formato.
-    //    Ya no se separan productos y combos.
     const ventaData = { 
       total: totalVenta, 
-      metodo_pago: 'Efectivo', // O el método que se elija
-      items: itemsParaEnviar, // ¡CLAVE! Se envía el arreglo unificado.
+      metodo_pago: 'Efectivo',
+      items: itemsParaEnviar,
       clienteId: clienteEncontrado ? clienteEncontrado.cliente.id : null,
       recompensaUsadaId: recompensaAplicadaId
     };
     
     try {
-      // 3. Enviamos los datos al backend.
       await apiClient.post('/ventas', ventaData);
       toast.success('¡Venta registrada con éxito!');
       limpiarVenta();
-      // Refrescar la vista si estamos en el historial de ventas
       if (activeTab === 'historial') {
         fetchData();
       }
@@ -157,9 +149,6 @@ function PosPage() {
         toast.error('Error al registrar la venta.'); 
     }
   };
-  // ========================================================================
-  // FIN DE LA CORRECCIÓN PRINCIPAL
-  // ========================================================================
   
   const handleUpdateStatus = async (pedidoId, nuevoEstado) => { try { await apiClient.put(`/pedidos/${pedidoId}/estado`, { estado: nuevoEstado }); fetchData(); toast.success(`Pedido #${pedidoId} actualizado.`); } catch (err) { toast.error('No se pudo actualizar el estado.'); } };
   const handleShowDetails = (pedido) => { setSelectedOrderDetails(pedido); setShowDetailsModal(true); };
