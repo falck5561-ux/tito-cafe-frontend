@@ -1,24 +1,38 @@
-// Archivo: src/components/ComboCard.jsx (Versión Corregida y Robusta)
+// Archivo: src/components/ComboCard.jsx
 
-import React from 'react';
+import React, { useContext } from 'react'; // 1. Importa useContext
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom'; // 2. Importa useNavigate para la redirección
+import { CartContext } from '../context/CartContext'; // 3. Importa tu contexto del carrito (asegúrate de que la ruta sea correcta)
 
 function ComboCard({ combo }) {
-  // --- CORRECCIÓN CLAVE ---
-  // Usamos el operador '|| 0' para asegurarnos de que si los precios no vienen, se use 0 por defecto.
-  // Esto evita el error NaN (Not a Number).
-  const precioOriginal = parseFloat(combo.precio_original || 0);
-  const precioFinal = parseFloat(combo.precio_final || precioOriginal); // Si no hay precio final, usa el original
+  const navigate = useNavigate(); // 4. Inicializa el hook de navegación
+  const { agregarAlCarrito } = useContext(CartContext); // 5. Obtiene la función para agregar al carrito desde el contexto
 
+  // --- LÓGICA DE PRECIOS Y DESCUENTOS (sin cambios) ---
+  const precioOriginal = parseFloat(combo.precio || 0);
+  const precioFinal = parseFloat(combo.precio_final || precioOriginal);
   const tieneDescuento = precioOriginal > precioFinal;
   let descuento = 0;
   if (tieneDescuento && precioOriginal > 0) {
     descuento = ((precioOriginal - precioFinal) / precioOriginal) * 100;
   }
-
-  // --- CORRECCIÓN DE IMAGEN ---
-  // Si no hay imagen_url, usamos un placeholder de un servicio en línea confiable.
   const imageUrl = combo.imagen_url || `https://placehold.co/400x300/2a2a2a/f5f5f5?text=${combo.nombre}`;
+
+  // --- NUEVA FUNCIÓN PARA EL BOTÓN ---
+  const handleBuyClick = (e) => {
+    // 6. ¡CLAVE! Detiene la propagación para evitar dobles notificaciones
+    e.stopPropagation();
+
+    // 7. Agrega el combo al carrito
+    agregarAlCarrito(combo);
+
+    // (Opcional) Aquí puedes llamar a una función para mostrar una notificación si la tienes
+    // mostrarNotificacion(`${combo.nombre} agregado al carrito!`);
+
+    // 8. Redirige al usuario a la página de su pedido
+    navigate('/hacer-un-pedido'); // Asegúrate de que esta sea la ruta correcta
+  };
 
   const cardVariants = {
     hidden: { y: 20, opacity: 0 },
@@ -35,9 +49,7 @@ function ComboCard({ combo }) {
     >
       <div className="product-card">
         <div className="card-image-container">
-          {/* Usamos la URL de imagen segura que definimos arriba */}
           <img src={imageUrl} alt={combo.nombre} />
-          
           {tieneDescuento && (
             <span className="discount-badge">-{descuento.toFixed(0)}%</span>
           )}
@@ -53,12 +65,14 @@ function ComboCard({ combo }) {
                 <span className="discounted-price">${precioFinal.toFixed(2)}</span>
               </>
             ) : (
-              // Si no hay descuento, solo mostramos el precio final.
               <span className="discounted-price">${precioFinal.toFixed(2)}</span>
             )}
           </div>
           
-          <button className="btn-buy">¡Lo Quiero!</button>
+          {/* 9. Asigna la nueva función al evento onClick del botón */}
+          <button className="btn-buy" onClick={handleBuyClick}>
+            ¡Lo Quiero!
+          </button>
         </div>
       </div>
     </motion.div>
