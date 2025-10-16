@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 
 function ComboModal({ show, handleClose, handleSave, comboActual }) {
-  // Estado inicial del formulario
+  // Estado inicial con los dos interruptores independientes
   const [formData, setFormData] = useState({
     titulo: '',
     descripcion: '',
     precio: '',
     imagenes: [''],
     descuento_porcentaje: 0,
-    activa: true, // Por defecto, un combo nuevo es visible para clientes
+    oferta_activa: false,  // Para activar/desactivar el descuento
+    activa: true,          // Para la visibilidad del combo
   });
 
   useEffect(() => {
@@ -20,19 +21,21 @@ function ComboModal({ show, handleClose, handleSave, comboActual }) {
           titulo: comboActual.titulo || '',
           descripcion: comboActual.descripcion || '',
           precio: comboActual.precio || '',
-          // Se asegura de que siempre haya al menos un campo de imagen
           imagenes: (comboActual.imagenes && comboActual.imagenes.length > 0) ? comboActual.imagenes : [''],
           descuento_porcentaje: comboActual.descuento_porcentaje || 0,
+          // AHORA: Cargamos el estado de ambos interruptores desde la API
+          oferta_activa: comboActual.oferta_activa !== undefined ? comboActual.oferta_activa : false,
           activa: comboActual.activa !== undefined ? comboActual.activa : true,
         });
       } else {
-        // Si es un combo nuevo, reseteamos el formulario
+        // Reseteamos el formulario para un combo nuevo
         setFormData({
           titulo: '',
           descripcion: '',
           precio: '',
           imagenes: [''],
           descuento_porcentaje: 0,
+          oferta_activa: false,
           activa: true,
         });
       }
@@ -49,7 +52,6 @@ function ComboModal({ show, handleClose, handleSave, comboActual }) {
     }));
   };
   
-  // Funciones para manejar múltiples imágenes
   const handleImageChange = (index, value) => {
     const newImages = [...formData.imagenes];
     newImages[index] = value;
@@ -68,7 +70,6 @@ function ComboModal({ show, handleClose, handleSave, comboActual }) {
 
   const onSave = (e) => {
     e.preventDefault();
-    // Limpia las URLs de imagen vacías antes de guardar
     const cleanedData = {
       ...formData,
       imagenes: formData.imagenes.filter(url => url && url.trim() !== ''),
@@ -86,6 +87,7 @@ function ComboModal({ show, handleClose, handleSave, comboActual }) {
               <button type="button" className="btn-close" onClick={handleClose}></button>
             </div>
             <div className="modal-body">
+              {/* Campos de Título, Descripción, Precio e Imágenes */}
               <div className="mb-3">
                 <label htmlFor="titulo" className="form-label">Título del Combo</label>
                 <input type="text" className="form-control" id="titulo" name="titulo" value={formData.titulo} onChange={handleChange} required />
@@ -98,8 +100,6 @@ function ComboModal({ show, handleClose, handleSave, comboActual }) {
                 <label htmlFor="precio" className="form-label">Precio</label>
                 <input type="number" step="0.01" className="form-control" id="precio" name="precio" value={formData.precio} onChange={handleChange} required />
               </div>
-
-              {/* Sección de Imágenes */}
               <div className="p-3 mb-3 border rounded">
                 <h6 className="mb-3">Imágenes del Combo</h6>
                 {formData.imagenes.map((url, index) => (
@@ -111,16 +111,24 @@ function ComboModal({ show, handleClose, handleSave, comboActual }) {
                 <button type="button" className="btn btn-outline-primary btn-sm mt-2" onClick={handleAddImageField}>Añadir URL de Imagen</button>
               </div>
 
-              {/* Oferta y Visibilidad */}
+              {/* --- SECCIÓN CORREGIDA CON DOS INTERRUPTORES --- */}
               <div className="p-3 border rounded">
-                  <h6 className="mb-3">Configuración de Oferta</h6>
+                  <h6 className="mb-3">Configuración de Oferta y Visibilidad</h6>
                   <div className="mb-3">
                     <label htmlFor="descuento_porcentaje" className="form-label">Porcentaje de Descuento (%)</label>
                     <input type="number" className="form-control" id="descuento_porcentaje" name="descuento_porcentaje" value={formData.descuento_porcentaje} onChange={handleChange} />
                   </div>
+                  
+                  {/* Interruptor para el DESCUENTO */}
+                  <div className="form-check form-switch mb-2">
+                    <input className="form-check-input" type="checkbox" role="switch" id="oferta_activa" name="oferta_activa" checked={formData.oferta_activa} onChange={handleChange} />
+                    <label className="form-check-label" htmlFor="oferta_activa">Activar Descuento</label>
+                  </div>
+
+                  {/* Interruptor para la VISIBILIDAD */}
                   <div className="form-check form-switch">
                     <input className="form-check-input" type="checkbox" role="switch" id="activa" name="activa" checked={formData.activa} onChange={handleChange} />
-                    <label className="form-check-label" htmlFor="activa">Combo Activo (Visible para clientes)</label>
+                    <label className="form-check-label" htmlFor="activa">Combo Visible para Clientes</label>
                   </div>
               </div>
 
