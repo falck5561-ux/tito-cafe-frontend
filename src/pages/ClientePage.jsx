@@ -72,68 +72,68 @@ function ClientePage() {
 
   const totalFinal = subtotal + costoEnvio;
 
-  // CORRECCIÓN 1: Este useEffect ahora pide productos Y combos, y los une.
+  // ========================================================================
+  // INICIO DE LA CORRECCIÓN PRINCIPAL PARA LA PANTALLA EN BLANCO
+  // ========================================================================
   useEffect(() => {
     const fetchInitialData = async () => {
-      // Solo cargar el menú si estamos en la pestaña 'crear'
       if (activeTab !== 'crear') return;
 
       setLoading(true);
       setError('');
       try {
-        const [productosRes, combosRes, direccionRes] = await Promise.allSettled([
+        // Pedimos todos los datos en paralelo
+        const [productosRes, combosRes, direccionRes] = await Promise.all([
           apiClient.get('/productos'),
-          apiClient.get('/combos'), // Pide los combos activos
+          apiClient.get('/combos'),
           apiClient.get('/usuarios/mi-direccion')
         ]);
 
-        let combinedMenu = [];
+        // Función unificada para procesar CUALQUIER item (producto o combo)
+        // Esto garantiza que todos los objetos tengan la misma estructura y evita errores.
+        const estandarizarItem = (item) => {
+          const precioFinal = Number(item.precio);
+          let precioOriginal = precioFinal;
 
-        // Procesar productos
-        if (productosRes.status === 'fulfilled' && Array.isArray(productosRes.value.data)) {
-          const productosData = productosRes.value.data.map(p => ({...p, tipo: 'producto'}));
-          combinedMenu = [...combinedMenu, ...productosData];
-        } else {
-          console.error("Error cargando productos:", productosRes.reason);
+          // Si un item está en oferta, calculamos cuál era su precio original.
+          // Esto es crucial para que la vista pueda mostrar el precio tachado sin errores.
+          if (item.en_oferta && item.descuento_porcentaje > 0) {
+            // Formula para revertir el descuento: Precio Original = Precio Final / (1 - (% Descuento / 100))
+            precioOriginal = precioFinal / (1 - item.descuento_porcentaje / 100);
+          }
+
+          return {
+            ...item,
+            precio: precioFinal,
+            precio_original: precioOriginal, // Todos los items ahora tienen esta propiedad
+            nombre: item.nombre || item.titulo, // Acepta 'nombre' (de productos) o 'titulo' (de combos)
+          };
+        };
+
+        // Aplicamos la estandarización a ambos arreglos
+        const productosEstandarizados = productosRes.data.map(estandarizarItem);
+        const combosEstandarizados = combosRes.data.map(estandarizarItem);
+        
+        // Unimos los productos y combos ya procesados en una sola lista para el menú
+        setMenuItems([...productosEstandarizados, ...combosEstandarizados]);
+
+        if (direccionRes.data) {
+          setDireccionGuardada(direccionRes.data);
         }
 
-        // Procesar y estandarizar combos para que sean compatibles
-        if (combosRes.status === 'fulfilled' && Array.isArray(combosRes.value.data)) {
-          const combosData = combosRes.value.data.map(c => ({
-            id: `combo-${c.id}`,
-            nombre: c.titulo || 'Combo',
-            precio: c.precio_oferta > 0 ? c.precio_oferta : c.precio,
-            precio_original: c.precio,
-            descripcion: c.descripcion || '',
-            imagenes: c.imagenes || [],
-            en_oferta: c.precio_oferta > 0 && Number(c.precio_oferta) < Number(c.precio),
-            descuento_porcentaje: c.descuento_porcentaje || 0,
-            tipo: 'combo'
-          }));
-          combinedMenu = [...combinedMenu, ...combosData];
-        } else {
-          console.error("Error cargando combos:", combosRes.reason);
-        }
-
-        if (combinedMenu.length > 0) {
-          setMenuItems(combinedMenu);
-        } else {
-          throw new Error('No se pudieron cargar los productos en este momento.');
-        }
-
-        if (direccionRes.status === 'fulfilled' && direccionRes.value.data) {
-          setDireccionGuardada(direccionRes.value.data);
-        }
       } catch (err) {
-        setError(err.message);
+        console.error("Error cargando datos iniciales:", err);
+        setError('No se pudieron cargar los productos en este momento.');
       } finally {
         setLoading(false);
       }
     };
     fetchInitialData();
-  }, [activeTab]); // Se ejecuta al cargar y si cambia la pestaña (para cargar el menú si se vuelve)
+  }, [activeTab]);
+  // ========================================================================
+  // FIN DE LA CORRECCIÓN PRINCIPAL
+  // ========================================================================
 
-  // CORRECCIÓN 2: Este useEffect ahora se ejecuta cada vez que cambia 'activeTab'
   useEffect(() => {
     const fetchTabData = async () => {
       if (activeTab === 'crear') return;
@@ -271,19 +271,14 @@ function ClientePage() {
           <div className="col-md-8">
             <h2>Elige tus Productos</h2>
             <div className="row g-3">
-              {menuItems?.map(item => {
-                const precioFinal = item.en_oferta
-                  ? Number(item.precio)
-                  : Number(item.precio_original || item.precio);
-
-                return (
+              {menuItems?.map(item => (
                   <div key={item.id} className="col-md-4 col-lg-3">
                     <div 
                       className={`card h-100 text-center shadow-sm position-relative ${item.en_oferta ? 'en-oferta' : ''}`}
                       onClick={() => agregarProductoAPedido(item)} 
                       style={{ cursor: 'pointer' }}
                     >
-                      {item.en_oferta && <span className="discount-badge">-{item.descuento_porcentaje}%</span>}
+                      {item.en_oferta && item.descuento_porcentaje > 0 && <span className="discount-badge">-{Number(item.descuento_porcentaje).toFixed(0)}%</span>}
                       <div className="card-body d-flex flex-column justify-content-center pt-4">
                         <h5 className="card-title">{item.nombre}</h5>
                         {item.en_oferta ? (
@@ -297,8 +292,8 @@ function ClientePage() {
                       </div>
                     </div>
                   </div>
-                );
-              })}
+                )
+              )}
             </div>
           </div>
           
@@ -509,4 +504,3 @@ function ClientePage() {
 }
 
 export default ClientePage;
-
