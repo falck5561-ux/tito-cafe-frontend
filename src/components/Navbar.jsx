@@ -7,7 +7,7 @@ function Navbar() {
   const { user, logout } = useContext(AuthContext);
 
   return (
-    <nav className="navbar navbar-dark fixed-top">
+    <nav className="navbar fixed-top navbar-expand-lg">
       <div className="container">
         <Link className="navbar-brand" to="/">
           <span>Tito Café</span>
@@ -25,7 +25,41 @@ function Navbar() {
           <span className="navbar-toggler-icon"></span>
         </button>
 
-        {/* El Contenido del Menú Lateral (Offcanvas) */}
+        {/* Contenido del Menú de Escritorio (Oculto en móvil) */}
+        <div className="collapse navbar-collapse" id="navbarNav">
+            <ul className="navbar-nav ms-auto align-items-center">
+                <li className="nav-item">
+                    <NavLink className="nav-link" to="/">Inicio</NavLink>
+                </li>
+                <li className="nav-item">
+                    <NavLink className="nav-link" to="/combos">Combos</NavLink>
+                </li>
+                {user?.rol === 'Cliente' && (
+                    <li className="nav-item">
+                        <NavLink className="nav-link" to="/hacer-un-pedido">Mi Pedido</NavLink>
+                    </li>
+                )}
+                 {user?.rol === 'Jefe' && (
+                    <li className="nav-item">
+                        <NavLink className="nav-link" to="/admin">Admin</NavLink>
+                    </li>
+                )}
+                <li className="nav-item d-flex align-items-center ms-lg-3">
+                    <ThemeToggleButton />
+                    {user ? (
+                        <button onClick={logout} className="btn btn-outline-secondary ms-3">
+                            Cerrar Sesión
+                        </button>
+                    ) : (
+                        <Link to="/login" className="btn btn-primary ms-3">
+                            Login
+                        </Link>
+                    )}
+                </li>
+            </ul>
+        </div>
+
+        {/* El Contenido del Menú Lateral (Offcanvas para móvil) */}
         <div
           className="offcanvas offcanvas-end"
           tabIndex="-1"
@@ -42,7 +76,6 @@ function Navbar() {
             ></button>
           </div>
 
-          {/* CUERPO DEL MENÚ: Usamos flexbox para organizar el contenido */}
           <div className="offcanvas-body d-flex flex-column">
             <ul className="navbar-nav flex-grow-1">
               <li className="nav-item">
@@ -51,19 +84,11 @@ function Navbar() {
               <li className="nav-item">
                 <NavLink className="nav-link" to="/combos">Combos</NavLink>
               </li>
-
               {user?.rol === 'Cliente' && (
                 <li className="nav-item">
                   <NavLink className="nav-link" to="/hacer-un-pedido">Mi Pedido</NavLink>
                 </li>
               )}
-
-              {(user?.rol === 'Empleado' || user?.rol === 'Jefe') && (
-                <li className="nav-item">
-                  <NavLink className="nav-link" to="/pos">Punto de Venta</NavLink>
-                </li>
-              )}
-
               {user?.rol === 'Jefe' && (
                 <li className="nav-item">
                   <NavLink className="nav-link" to="/admin">Admin</NavLink>
@@ -71,7 +96,6 @@ function Navbar() {
               )}
             </ul>
             
-            {/* FOOTER DEL MENÚ: mt-auto lo empuja hacia abajo */}
             <div className="offcanvas-footer mt-auto">
               <ThemeToggleButton />
               {user ? (
