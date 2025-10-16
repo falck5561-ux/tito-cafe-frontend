@@ -3,6 +3,10 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 
+// --- ¡LÍNEA AÑADIDA! ---
+// Importa todo el JavaScript que Bootstrap necesita para los menús, modales, etc.
+import 'bootstrap/dist/js/bootstrap.bundle.min';
+
 // Importación de Componentes
 import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -23,7 +27,8 @@ function App() {
       <Navbar />
       <Toaster position="top-center" reverseOrder={false} />
       
-      <div className="container mt-4">
+      {/* El padding-top se añade para compensar el navbar fijo (fixed-top) */}
+      <div className="container pt-5 mt-4">
         <Routes>
           {/* --- Rutas Públicas --- */}
           <Route path="/" element={<HomePage />} />
@@ -32,15 +37,38 @@ function App() {
           <Route path="/combos" element={<CombosPage />} />
 
           {/* --- Rutas Protegidas --- */}
-          <Route path="/admin" element={<ProtectedRoute roles={['Jefe']}><AdminPage /></ProtectedRoute>} />
-          <Route path="/pos" element={<ProtectedRoute roles={['Empleado', 'Jefe']}><PosPage /></ProtectedRoute>} />
-          <Route path="/cliente" element={<ProtectedRoute roles={['Cliente']}><ClientePage /></ProtectedRoute>} />
-          
-          {/* <-- ¡AQUÍ ESTÁ LA NUEVA RUTA AÑADIDA! --> */}
-          {/* Esto le dice a la app que /hacer-un-pedido también debe mostrar la página del cliente. */}
-          <Route path="/hacer-un-pedido" element={<ProtectedRoute roles={['Cliente']}><ClientePage /></ProtectedRoute>} />
-
-          <Route path="/canjear" element={<ProtectedRoute roles={['Empleado', 'Jefe']}><CanjearPage /></ProtectedRoute>} />
+          <Route 
+            path="/admin" 
+            element={
+              <ProtectedRoute roles={['Jefe']}>
+                <AdminPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/pos" 
+            element={
+              <ProtectedRoute roles={['Empleado', 'Jefe']}>
+                <PosPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/hacer-un-pedido" 
+            element={
+              <ProtectedRoute roles={['Cliente']}>
+                <ClientePage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/canjear" 
+            element={
+              <ProtectedRoute roles={['Empleado', 'Jefe']}>
+                <CanjearPage />
+              </ProtectedRoute>
+            } 
+          />
           
         </Routes>
       </div>
