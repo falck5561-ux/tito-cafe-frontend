@@ -7,13 +7,13 @@ function Navbar() {
   const { user, logout } = useContext(AuthContext);
 
   return (
-    <nav className="navbar navbar-expand-lg navbar-dark fixed-top">
+    <nav className="navbar navbar-dark fixed-top"> {/* Quitamos navbar-expand-lg para que el toggler siempre sea visible en móvil */}
       <div className="container">
         <Link className="navbar-brand" to="/">
           <span>Tito Café</span>
         </Link>
 
-        {/* --- MODIFICACIÓN 1: El botón ahora apunta a un 'offcanvas' --- */}
+        {/* --- Botón Toggler para el Offcanvas --- */}
         <button
           className="navbar-toggler"
           type="button"
@@ -25,9 +25,9 @@ function Navbar() {
           <span className="navbar-toggler-icon"></span>
         </button>
 
-        {/* --- MODIFICACIÓN 2: Usamos la estructura Offcanvas en lugar de 'collapse' --- */}
+        {/* --- Menú Lateral (Offcanvas) --- */}
         <div
-          className="offcanvas offcanvas-end text-bg-dark"
+          className="offcanvas offcanvas-end" // Le quitamos text-bg-dark para controlarlo por CSS
           tabIndex="-1"
           id="offcanvasNavbar"
           aria-labelledby="offcanvasNavbarLabel"
@@ -42,8 +42,8 @@ function Navbar() {
             ></button>
           </div>
           <div className="offcanvas-body">
-            {/* La lista de enlaces (ul) ahora va aquí adentro */}
-            <ul className="navbar-nav justify-content-end flex-grow-1 pe-3 align-items-center">
+            {/* Lista de enlaces principal */}
+            <ul className="navbar-nav justify-content-end flex-grow-1 pe-3">
               <li className="nav-item">
                 <NavLink className="nav-link" to="/">Inicio</NavLink>
               </li>
@@ -68,23 +68,21 @@ function Navbar() {
                   <NavLink className="nav-link" to="/admin">Admin</NavLink>
                 </li>
               )}
-
-              <li className="my-3"><hr className="dropdown-divider" /></li>
-
-              {/* Contenedor para los botones de tema y sesión */}
-              <li className="nav-item d-flex align-items-center mt-2 mt-lg-0">
-                <ThemeToggleButton />
-                {user ? (
-                  <button onClick={logout} className="btn btn-outline-secondary ms-3">
-                    Cerrar Sesión
-                  </button>
-                ) : (
-                  <Link to="/login" className="btn btn-primary ms-3">
-                    Login
-                  </Link>
-                )}
-              </li>
             </ul>
+            
+            {/* --- MODIFICACIÓN: Contenedor para los botones al final --- */}
+            <div className="offcanvas-footer mt-auto">
+              <ThemeToggleButton />
+              {user ? (
+                <button onClick={logout} className="btn btn-outline-secondary">
+                  Cerrar Sesión
+                </button>
+              ) : (
+                <Link to="/login" className="btn btn-primary">
+                  Login
+                </Link>
+              )}
+            </div>
           </div>
         </div>
       </div>
