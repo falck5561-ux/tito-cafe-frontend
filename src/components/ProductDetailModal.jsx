@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useContext } from 'react'; // Importamos useContext
 import { motion } from 'framer-motion';
+import AuthContext from '../context/AuthContext'; // Importamos el contexto de autenticación
 
 const modalStyles = {
   backdrop: {
@@ -60,8 +61,12 @@ const modalStyles = {
 };
 
 function ProductDetailModal({ product, onClose, onAddToCart }) {
+  // Obtenemos el usuario del contexto para saber su rol
+  const { user } = useContext(AuthContext);
+
   if (!product) return null;
 
+  // Lógica para calcular el precio final (sin cambios)
   const precioFinal = product.en_oferta && product.descuento_porcentaje > 0
     ? Number(product.precio) * (1 - product.descuento_porcentaje / 100)
     : Number(product.precio);
@@ -108,9 +113,15 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
               <span className="fs-3 fw-bold">${precioFinal.toFixed(2)}</span>
             )}
           </div>
-          <button className="btn btn-primary" onClick={() => onAddToCart(product)}>
-            Hacer Pedido
-          </button>
+
+          {/* --- CORRECCIÓN DE LÓGICA DE ROLES --- */}
+          {/* El botón solo se muestra si NO hay usuario, o si el usuario es un 'Cliente'. */}
+          {/* Esto lo oculta automáticamente para 'Jefe' y 'Empleado'. */}
+          {(!user || user.rol === 'Cliente') && (
+            <button className="btn btn-primary" onClick={() => onAddToCart(product)}>
+              Hacer Pedido
+            </button>
+          )}
         </div>
       </motion.div>
     </motion.div>
@@ -118,4 +129,3 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
 }
 
 export default ProductDetailModal;
-
