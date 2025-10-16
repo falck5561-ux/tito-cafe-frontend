@@ -9,7 +9,6 @@ export const useMenuData = () => {
   useEffect(() => {
     const fetchProductos = async () => {
       try {
-        // --- LA CORRECCIÓN ESTÁ AQUÍ ---
         // Nos aseguramos de que siempre pida SÓLO los productos.
         const response = await apiClient.get('/productos');
         setProductos(Array.isArray(response.data) ? response.data : []);
@@ -21,7 +20,7 @@ export const useMenuData = () => {
       }
     };
     fetchProductos();
-  }, []); // El array vacío asegura que solo se ejecute una vez.
+  }, []); 
 
   return { productos, loading, error };
 };
