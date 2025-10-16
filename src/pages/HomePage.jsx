@@ -1,5 +1,6 @@
 import React, { useState, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
+// --- MODIFICACIÓN 1: Importamos 'Link' para una navegación correcta ---
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useMenuData } from '../hooks/useMenuData';
 import ProductCard from '../components/ProductCard';
@@ -10,7 +11,6 @@ import { useCart } from '../context/CartContext';
 function HomePage() {
   const { productos, loading, error } = useMenuData();
   const { user } = useContext(AuthContext);
-  const navigate = useNavigate();
   const { agregarProductoAPedido } = useCart();
 
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -26,18 +26,11 @@ function HomePage() {
     setSelectedProduct(null);
   };
 
-  const handleAddToCartAndNavigate = (product) => {
+  // --- MODIFICACIÓN 2: Creamos una función solo para el modal ---
+  // Esta función agrega el producto y cierra el modal, permitiendo al usuario seguir comprando.
+  const handleAddToCartFromModal = (product) => {
     agregarProductoAPedido(product);
-    if (user) {
-        switch (user.rol) {
-            case 'Cliente': navigate('/cliente'); break;
-            case 'Jefe': navigate('/admin'); break;
-            case 'Empleado': navigate('/pos'); break;
-            default: navigate('/login'); break;
-        }
-    } else {
-      navigate('/login');
-    }
+    handleCloseDetails();
   };
 
   const heroStyle = {
@@ -46,8 +39,6 @@ function HomePage() {
     textShadow: '2px 2px 4px rgba(0,0,0,0.7)'
   };
 
-  // --- LÍNEA DE DIAGNÓSTICO ---
-  // Esto imprimirá en la consola la lista de productos que el componente va a dibujar.
   console.log("Datos del menú que HomePage va a renderizar:", productos);
 
   return (
@@ -56,7 +47,12 @@ function HomePage() {
         <motion.img src="/logo-inicio.png" alt="Tito Café Logo" className="hero-logo mb-4" initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2, type: 'spring' }} />
         <h1 className="display-4 fw-bold">El Sabor de la Tradición en cada Taza</h1>
         <p className="fs-4">Descubre nuestra selección de cafés de especialidad, postres artesanales y un ambiente único.</p>
-        <button onClick={handleAddToCartAndNavigate} className="btn btn-primary btn-lg mt-3">Haz tu Pedido</button>
+
+        {/* --- MODIFICACIÓN 3: Usamos el componente Link para navegar correctamente --- */}
+        {/* Esto soluciona el error 'No routes matched' y no intenta agregar un producto vacío. */}
+        <Link to="/hacer-un-pedido" className="btn btn-primary btn-lg mt-3">
+          Haz tu Pedido
+        </Link>
       </div>
 
       {loading && <div className="text-center my-5"><div className="spinner-border" role="status"></div></div>}
@@ -82,7 +78,8 @@ function HomePage() {
         <ProductDetailModal
           product={selectedProduct}
           onClose={handleCloseDetails}
-          onAddToCart={handleAddToCartAndNavigate} 
+          // --- MODIFICACIÓN 4: Pasamos la nueva función al modal ---
+          onAddToCart={handleAddToCartFromModal} 
         />
       )}
     </motion.div>
@@ -90,4 +87,3 @@ function HomePage() {
 }
 
 export default HomePage;
-

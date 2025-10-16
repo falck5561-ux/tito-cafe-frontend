@@ -142,7 +142,6 @@ h1, h2, h3, h4, h5, .navbar-brand, .display-4 {
   --bs-table-border-color: var(--bs-border-color);
   --bs-table-hover-bg: var(--bs-tertiary-bg);
   --bs-table-striped-bg: var(--bs-tertiary-bg);
-  /* SOLUCIÓN: Define el color del texto para el hover, usando la variable del tema. */
   --bs-table-hover-color: var(--texto-principal) !important;
 }
 
@@ -157,6 +156,54 @@ h1, h2, h3, h4, h5, .navbar-brand, .display-4 {
 
 [data-bs-theme="dark"] .table thead th {
   color: var(--texto-principal);
+}
+
+/* ========================================= */
+/* === BOTÓN DE CARRITO FLOTANTE (NUEVO) === */
+/* ========================================= */
+.boton-carrito-flotante {
+  position: fixed;
+  z-index: 1000;
+  bottom: 20px;
+  right: 20px;
+  
+  /* Usamos la variable del tema para consistencia */
+  background-color: var(--cafe-medium); 
+  color: white;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: none;
+  
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  font-size: 1.5rem;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.boton-carrito-flotante:hover {
+  transform: scale(1.1);
+  background-color: var(--cafe-dark);
+}
+
+.badge-carrito {
+  position: absolute;
+  top: 0;
+  right: 0;
+  
+  background-color: #dc3545;
+  color: white;
+  
+  font-size: 0.75rem;
+  font-weight: bold;
+  padding: 0.25em 0.5em;
+  border-radius: 50%;
+  
+  transform: translate(25%, -25%);
 }
 
 /* ======================= */
@@ -186,7 +233,6 @@ h1, h2, h3, h4, h5, .navbar-brand, .display-4 {
   z-index: 9999 !important;
 }
 
-/* --- Caja "Sin Recompensas" (Modo Claro) --- */
 .no-recompensas-box {
   background-color: #f8f9fa;
   color: var(--texto-secundario);
@@ -200,7 +246,6 @@ h1, h2, h3, h4, h5, .navbar-brand, .display-4 {
   color: var(--texto-principal);
 }
 
-/* --- CORRECCIÓN: Estilos para "Sin Recompensas" en Modo Oscuro --- */
 [data-bs-theme="dark"] .no-recompensas-box {
   background-color: var(--bs-tertiary-bg);
   color: var(--texto-secundario);
@@ -211,8 +256,6 @@ h1, h2, h3, h4, h5, .navbar-brand, .display-4 {
   color: var(--texto-principal);
 }
 
-
-/* --- Detalle del Pedido --- */
 .detalle-pedido-productos {
   background-color: var(--bs-tertiary-bg);
   padding: 1.5rem;
