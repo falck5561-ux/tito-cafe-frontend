@@ -29,7 +29,8 @@ function CombosPage() {
     fetchCombos();
   }, []);
 
-  const handleOrdenarClick = (e, combo) => {
+  // --- FUNCIÓN CLAVE CORREGIDA ---
+  const handleOrdenarClick = (e, combo, precioFinal) => {
     e.stopPropagation(); 
 
     if (!user) {
@@ -38,7 +39,15 @@ function CombosPage() {
       return;
     }
     
-    agregarProductoAPedido(combo);
+    // 1. Creamos un objeto para el carrito con el precio ya calculado.
+    //    Esto asegura que se agregue el precio con descuento.
+    const itemParaCarrito = {
+      ...combo,
+      precio: precioFinal 
+    };
+
+    // 2. Pasamos el nuevo objeto con el precio correcto al carrito.
+    agregarProductoAPedido(itemParaCarrito);
     navigate('/hacer-un-pedido');
   };
 
@@ -67,7 +76,6 @@ function CombosPage() {
       {!loading && !error && combos.length > 0 && (
         <div className="row g-4">
           {combos.map((combo, index) => {
-            // --- INICIO DE LA LÓGICA DE DESCUENTO ---
             const esOferta = combo.en_oferta && combo.descuento_porcentaje > 0;
             const precioOriginal = Number(combo.precio);
             let precioFinal = precioOriginal;
@@ -75,7 +83,6 @@ function CombosPage() {
             if (esOferta) {
               precioFinal = precioOriginal * (1 - combo.descuento_porcentaje / 100);
             }
-            // --- FIN DE LA LÓGICA DE DESCUENTO ---
 
             const displayImage = combo.imagen_url || `https://placehold.co/400x300/d7ccc8/4a2c2a?text=${encodeURIComponent(combo.nombre || combo.titulo)}`;
 
@@ -88,7 +95,6 @@ function CombosPage() {
                 transition={{ delay: index * 0.1 }}
               >
                 <div className="card h-100 shadow-sm overflow-hidden position-relative">
-                  {/* Badge de descuento que solo aparece si hay oferta */}
                   {esOferta && (
                     <span className="badge bg-danger" style={{ position: 'absolute', top: '10px', right: '10px', fontSize: '0.9rem' }}>
                       -{combo.descuento_porcentaje}%
@@ -107,7 +113,6 @@ function CombosPage() {
                   </div>
                   <div className="card-footer bg-transparent border-top-0 pb-3 d-flex justify-content-between align-items-center">
                     
-                    {/* --- VISUALIZACIÓN DEL PRECIO CON DESCUENTO --- */}
                     <div>
                       {esOferta ? (
                         <>
@@ -120,7 +125,8 @@ function CombosPage() {
                     </div>
                     
                     {(!user || user.rol === 'Cliente') && (
-                      <button onClick={(e) => handleOrdenarClick(e, combo)} className="btn btn-primary">
+                      // 3. Pasamos el 'precioFinal' a la función del onClick.
+                      <button onClick={(e) => handleOrdenarClick(e, combo, precioFinal)} className="btn btn-primary">
                         ¡Lo Quiero!
                       </button>
                     )}
