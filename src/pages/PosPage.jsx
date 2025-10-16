@@ -33,7 +33,7 @@ const DetallesPedidoModal = ({ pedido, onClose }) => {
 
 function PosPage() {
   const [activeTab, setActiveTab] = useState('pos');
-  const [menuItems, setMenuItems] = useState([]); // <-- Estado para el menú unificado
+  const [menuItems, setMenuItems] = useState([]);
   const [ventaActual, setVentaActual] = useState([]);
   const [totalVenta, setTotalVenta] = useState(0);
   const [pedidos, setPedidos] = useState([]);
@@ -52,7 +52,6 @@ function PosPage() {
     setError('');
     try {
       if (activeTab === 'pos') {
-        // CORRECCIÓN: Pedir productos y combos a la vez
         const [productosRes, combosRes] = await Promise.allSettled([
           apiClient.get('/productos'),
           apiClient.get('/combos'), 
@@ -64,11 +63,11 @@ function PosPage() {
         }
         if (combosRes.status === 'fulfilled' && Array.isArray(combosRes.value.data)) {
           combinedMenu.push(...combosRes.value.data.map(c => ({
-            id: `combo-${c.id}`,
-            nombre: c.titulo,
-            precio: c.precio_oferta > 0 && Number(c.precio_oferta) < Number(c.precio) ? c.precio_oferta : c.precio,
-            precio_original: c.precio,
-            en_oferta: c.precio_oferta > 0 && Number(c.precio_oferta) < Number(c.precio),
+            id: c.id, // Ya no es necesario el prefijo 'combo-' si la API lo devuelve bien
+            nombre: c.titulo || c.nombre,
+            precio: c.precio,
+            precio_original: c.precio_original || c.precio,
+            en_oferta: c.en_oferta,
             descuento_porcentaje: c.descuento_porcentaje,
             tipo: 'combo'
           })));
@@ -76,10 +75,10 @@ function PosPage() {
         setMenuItems(combinedMenu);
 
       } else if (activeTab === 'pedidos') {
-        const res = await apiClient.get('/pedidos'); // CORRECCIÓN: Usar apiClient y ruta corta
+        const res = await apiClient.get('/pedidos');
         setPedidos(res.data);
       } else if (activeTab === 'historial') {
-        const res = await apiClient.get('/ventas/hoy'); // CORRECCIÓN: Usar apiClient y ruta corta
+        const res = await apiClient.get('/ventas/hoy');
         setVentasDelDia(res.data);
       }
     } catch (err) {
@@ -91,6 +90,7 @@ function PosPage() {
   useEffect(() => { fetchData(); }, [activeTab]);
 
   useEffect(() => {
+    // Usamos 'precioFinal' que ya está calculado para el total
     const nuevoTotal = ventaActual.reduce((sum, item) => sum + (item.cantidad * Number(item.precioFinal)), 0);
     setTotalVenta(nuevoTotal);
   }, [ventaActual]);
@@ -108,7 +108,7 @@ function PosPage() {
       return [...prevVenta, { 
         ...item, 
         cantidad: 1, 
-        precioFinal: parseFloat(precioFinal).toFixed(2),
+        precioFinal: parseFloat(precioFinal).toFixed(2), // Guardamos el precio correcto
         esRecompensa: false
       }];
     });
@@ -119,35 +119,47 @@ function PosPage() {
   const eliminarProducto = (productoId) => { setVentaActual(prev => prev.filter(item => item.id !== productoId)); };
   const limpiarVenta = () => { setVentaActual([]); setEmailCliente(''); setClienteEncontrado(null); setRecompensaAplicadaId(null); };
   
+  // ========================================================================
+  // INICIO DE LA CORRECCIÓN PRINCIPAL PARA EL ERROR 400
+  // ========================================================================
   const handleCobrar = async () => {
     if (ventaActual.length === 0) return toast.error('El ticket está vacío.');
     
-    const productosParaEnviar = ventaActual
-      .filter(item => item.tipo === 'producto')
-      .map(({ id, cantidad, precioFinal, nombre }) => ({ id: Number(id), cantidad, precio: Number(precioFinal), nombre }));
-
-    const combosParaEnviar = ventaActual
-      .filter(item => item.tipo === 'combo')
-      .map(({ id, cantidad, precioFinal, nombre }) => ({ id: Number(id.replace('combo-', '')), cantidad, precio: Number(precioFinal), nombre }));
+    // 1. Preparamos el arreglo 'items' en el formato correcto.
+    //    El backend ahora solo necesita 'id', 'cantidad' y 'precio'.
+    const itemsParaEnviar = ventaActual.map(({ id, cantidad, precioFinal }) => ({
+        id, // El ID del producto o combo
+        cantidad,
+        precio: Number(precioFinal), // Usamos el precio final calculado
+    }));
     
+    // 2. Creamos el objeto 'ventaData' con el nuevo formato.
+    //    Ya no se separan productos y combos.
     const ventaData = { 
       total: totalVenta, 
-      metodo_pago: 'Efectivo', 
-      productos: productosParaEnviar,
-      combos: combosParaEnviar,
+      metodo_pago: 'Efectivo', // O el método que se elija
+      items: itemsParaEnviar, // ¡CLAVE! Se envía el arreglo unificado.
       clienteId: clienteEncontrado ? clienteEncontrado.cliente.id : null,
       recompensaUsadaId: recompensaAplicadaId
     };
     
     try {
-      await apiClient.post('/ventas', ventaData); // CORRECCIÓN: Usar apiClient y ruta corta
+      // 3. Enviamos los datos al backend.
+      await apiClient.post('/ventas', ventaData);
       toast.success('¡Venta registrada con éxito!');
       limpiarVenta();
+      // Refrescar la vista si estamos en el historial de ventas
       if (activeTab === 'historial') {
         fetchData();
       }
-    } catch (err) { toast.error('Error al registrar la venta.'); }
+    } catch (err) { 
+        console.error("Error al registrar venta:", err.response?.data || err.message);
+        toast.error('Error al registrar la venta.'); 
+    }
   };
+  // ========================================================================
+  // FIN DE LA CORRECCIÓN PRINCIPAL
+  // ========================================================================
   
   const handleUpdateStatus = async (pedidoId, nuevoEstado) => { try { await apiClient.put(`/pedidos/${pedidoId}/estado`, { estado: nuevoEstado }); fetchData(); toast.success(`Pedido #${pedidoId} actualizado.`); } catch (err) { toast.error('No se pudo actualizar el estado.'); } };
   const handleShowDetails = (pedido) => { setSelectedOrderDetails(pedido); setShowDetailsModal(true); };
@@ -214,7 +226,7 @@ function PosPage() {
               {menuItems.map(item => (
                 <div key={item.id} className="col-md-4 col-lg-3">
                   <motion.div whileHover={{ scale: 1.05 }} className={`card h-100 text-center ${item.en_oferta ? 'border-danger' : ''}`} onClick={() => agregarProductoAVenta(item)} style={{ cursor: 'pointer', position: 'relative' }}>
-                    {item.en_oferta && (<span className="badge bg-danger" style={{ position: 'absolute', top: '10px', right: '10px' }}>-{item.descuento_porcentaje}%</span>)}
+                    {item.en_oferta && (<span className="badge bg-danger" style={{ position: 'absolute', top: '10px', right: '10px' }}>-{Number(item.descuento_porcentaje || 0).toFixed(0)}%</span>)}
                     <div className="card-body d-flex flex-column justify-content-center pt-4">
                       <h5 className="card-title">{item.nombre}</h5>
                       {item.en_oferta ? (
@@ -321,4 +333,3 @@ function PosPage() {
 }
 
 export default PosPage;
-
