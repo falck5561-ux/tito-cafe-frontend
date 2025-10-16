@@ -43,7 +43,7 @@ body {
   background-color: var(--bs-body-bg);
   color: var(--bs-body-color);
   transition: background-color 0.3s ease, color 0.3s ease;
-  padding-top: 80px;
+  padding-top: 80px; /* Ajusta este valor si la barra es más gruesa */
 }
 h1, h2, h3, h4, h5, .navbar-brand, .display-4 {
   font-family: 'Playfair Display', serif;
@@ -63,6 +63,8 @@ h1, h2, h3, h4, h5, .navbar-brand, .display-4 {
   backdrop-filter: blur(10px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   transition: background-color 0.3s ease;
+  padding-top: 1rem; /* Aumenta el padding para hacerla más gruesa */
+  padding-bottom: 1rem; /* Aumenta el padding para hacerla más gruesa */
 }
 .navbar-brand span {
   font-family: 'Playfair Display', serif;
@@ -100,6 +102,8 @@ h1, h2, h3, h4, h5, .navbar-brand, .display-4 {
   .navbar {
     background-color: #181818;
     backdrop-filter: none;
+    padding-top: 0.75rem; /* Ajuste para móvil, puede ser más delgado */
+    padding-bottom: 0.75rem; /* Ajuste para móvil */
   }
 }
 
@@ -155,9 +159,8 @@ h1, h2, h3, h4, h5, .navbar-brand, .display-4 {
 }
 
 /* ===================== */
-/* === O T R O S   E S T I L O S === */
+/* === PESTAÑAS (TABS) === */
 /* ===================== */
-/* Aquí va el resto de tu CSS (Tabs, Cards, Tables, etc.) */
 .nav-tabs {
   border-bottom-color: var(--bs-border-color);
 }
@@ -173,6 +176,10 @@ h1, h2, h3, h4, h5, .navbar-brand, .display-4 {
   border-color: var(--bs-border-color) var(--bs-border-color) var(--bs-body-bg);
   border-bottom-color: var(--cafe-medium);
 }
+
+/* ======================= */
+/* === TARJETAS (CARDS) === */
+/* ======================= */
 .card {
   background-color: var(--bs-card-bg);
   border: 1px solid var(--bs-border-color);
@@ -184,6 +191,26 @@ h1, h2, h3, h4, h5, .navbar-brand, .display-4 {
   transform: translateY(-5px);
   box-shadow: 0 10px 20px rgba(0,0,0,0.1);
 }
+/* --- ESTILO PARA TARJETAS EN OFERTA (CORREGIDO) --- */
+.card.en-oferta {
+  border: 2px solid #dc3545; /* Borde rojo */
+}
+.discount-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 10;
+  background-color: #dc3545;
+  color: white;
+  padding: 0.35em 0.65em;
+  font-size: .8em;
+  font-weight: 700;
+  border-radius: 50rem;
+}
+
+/* ================= */
+/* === TABLAS === */
+/* ================= */
 .table {
   --bs-table-bg: var(--bs-card-bg);
   --bs-table-color: var(--bs-body-color);
@@ -192,47 +219,70 @@ h1, h2, h3, h4, h5, .navbar-brand, .display-4 {
   --bs-table-striped-bg: var(--bs-tertiary-bg);
   --bs-table-hover-color: var(--texto-principal) !important;
 }
+
 .table thead th {
   background-color: var(--cafe-dark);
   border-color: var(--cafe-medium);
 }
+
 [data-bs-theme="light"] .table thead th {
   color: var(--crema);
 }
+
 [data-bs-theme="dark"] .table thead th {
   color: var(--texto-principal);
 }
+
+/* ========================================= */
+/* === BOTÓN DE CARRITO FLOTANTE === */
+/* ========================================= */
 .boton-carrito-flotante {
   position: fixed;
   z-index: 1000;
   bottom: 20px;
   right: 20px;
+  
   background-color: var(--cafe-medium); 
   color: white;
   width: 60px;
   height: 60px;
   border-radius: 50%;
   border: none;
+  
   display: flex;
   align-items: center;
   justify-content: center;
+  
   font-size: 1.5rem;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   cursor: pointer;
   transition: transform 0.2s ease, background-color 0.2s ease;
 }
+
+.boton-carrito-flotante:hover {
+  transform: scale(1.1);
+  background-color: var(--cafe-dark);
+}
+
 .badge-carrito {
   position: absolute;
   top: 0;
   right: 0;
+  
   background-color: #dc3545;
   color: white;
+  
   font-size: 0.75rem;
   font-weight: bold;
   padding: 0.25em 0.5em;
   border-radius: 50%;
+  
   transform: translate(25%, -25%);
 }
+
+/* ======================= */
+/* === OTROS ESTILOS === */
+/* ======================= */
 .btn-primary {
   background-color: var(--cafe-medium);
   border-color: var(--cafe-medium);
@@ -241,6 +291,7 @@ h1, h2, h3, h4, h5, .navbar-brand, .display-4 {
   background-color: var(--cafe-dark);
   border-color: var(--cafe-dark);
 }
+
 .hero-logo {
   width: 120px;
   height: 120px;
@@ -251,13 +302,11 @@ h1, h2, h3, h4, h5, .navbar-brand, .display-4 {
   border: 4px solid var(--cafe-light);
   box-shadow: 0 4px 15px rgba(0,0,0,0.2);
 }
-.detalle-pedido-productos {
-  background-color: var(--bs-tertiary-bg);
-  padding: 1.5rem;
-  margin: 0.5rem 0;
-  border-radius: 8px;
-  border: 1px solid var(--bs-border-color);
+
+.pac-container {
+  z-index: 9999 !important;
 }
+
 .no-recompensas-box {
   background-color: #f8f9fa;
   color: var(--texto-secundario);
@@ -265,4 +314,39 @@ h1, h2, h3, h4, h5, .navbar-brand, .display-4 {
   padding: 2rem;
   border-radius: 8px;
   text-align: center;
+}
+
+.no-recompensas-box h3 {
+  color: var(--texto-principal);
+}
+
+[data-bs-theme="dark"] .no-recompensas-box {
+  background-color: var(--bs-tertiary-bg);
+  color: var(--texto-secundario);
+  border: 2px dashed var(--bs-border-color);
+}
+
+[data-bs-theme="dark"] .no-recompensas-box h3 {
+  color: var(--texto-principal);
+}
+
+.detalle-pedido-productos {
+  background-color: var(--bs-tertiary-bg);
+  padding: 1.5rem;
+  margin: 0.5rem 0;
+  border-radius: 8px;
+  border: 1px solid var(--bs-border-color);
+}
+
+.detalle-pedido-productos h5 {
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--bs-border-color);
+}
+
+.detalle-pedido-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  font-size: 0.95rem;
 }
