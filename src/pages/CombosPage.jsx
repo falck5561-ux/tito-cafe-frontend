@@ -5,7 +5,6 @@ import apiClient from '../services/api';
 import AuthContext from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import toast from 'react-hot-toast';
-// 1. Importamos el modal de detalles del producto
 import ProductDetailModal from '../components/ProductDetailModal';
 
 function CombosPage() {
@@ -15,8 +14,6 @@ function CombosPage() {
   const { user } = useContext(AuthContext);
   const { agregarProductoAPedido } = useCart();
   const navigate = useNavigate();
-
-  // 2. Añadimos un estado para controlar el combo seleccionado y la visibilidad del modal
   const [selectedCombo, setSelectedCombo] = useState(null);
 
   useEffect(() => {
@@ -34,7 +31,6 @@ function CombosPage() {
     fetchCombos();
   }, []);
 
-  // 3. Renombramos la función para mayor claridad y la adaptamos para el modal
   const handleAddToCart = (combo, precioFinal) => {
     if (!user) {
       toast.error('Por favor, inicia sesión para añadir al carrito.');
@@ -42,7 +38,6 @@ function CombosPage() {
       return;
     }
     
-    // Creamos un objeto para el carrito con el precio final correcto
     const itemParaCarrito = {
       ...combo,
       precio: precioFinal,
@@ -95,15 +90,16 @@ function CombosPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  // 4. Añadimos el onClick para abrir el modal y un cursor pointer
                   onClick={() => setSelectedCombo(combo)}
                   style={{ cursor: 'pointer' }}
                 >
-                  <div className="card h-100 shadow-sm overflow-hidden position-relative">
+                  {/* --- ¡CORRECCIÓN APLICADA AQUÍ! --- */}
+                  {/* Se añade la clase 'en-oferta' si el combo tiene descuento */}
+                  <div className={`card h-100 shadow-sm overflow-hidden position-relative ${esOferta ? 'en-oferta' : ''}`}>
                     {esOferta && (
-                      <span className="badge bg-danger" style={{ position: 'absolute', top: '10px', right: '10px', fontSize: '0.9rem' }}>
+                      <div className="discount-badge">
                         -{combo.descuento_porcentaje}%
-                      </span>
+                      </div>
                     )}
 
                     <img
@@ -114,7 +110,6 @@ function CombosPage() {
                     />
                     <div className="card-body d-flex flex-column">
                       <h4 className="card-title flex-grow-1">{combo.nombre || combo.titulo}</h4>
-                      {/* 5. La descripción ya no se muestra aquí directamente */}
                     </div>
                     <div className="card-footer bg-transparent border-top-0 pb-3 d-flex justify-content-between align-items-center">
                       <div>
@@ -127,7 +122,6 @@ function CombosPage() {
                           <span className="fw-bold fs-4">${precioOriginal.toFixed(2)}</span>
                         )}
                       </div>
-                      {/* 6. El botón "¡Lo Quiero!" se ha movido al modal */}
                     </div>
                   </div>
                 </motion.div>
@@ -137,19 +131,17 @@ function CombosPage() {
         )}
       </motion.div>
 
-      {/* 7. Lógica para renderizar el modal cuando un combo está seleccionado */}
       {selectedCombo && (
         <ProductDetailModal
           product={selectedCombo}
           onClose={() => setSelectedCombo(null)}
           onAddToCart={(product) => {
-            // Re-calculamos el precio final para pasarlo a la función del carrito
             const esOferta = product.en_oferta && product.descuento_porcentaje > 0;
             const precioOriginal = Number(product.precio);
             const precioFinal = esOferta ? precioOriginal * (1 - product.descuento_porcentaje / 100) : precioOriginal;
             
             handleAddToCart(product, precioFinal);
-            setSelectedCombo(null); // Cerramos el modal después de agregar
+            setSelectedCombo(null);
           }}
         />
       )}
@@ -158,4 +150,3 @@ function CombosPage() {
 }
 
 export default CombosPage;
-
