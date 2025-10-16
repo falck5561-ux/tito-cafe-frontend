@@ -112,23 +112,31 @@ function PosPage() {
   const handleCobrar = async () => {
     if (ventaActual.length === 0) return toast.error('El ticket está vacío.');
     
-    const productosParaEnviar = ventaActual.map(({ id, cantidad, precioFinal, nombre }) => ({ 
-      id: id.toString(), // Nos aseguramos que el ID sea un string
-      cantidad, 
-      precio: Number(precioFinal), 
-      nombre 
-    }));
+    // --- CORRECCIÓN CLAVE AQUÍ ---
+    // Separamos los productos de los combos
+    const productosParaEnviar = ventaActual
+      .filter(item => item.tipo === 'producto')
+      .map(({ id, cantidad, precioFinal, nombre }) => ({ id: Number(id), cantidad, precio: Number(precioFinal), nombre }));
+
+    const combosParaEnviar = ventaActual
+      .filter(item => item.tipo === 'combo')
+      .map(({ id, cantidad, precioFinal, nombre }) => ({ 
+        id: Number(id.replace('combo-', '')), // Enviamos solo el número del ID
+        cantidad, 
+        precio: Number(precioFinal), 
+        nombre 
+      }));
     
     const ventaData = { 
       total: totalVenta, 
       metodo_pago: 'Efectivo', 
-      productos: productosParaEnviar,
+      productos: productosParaEnviar, // Array solo de productos
+      combos: combosParaEnviar,       // Array solo de combos
       clienteId: clienteEncontrado ? clienteEncontrado.cliente.id : null,
       recompensaUsadaId: recompensaAplicadaId
     };
 
-    // --- LÍNEA DE DEPURACIÓN ---
-    console.log("Enviando los siguientes datos de venta al backend:", ventaData);
+    console.log("Enviando datos de venta:", ventaData);
     
     try {
       await apiClient.post('/ventas', ventaData);
@@ -138,9 +146,8 @@ function PosPage() {
         fetchData();
       }
     } catch (err) { 
-      toast.error('Error al registrar la venta. Revisa la consola para más detalles.'); 
-      // --- LÍNEA DE DEPURACIÓN DEL ERROR ---
-      console.error("Error del backend al registrar la venta:", err.response || err); 
+      toast.error('Error al registrar la venta. Revisa los logs del servidor.'); 
+      console.error("Error del backend:", err.response || err); 
     }
   };
   
