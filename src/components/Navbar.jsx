@@ -3,19 +3,76 @@ import { Link, NavLink } from 'react-router-dom';
 import AuthContext from '../context/AuthContext';
 import ThemeToggleButton from './ThemeToggleButton';
 
-function Navbar() {
+// Para no repetir código, creamos un componente con los enlaces principales del menú.
+const MenuLinks = () => {
+  const { user } = useContext(AuthContext);
+  return (
+    <>
+      <li className="nav-item">
+        <NavLink className="nav-link" to="/">Inicio</NavLink>
+      </li>
+      <li className="nav-item">
+        <NavLink className="nav-link" to="/combos">Combos</NavLink>
+      </li>
+      {user?.rol === 'Cliente' && (
+        <li className="nav-item">
+          <NavLink className="nav-link" to="/hacer-un-pedido">Mi Pedido</NavLink>
+        </li>
+      )}
+      {user?.rol === 'Jefe' && (
+        <li className="nav-item">
+          <NavLink className="nav-link" to="/admin">Admin</NavLink>
+        </li>
+      )}
+    </>
+  );
+};
+
+// Componente para los botones de usuario (Login/Logout/Tema)
+const UserControls = ({ isMobile = false }) => {
   const { user, logout } = useContext(AuthContext);
+  const buttonClass = isMobile ? "" : "ms-3";
 
   return (
-    <nav className="navbar fixed-top navbar-expand-lg">
+    <>
+      <ThemeToggleButton />
+      {user ? (
+        <button onClick={logout} className={`btn btn-outline-secondary ${buttonClass}`}>
+          Cerrar Sesión
+        </button>
+      ) : (
+        <Link to="/login" className={`btn btn-primary ${buttonClass}`}>
+          Login
+        </Link>
+      )}
+    </>
+  );
+};
+
+
+function Navbar() {
+  return (
+    <nav className="navbar fixed-top">
       <div className="container">
         <Link className="navbar-brand" to="/">
           <span>Tito Café</span>
         </Link>
 
-        {/* Botón que abre el menú lateral */}
+        {/* --- MENÚ DE ESCRITORIO --- */}
+        {/* Se muestra solo en pantallas grandes (d-none lo oculta en móvil) */}
+        <div className="d-none d-lg-flex align-items-center">
+          <ul className="navbar-nav flex-row">
+            <MenuLinks />
+          </ul>
+          <div className="ms-lg-3">
+             <UserControls />
+          </div>
+        </div>
+
+        {/* --- BOTÓN PARA MENÚ MÓVIL --- */}
+        {/* Se muestra solo en pantallas pequeñas (d-lg-none lo oculta en PC) */}
         <button
-          className="navbar-toggler"
+          className="navbar-toggler d-lg-none"
           type="button"
           data-bs-toggle="offcanvas"
           data-bs-target="#offcanvasNavbar"
@@ -25,41 +82,7 @@ function Navbar() {
           <span className="navbar-toggler-icon"></span>
         </button>
 
-        {/* Contenido del Menú de Escritorio (Oculto en móvil) */}
-        <div className="collapse navbar-collapse" id="navbarNav">
-            <ul className="navbar-nav ms-auto align-items-center">
-                <li className="nav-item">
-                    <NavLink className="nav-link" to="/">Inicio</NavLink>
-                </li>
-                <li className="nav-item">
-                    <NavLink className="nav-link" to="/combos">Combos</NavLink>
-                </li>
-                {user?.rol === 'Cliente' && (
-                    <li className="nav-item">
-                        <NavLink className="nav-link" to="/hacer-un-pedido">Mi Pedido</NavLink>
-                    </li>
-                )}
-                 {user?.rol === 'Jefe' && (
-                    <li className="nav-item">
-                        <NavLink className="nav-link" to="/admin">Admin</NavLink>
-                    </li>
-                )}
-                <li className="nav-item d-flex align-items-center ms-lg-3">
-                    <ThemeToggleButton />
-                    {user ? (
-                        <button onClick={logout} className="btn btn-outline-secondary ms-3">
-                            Cerrar Sesión
-                        </button>
-                    ) : (
-                        <Link to="/login" className="btn btn-primary ms-3">
-                            Login
-                        </Link>
-                    )}
-                </li>
-            </ul>
-        </div>
-
-        {/* El Contenido del Menú Lateral (Offcanvas para móvil) */}
+        {/* --- CONTENIDO DEL MENÚ LATERAL (OFFCANVAS) --- */}
         <div
           className="offcanvas offcanvas-end"
           tabIndex="-1"
@@ -75,38 +98,12 @@ function Navbar() {
               aria-label="Close"
             ></button>
           </div>
-
           <div className="offcanvas-body d-flex flex-column">
             <ul className="navbar-nav flex-grow-1">
-              <li className="nav-item">
-                <NavLink className="nav-link" to="/">Inicio</NavLink>
-              </li>
-              <li className="nav-item">
-                <NavLink className="nav-link" to="/combos">Combos</NavLink>
-              </li>
-              {user?.rol === 'Cliente' && (
-                <li className="nav-item">
-                  <NavLink className="nav-link" to="/hacer-un-pedido">Mi Pedido</NavLink>
-                </li>
-              )}
-              {user?.rol === 'Jefe' && (
-                <li className="nav-item">
-                  <NavLink className="nav-link" to="/admin">Admin</NavLink>
-                </li>
-              )}
+              <MenuLinks />
             </ul>
-            
             <div className="offcanvas-footer mt-auto">
-              <ThemeToggleButton />
-              {user ? (
-                <button onClick={logout} className="btn btn-outline-secondary">
-                  Cerrar Sesión
-                </button>
-              ) : (
-                <Link to="/login" className="btn btn-primary">
-                  Login
-                </Link>
-              )}
+              <UserControls isMobile={true} />
             </div>
           </div>
         </div>
