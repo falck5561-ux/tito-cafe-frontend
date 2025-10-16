@@ -44,7 +44,7 @@ function AdminPage() {
         setPedidos(res.data);
       } else if (activeTab === 'combos') {
         // --- LA CORRECCIÓN ESTÁ AQUÍ ---
-        const res = await apiClient.get('/combos/todos'); // Cambiado de /todas a /todos
+        const res = await apiClient.get('/combos');
         setCombos(res.data);
       }
     } catch (err) {
