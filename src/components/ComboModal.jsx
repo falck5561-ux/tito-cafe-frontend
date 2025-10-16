@@ -1,36 +1,40 @@
-// Ruta: src/components/ComboModal.jsx
-// VERSIÓN MEJORADA
-
 import React, { useState, useEffect } from 'react';
 
 function ComboModal({ show, handleClose, handleSave, comboActual }) {
+  // Estado inicial del formulario
   const [formData, setFormData] = useState({
     titulo: '',
     descripcion: '',
     precio: '',
     imagenes: [''],
-    activa: true,
-    en_oferta: false,
     descuento_porcentaje: 0,
+    activa: true, // Por defecto, un combo nuevo es visible para clientes
   });
 
   useEffect(() => {
     if (show) {
       if (comboActual) {
+        // Si estamos editando, llenamos el formulario con los datos existentes
         setFormData({
           id: comboActual.id,
+          // CORRECCIÓN: Usamos 'titulo' y 'descripcion'
           titulo: comboActual.titulo || '',
           descripcion: comboActual.descripcion || '',
           precio: comboActual.precio || '',
+          // Se asegura de que siempre haya al menos un campo de imagen
           imagenes: (comboActual.imagenes && comboActual.imagenes.length > 0) ? comboActual.imagenes : [''],
-          activa: comboActual.activa !== undefined ? comboActual.activa : true,
-          en_oferta: comboActual.en_oferta || false,
           descuento_porcentaje: comboActual.descuento_porcentaje || 0,
+          activa: comboActual.activa !== undefined ? comboActual.activa : true,
         });
       } else {
+        // Si es un combo nuevo, reseteamos el formulario
         setFormData({
-          titulo: '', descripcion: '', precio: '', imagenes: [''],
-          activa: true, en_oferta: false, descuento_porcentaje: 0,
+          titulo: '',
+          descripcion: '',
+          precio: '',
+          imagenes: [''],
+          descuento_porcentaje: 0,
+          activa: true,
         });
       }
     }
@@ -40,9 +44,13 @@ function ComboModal({ show, handleClose, handleSave, comboActual }) {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' || type === 'switch' ? checked : value,
+    }));
   };
-
+  
+  // Funciones para manejar múltiples imágenes
   const handleImageChange = (index, value) => {
     const newImages = [...formData.imagenes];
     newImages[index] = value;
@@ -79,19 +87,20 @@ function ComboModal({ show, handleClose, handleSave, comboActual }) {
             </div>
             <div className="modal-body">
               <div className="mb-3">
-                <label className="form-label">Título del Combo</label>
-                <input type="text" className="form-control" name="titulo" value={formData.titulo} onChange={handleChange} required />
+                {/* CORRECCIÓN: El 'name' del input ahora es 'titulo' */}
+                <label htmlFor="titulo" className="form-label">Título del Combo</label>
+                <input type="text" className="form-control" id="titulo" name="titulo" value={formData.titulo} onChange={handleChange} required />
               </div>
               <div className="mb-3">
-                <label className="form-label">Descripción</label>
-                <textarea className="form-control" name="descripcion" rows="3" value={formData.descripcion} onChange={handleChange}></textarea>
+                <label htmlFor="descripcion" className="form-label">Descripción</label>
+                <textarea className="form-control" id="descripcion" name="descripcion" rows="3" value={formData.descripcion} onChange={handleChange}></textarea>
               </div>
               <div className="mb-3">
-                <label className="form-label">Precio</label>
-                <input type="number" step="0.01" className="form-control" name="precio" value={formData.precio} onChange={handleChange} required />
+                <label htmlFor="precio" className="form-label">Precio</label>
+                <input type="number" step="0.01" className="form-control" id="precio" name="precio" value={formData.precio} onChange={handleChange} required />
               </div>
-              
-              {/* Sección de Imágenes Dinámica */}
+
+              {/* Sección de Imágenes (ya estaba bien) */}
               <div className="p-3 mb-3 border rounded">
                 <h6 className="mb-3">Imágenes del Combo</h6>
                 {formData.imagenes.map((url, index) => (
@@ -102,24 +111,20 @@ function ComboModal({ show, handleClose, handleSave, comboActual }) {
                 ))}
                 <button type="button" className="btn btn-outline-primary btn-sm mt-2" onClick={handleAddImageField}>Añadir URL de Imagen</button>
               </div>
-              
-              {/* Sección de Oferta */}
-              <div className="p-3 mb-3 border rounded">
-                <h6 className="mb-3">Configuración de Oferta</h6>
-                <div className="mb-3">
-                  <label className="form-label">Porcentaje de Descuento (%)</label>
-                  <input type="number" className="form-control" name="descuento_porcentaje" value={formData.descuento_porcentaje} onChange={handleChange} />
-                </div>
-                <div className="form-check form-switch">
-                  <input className="form-check-input" type="checkbox" role="switch" name="en_oferta" checked={formData.en_oferta} onChange={handleChange} />
-                  <label className="form-check-label">Activar oferta para este combo</label>
-                </div>
+
+              {/* Oferta y Visibilidad */}
+              <div className="p-3 border rounded">
+                  <h6 className="mb-3">Configuración de Oferta</h6>
+                  <div className="mb-3">
+                    <label htmlFor="descuento_porcentaje" className="form-label">Porcentaje de Descuento (%)</label>
+                    <input type="number" className="form-control" id="descuento_porcentaje" name="descuento_porcentaje" value={formData.descuento_porcentaje} onChange={handleChange} />
+                  </div>
+                  <div className="form-check form-switch">
+                    <input className="form-check-input" type="checkbox" role="switch" id="activa" name="activa" checked={formData.activa} onChange={handleChange} />
+                    <label className="form-check-label" htmlFor="activa">Combo Activo (Visible para clientes)</label>
+                  </div>
               </div>
 
-              <div className="form-check form-switch">
-                <input className="form-check-input" type="checkbox" role="switch" name="activa" checked={formData.activa} onChange={handleChange} />
-                <label className="form-check-label">Combo Activo (Visible para clientes)</label>
-              </div>
             </div>
             <div className="modal-footer">
               <button type="button" className="btn btn-secondary" onClick={handleClose}>Cancelar</button>
