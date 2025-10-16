@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
-import apiClient from '../services/api'; // 1. Usar apiClient en lugar de axios directamente
+import apiClient from '../services/api';
 
 // Componente Modal integrado para no tener que importarlo
 const DetallesPedidoModal = ({ pedido, onClose }) => {
@@ -24,7 +24,7 @@ const DetallesPedidoModal = ({ pedido, onClose }) => {
 
 function PosPage() {
   const [activeTab, setActiveTab] = useState('pos');
-  const [menuItems, setMenuItems] = useState([]); // <-- 2. Estado para el menú unificado
+  const [menuItems, setMenuItems] = useState([]);
   const [ventaActual, setVentaActual] = useState([]);
   const [totalVenta, setTotalVenta] = useState(0);
   const [pedidos, setPedidos] = useState([]);
@@ -43,7 +43,6 @@ function PosPage() {
     setError('');
     try {
       if (activeTab === 'pos') {
-        // 3. Cargar productos Y combos
         const [productosRes, combosRes] = await Promise.allSettled([
           apiClient.get('/productos'),
           apiClient.get('/combos'), 
@@ -67,7 +66,6 @@ function PosPage() {
         setMenuItems(combinedMenu);
 
       } else if (activeTab === 'pedidos') {
-        // 4. CORRECCIÓN DE RUTAS: Usar apiClient y quitar /api
         const res = await apiClient.get('/pedidos');
         setPedidos(res.data);
       } else if (activeTab === 'historial') {
@@ -106,8 +104,6 @@ function PosPage() {
     });
   };
 
-  // --- El resto de funciones ahora usarán apiClient implícitamente ---
-
   const incrementarCantidad = (productoId) => { setVentaActual(prev => prev.map(item => item.id === productoId ? { ...item, cantidad: item.cantidad + 1 } : item)); };
   const decrementarCantidad = (productoId) => { setVentaActual(prev => { const p = prev.find(item => item.id === productoId); if (p.cantidad === 1) { return prev.filter(item => item.id !== productoId); } return prev.map(item => item.id === productoId ? { ...item, cantidad: item.cantidad - 1 } : item); }); };
   const eliminarProducto = (productoId) => { setVentaActual(prev => prev.filter(item => item.id !== productoId)); };
@@ -121,7 +117,9 @@ function PosPage() {
       await apiClient.post('/ventas', ventaData);
       toast.success('¡Venta registrada con éxito!');
       limpiarVenta();
-      if (activeTab === 'historial') { fetchData(); }
+      if (activeTab === 'historial') {
+        fetchData();
+      }
     } catch (err) { toast.error('Error al registrar la venta.'); }
   };
   
@@ -157,7 +155,26 @@ function PosPage() {
     if (activeTab === 'pedidos') {
       return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          {/* Tu JSX de Pedidos en Línea aquí */}
+          <h1 className="mb-4">Gestión de Pedidos en Línea</h1>
+          <div className="table-responsive">
+            <table className="table table-dark table-hover align-middle">
+              <thead><tr><th>ID</th><th>Cliente</th><th>Fecha</th><th>Total</th><th>Tipo</th><th>Estado</th><th>Acciones</th></tr></thead>
+              <tbody>
+                {pedidos.map((pedido) => (
+                  <tr key={pedido.id}>
+                    <td>#{pedido.id}</td><td>{pedido.nombre_cliente}</td><td>{new Date(pedido.fecha).toLocaleString()}</td><td>${Number(pedido.total).toFixed(2)}</td>
+                    <td><span className={`badge ${pedido.tipo_orden === 'domicilio' ? 'bg-info text-dark' : 'bg-secondary'}`}>{pedido.tipo_orden.charAt(0).toUpperCase() + pedido.tipo_orden.slice(1)}</span></td>
+                    <td>{pedido.estado}</td>
+                    <td>
+                      <button className="btn btn-sm btn-info me-2" onClick={() => handleShowDetails(pedido)}>Ver Pedido</button>
+                      <button className="btn btn-sm btn-warning me-2" onClick={() => handleUpdateStatus(pedido.id, 'En Preparacion')}>Preparar</button>
+                      <button className="btn btn-sm btn-success" onClick={() => handleUpdateStatus(pedido.id, 'Completado')}>Completado</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </motion.div>
       );
     }
@@ -189,14 +206,78 @@ function PosPage() {
             </div>
           </div>
           <div className="col-md-5">
-            {/* Tu JSX del Ticket de Venta aquí */}
+            <div className="card">
+              <div className="card-body">
+                <h3 className="card-title text-center">Ticket de Venta</h3>
+                <hr />
+                <form onSubmit={handleBuscarCliente} className="d-flex mb-3">
+                  <input type="email" className="form-control me-2" placeholder="Buscar cliente por correo..." value={emailCliente} onChange={(e) => setEmailCliente(e.target.value)} />
+                  <button type="submit" className="btn btn-info">Buscar</button>
+                </form>
+                {clienteEncontrado && (
+                  <div className="alert alert-secondary">
+                    <p className="mb-1"><strong>Cliente:</strong> {clienteEncontrado.cliente.nombre}</p>
+                    {clienteEncontrado.recompensas.length > 0 ? (
+                      clienteEncontrado.recompensas.map(rec => (
+                        <div key={rec.id}>
+                          <p className="mb-1">{rec.descripcion}</p>
+                          <button className="btn btn-sm btn-success w-100" onClick={() => handleAplicarRecompensa(rec)} disabled={recompensaAplicadaId === rec.id}>
+                            {recompensaAplicadaId === rec.id ? 'Recompensa Aplicada' : `Aplicar ${rec.nombre}`}
+                          </button>
+                        </div>
+                      ))
+                    ) : (<p className="mb-0">No hay recompensas.</p>)}
+                  </div>
+                )}
+                <hr />
+                <ul className="list-group list-group-flush">
+                  {ventaActual.length === 0 && <li className="list-group-item text-center text-muted">El ticket está vacío</li>}
+                  {ventaActual.map((item) => (
+                    <li key={item.id} className="list-group-item d-flex align-items-center justify-content-between p-1">
+                      <span className="me-auto">{item.nombre}</span>
+                      <div className="d-flex align-items-center">
+                        <button className="btn btn-outline-secondary btn-sm" onClick={() => decrementarCantidad(item.id)}>-</button>
+                        <span className="mx-2">{item.cantidad}</span>
+                        <button className="btn btn-outline-secondary btn-sm" onClick={() => incrementarCantidad(item.id)}>+</button>
+                      </div>
+                      <span className="mx-3" style={{ minWidth: '60px', textAlign: 'right' }}>${(item.cantidad * Number(item.precioFinal)).toFixed(2)}</span>
+                      <button className="btn btn-outline-danger btn-sm" onClick={() => eliminarProducto(item.id)}>&times;</button>
+                    </li>
+                  ))}
+                </ul>
+                <hr />
+                <h4>Total: ${totalVenta.toFixed(2)}</h4>
+                <div className="d-grid gap-2 mt-3">
+                  <button className="btn btn-success" onClick={handleCobrar}>Cobrar</button>
+                  <button className="btn btn-danger" onClick={limpiarVenta}>Cancelar</button>
+                </div>
+              </div>
+            </div>
           </div>
         </motion.div>
       );
     }
     
     if (activeTab === 'historial') {
-        // Tu JSX de Historial de Ventas aquí
+      return (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+          <h1 className="mb-4">Ventas del Punto de Venta (Hoy)</h1>
+          {ventasDelDia.length === 0 ? <p>No se han registrado ventas en el POS hoy.</p> : (
+            <div className="list-group">
+              {ventasDelDia.map(venta => (
+                <div key={venta.id} className="list-group-item">
+                  <div className="d-flex w-100 justify-content-between">
+                    <h5 className="mb-1">Venta #{venta.id} (Empleado: {venta.nombre_empleado})</h5>
+                    <small>{new Date(venta.fecha).toLocaleTimeString()}</small>
+                  </div>
+                  <p className="mb-1">Total: <strong>${Number(venta.total).toFixed(2)}</strong></p>
+                  <small>Método de Pago: {venta.metodo_pago}</small>
+                </div>
+              ))}
+            </div>
+          )}
+        </motion.div>
+      );
     }
   };
 
