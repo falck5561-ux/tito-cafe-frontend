@@ -7,13 +7,13 @@ function Navbar() {
   const { user, logout } = useContext(AuthContext);
 
   return (
-    <nav className="navbar navbar-dark fixed-top"> {/* Quitamos navbar-expand-lg para que el toggler siempre sea visible en móvil */}
+    <nav className="navbar navbar-dark fixed-top">
       <div className="container">
         <Link className="navbar-brand" to="/">
           <span>Tito Café</span>
         </Link>
 
-        {/* --- Botón Toggler para el Offcanvas --- */}
+        {/* Botón que abre el menú lateral */}
         <button
           className="navbar-toggler"
           type="button"
@@ -25,9 +25,9 @@ function Navbar() {
           <span className="navbar-toggler-icon"></span>
         </button>
 
-        {/* --- Menú Lateral (Offcanvas) --- */}
+        {/* El Contenido del Menú Lateral (Offcanvas) */}
         <div
-          className="offcanvas offcanvas-end" // Le quitamos text-bg-dark para controlarlo por CSS
+          className="offcanvas offcanvas-end"
           tabIndex="-1"
           id="offcanvasNavbar"
           aria-labelledby="offcanvasNavbarLabel"
@@ -41,9 +41,10 @@ function Navbar() {
               aria-label="Close"
             ></button>
           </div>
-          <div className="offcanvas-body">
-            {/* Lista de enlaces principal */}
-            <ul className="navbar-nav justify-content-end flex-grow-1 pe-3">
+
+          {/* CUERPO DEL MENÚ: Usamos flexbox para organizar el contenido */}
+          <div className="offcanvas-body d-flex flex-column">
+            <ul className="navbar-nav flex-grow-1">
               <li className="nav-item">
                 <NavLink className="nav-link" to="/">Inicio</NavLink>
               </li>
@@ -70,7 +71,7 @@ function Navbar() {
               )}
             </ul>
             
-            {/* --- MODIFICACIÓN: Contenedor para los botones al final --- */}
+            {/* FOOTER DEL MENÚ: mt-auto lo empuja hacia abajo */}
             <div className="offcanvas-footer mt-auto">
               <ThemeToggleButton />
               {user ? (
