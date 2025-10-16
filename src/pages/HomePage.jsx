@@ -1,23 +1,21 @@
 import React, { useState, useContext } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useMenuData } from '../hooks/useMenuData';
 import ProductCard from '../components/ProductCard';
 import AuthContext from '../context/AuthContext';
 import ProductDetailModal from '../components/ProductDetailModal';
-import { useCart } from '../context/CartContext'; // 1. Importar el hook del carrito global
+import { useCart } from '../context/CartContext';
 
 function HomePage() {
   const { productos, loading, error } = useMenuData();
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
-  const { agregarProductoAPedido } = useCart(); // 2. Obtener la función para añadir al carrito global
+  const { agregarProductoAPedido } = useCart();
 
-  // Estados para manejar el modal (esto ya lo tenías y está perfecto)
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
 
-  // Funciones para abrir/cerrar el modal (también correctas)
   const handleShowDetails = (product) => {
     setSelectedProduct(product);
     setShowDetailModal(true);
@@ -28,27 +26,17 @@ function HomePage() {
     setSelectedProduct(null);
   };
 
-  // 3. NUEVA FUNCIÓN: Añade al carrito Y LUEGO navega
   const handleAddToCartAndNavigate = (product) => {
-    // Primero, añade el producto al carrito global
     agregarProductoAPedido(product);
-    
-    // Luego, navega a la página correcta (cliente o login)
     if (user) {
-      navigate('/cliente');
+        switch (user.rol) {
+            case 'Cliente': navigate('/cliente'); break;
+            case 'Jefe': navigate('/admin'); break;
+            case 'Empleado': navigate('/pos'); break;
+            default: navigate('/login'); break;
+        }
     } else {
       navigate('/login');
-    }
-  };
-
-  // Tu función para el botón principal del Hero (se mantiene igual)
-  const getPedidoUrl = () => {
-    if (!user) return "/login";
-    switch (user.rol) {
-      case 'Cliente': return "/cliente";
-      case 'Jefe': return "/admin";
-      case 'Empleado': return "/pos";
-      default: return "/login";
     }
   };
 
@@ -58,13 +46,17 @@ function HomePage() {
     textShadow: '2px 2px 4px rgba(0,0,0,0.7)'
   };
 
+  // --- LÍNEA DE DIAGNÓSTICO ---
+  // Esto imprimirá en la consola la lista de productos que el componente va a dibujar.
+  console.log("Datos del menú que HomePage va a renderizar:", productos);
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
       <div className="p-5 mb-5 text-center rounded-3 shadow" style={heroStyle}>
         <motion.img src="/logo-inicio.png" alt="Tito Café Logo" className="hero-logo mb-4" initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2, type: 'spring' }} />
         <h1 className="display-4 fw-bold">El Sabor de la Tradición en cada Taza</h1>
         <p className="fs-4">Descubre nuestra selección de cafés de especialidad, postres artesanales y un ambiente único.</p>
-        <Link to={getPedidoUrl()} className="btn btn-primary btn-lg mt-3">Haz tu Pedido</Link>
+        <button onClick={handleAddToCartAndNavigate} className="btn btn-primary btn-lg mt-3">Haz tu Pedido</button>
       </div>
 
       {loading && <div className="text-center my-5"><div className="spinner-border" role="status"></div></div>}
@@ -86,12 +78,10 @@ function HomePage() {
         </div>
       )}
 
-      {/* Renderizar el modal al final */}
       {showDetailModal && (
         <ProductDetailModal
           product={selectedProduct}
           onClose={handleCloseDetails}
-          // 4. CAMBIO CLAVE: El botón del modal ahora usa la nueva función
           onAddToCart={handleAddToCartAndNavigate} 
         />
       )}
