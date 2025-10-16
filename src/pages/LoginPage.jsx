@@ -19,7 +19,9 @@ function LoginPage() {
       const loggedInUser = await login(email, password);
       
       if (loggedInUser) {
-        toast.success(`¡Bienvenido, ${loggedInUser.nombre}!`);
+        // --- CORRECCIÓN DEL MENSAJE DE BIENVENIDA ---
+        // Se cambia el mensaje para que sea más general y profesional.
+        toast.success('¡Bienvenido a Tito Café!');
 
         // --- LÓGICA DE REDIRECCIÓN POR ROL MEJORADA ---
         switch (loggedInUser.rol) {
