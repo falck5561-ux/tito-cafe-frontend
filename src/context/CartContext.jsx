@@ -15,6 +15,14 @@ export const CartProvider = ({ children }) => {
   }, [pedidoActual]);
 
   const agregarProductoAPedido = (producto) => {
+    // --- ¡CORRECCIÓN CLAVE! ---
+    // Se añade una validación para prevenir que se agreguen productos inválidos o vacíos.
+    // Esto elimina el error del item "NaN" automático.
+    if (!producto || !producto.id || typeof producto.precio === 'undefined') {
+      console.error("Intento de agregar un producto inválido al carrito:", producto);
+      return; // Detiene la ejecución si el producto no es válido
+    }
+
     let precioFinal = Number(producto.precio);
     if (producto.en_oferta && producto.descuento_porcentaje > 0) {
       precioFinal = precioFinal * (1 - producto.descuento_porcentaje / 100);
@@ -28,7 +36,9 @@ export const CartProvider = ({ children }) => {
       }
       return [...prev, { ...producto, cantidad: 1, precio: precioFinal }];
     });
-    toast.success(`${producto.nombre} añadido al carrito!`);
+    
+    // NOTA: La notificación toast.success() se ha movido a los componentes 
+    // que llaman a esta función para dar más control y evitar duplicados.
   };
 
   const incrementarCantidad = (productoId) => {

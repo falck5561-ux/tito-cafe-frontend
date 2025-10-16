@@ -38,6 +38,21 @@ const styles = {
   },
 };
 
+// --- MODIFICACIÓN: Función centralizada para notificaciones ---
+const notify = (type, message) => {
+  switch (type) {
+    case 'success':
+      toast.success(message);
+      break;
+    case 'error':
+      toast.error(message);
+      break;
+    default:
+      toast(message);
+      break;
+  }
+};
+
 function ClientePage() {
   const { 
     pedidoActual, 
@@ -168,21 +183,29 @@ function ClientePage() {
     try {
       const res = await apiClient.post('/pedidos/calcular-envio', { lat: location.lat, lng: location.lng });
       setCostoEnvio(res.data.deliveryCost);
-      toast.success(`Costo de envío: $${res.data.deliveryCost.toFixed(2)}`);
+      notify('success', `Costo de envío: $${res.data.deliveryCost.toFixed(2)}`);
     } catch (err) {
-      toast.error(err.response?.data?.msg || 'No se pudo calcular el costo de envío.');
+      notify('error', err.response?.data?.msg || 'No se pudo calcular el costo de envío.');
       setDireccion(null);
     } finally {
       setCalculandoEnvio(false);
     }
   };
 
-  const usarDireccionGuardada = () => { if (direccionGuardada) { handleLocationSelect(direccionGuardada); if (direccionGuardada.referencia) { setReferencia(direccionGuardada.referencia); } toast.success('Usando dirección guardada.'); } };
+  const usarDireccionGuardada = () => { 
+    if (direccionGuardada) { 
+      handleLocationSelect(direccionGuardada); 
+      if (direccionGuardada.referencia) { 
+        setReferencia(direccionGuardada.referencia); 
+      } 
+      notify('success', 'Usando dirección guardada.'); 
+    } 
+  };
   
   const handleProcederAlPago = async () => {
     if (totalFinal <= 0) return;
-    if (tipoOrden === 'domicilio' && !direccion) { return toast.error('Por favor, selecciona o escribe tu ubicación.'); }
-    if (calculandoEnvio) { return toast.error('Espera a que termine el cálculo del envío.'); }
+    if (tipoOrden === 'domicilio' && !direccion) { return notify('error', 'Por favor, selecciona o escribe tu ubicación.'); }
+    if (calculandoEnvio) { return notify('error', 'Espera a que termine el cálculo del envío.'); }
     setPaymentLoading(true);
     try {
       const productosParaEnviar = pedidoActual.map(({ id, cantidad, precio, nombre }) => ({ id, cantidad, precio: Number(precio), nombre }));
@@ -205,7 +228,7 @@ function ClientePage() {
       setClientSecret(res.data.clientSecret);
       setShowPaymentModal(true);
     } catch (err) {
-      toast.error('No se pudo iniciar el proceso de pago.');
+      notify('error', 'No se pudo iniciar el proceso de pago.');
     } finally {
       setPaymentLoading(false);
     }
@@ -224,13 +247,13 @@ function ClientePage() {
       try {
         const datosParaGuardar = { ...direccion, referencia };
         await apiClient.put('/usuarios/mi-direccion', datosParaGuardar);
-        toast.success('Dirección y referencia guardadas.');
+        notify('success', 'Dirección y referencia guardadas.');
         setDireccionGuardada(datosParaGuardar);
       } catch (err) {
-        toast.error('No se pudo guardar la dirección y referencia.');
+        notify('error', 'No se pudo guardar la dirección y referencia.');
       }
     }
-    toast.success('¡Pedido realizado y pagado con éxito!');
+    notify('success', '¡Pedido realizado y pagado con éxito!');
     limpiarPedidoCompleto();
     setShowPaymentModal(false);
     setClientSecret('');
@@ -319,9 +342,9 @@ function ClientePage() {
             </div>
           </div>
           
-          {/* --- COLUMNA DE CARRITO PARA ESCRITORIO (SE OCULTA EN MÓVIL) --- */}
+          {/* --- MODIFICACIÓN: COLUMNA DE CARRITO FIJA PARA ESCRITORIO --- */}
           <div className="col-md-4 d-none d-md-block">
-            <div className="card shadow-sm position-sticky" style={{top: '100px'}}>
+            <div className="card shadow-sm position-sticky" style={{top: '20px'}}> {/* Ajusta el valor de 'top' según necesites */}
               <CarritoContent isModal={false} />
             </div>
           </div>
@@ -479,4 +502,3 @@ function ClientePage() {
 }
 
 export default ClientePage;
-
