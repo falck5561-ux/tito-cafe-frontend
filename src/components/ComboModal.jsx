@@ -23,9 +23,12 @@ function ComboModal({ show, handleClose, handleSave, comboActual }) {
           precio: comboActual.precio || '',
           imagenes: (comboActual.imagenes && comboActual.imagenes.length > 0) ? comboActual.imagenes : [''],
           descuento_porcentaje: comboActual.descuento_porcentaje || 0,
-          // AHORA: Cargamos el estado de ambos interruptores desde la API
-          oferta_activa: comboActual.oferta_activa !== undefined ? comboActual.oferta_activa : false,
-          activa: comboActual.activa !== undefined ? comboActual.activa : true,
+          // --- ¡CORRECCIÓN APLICADA AQUÍ! ---
+          // Hacemos el componente más robusto.
+          // Lee 'oferta_activa', pero si no existe, usa 'en_oferta' como respaldo.
+          oferta_activa: comboActual.oferta_activa !== undefined ? comboActual.oferta_activa : (comboActual.en_oferta || false),
+          // Hacemos lo mismo para la visibilidad del combo.
+          activa: comboActual.activa !== undefined ? comboActual.activa : (comboActual.esta_activo !== undefined ? comboActual.esta_activo : true),
         });
       } else {
         // Reseteamos el formulario para un combo nuevo
@@ -145,3 +148,4 @@ function ComboModal({ show, handleClose, handleSave, comboActual }) {
 }
 
 export default ComboModal;
+
