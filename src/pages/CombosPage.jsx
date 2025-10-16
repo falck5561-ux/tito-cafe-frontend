@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import apiClient from '../services/api';
 import AuthContext from '../context/AuthContext';
-// CORRECCIÓN: El hook se llama 'useCart', no está en el contexto directamente
 import { useCart } from '../context/CartContext'; 
 import toast from 'react-hot-toast';
 
@@ -12,14 +11,14 @@ function CombosPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const { user } = useContext(AuthContext);
-  // CORRECCIÓN: Se usa el nombre de la función que provee el hook
-  const { agregarAlCarrito } = useCart(); 
+  // --- CORRECCIÓN CLAVE ---
+  // Usamos el nombre REAL de la función que está en tu CartContext.
+  const { agregarProductoAPedido } = useCart(); 
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchCombos = async () => {
       try {
-        // CORRECCIÓN: Usamos la API que devuelve los nombres correctos
         const response = await apiClient.get('/combos'); 
         setCombos(response.data);
       } catch (err) {
@@ -32,9 +31,7 @@ function CombosPage() {
     fetchCombos();
   }, []);
 
-  // --- FUNCIÓN CLAVE CORREGIDA ---
   const handleOrdenarClick = (e, combo) => {
-    // 1. Detiene cualquier evento click en elementos padres (previene doble notificación)
     e.stopPropagation(); 
 
     if (!user) {
@@ -43,11 +40,14 @@ function CombosPage() {
       return;
     }
     
-    // 2. Agrega el producto al carrito (usa la función correcta del contexto)
-    agregarAlCarrito(combo);
-    toast.success(`${combo.nombre || combo.titulo} añadido al carrito!`);
+    // --- CORRECCIÓN CLAVE ---
+    // Llamamos a la función con su nombre correcto.
+    agregarProductoAPedido(combo);
     
-    // 3. ¡NUEVO! Redirige al usuario a la página del pedido
+    // La notificación ya la dispara el contexto, pero podemos dejar esta si quieres un mensaje específico aquí.
+    // toast.success(`${combo.nombre || combo.titulo} añadido al carrito!`);
+    
+    // Redirige al usuario a la página del pedido
     navigate('/hacer-un-pedido'); // Asegúrate que esta sea tu ruta correcta
   };
 
@@ -99,7 +99,6 @@ function CombosPage() {
                   </div>
                   <div className="card-footer bg-transparent border-top-0 pb-3 d-flex justify-content-between align-items-center">
                     <span className="fw-bold fs-4">${Number(combo.precio).toFixed(2)}</span>
-                    {/* 4. Pasamos el evento 'e' a la función */}
                     <button onClick={(e) => handleOrdenarClick(e, combo)} className="btn btn-primary">
                       ¡Lo Quiero!
                     </button>
