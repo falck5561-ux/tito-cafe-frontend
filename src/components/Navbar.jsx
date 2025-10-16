@@ -9,20 +9,49 @@ function Navbar() {
   return (
     <nav className="navbar navbar-expand-lg navbar-dark fixed-top">
       <div className="container">
-        {/* --- CAMBIO: Se ha eliminado el <img> de aquí --- */}
         <Link className="navbar-brand" to="/">
           <span>Tito Café</span>
         </Link>
 
-        <div className="d-flex align-items-center">
+        {/* Este div agrupa los enlaces de navegación y los botones de la derecha */}
+        {/* Usamos 'ms-auto' para empujar todo a la derecha y 'align-items-center' para centrar verticalmente */}
+        <div className="d-flex align-items-center ms-auto">
+          
+          {/* --- ENLACES DE NAVEGACIÓN PRINCIPALES --- */}
           <ul className="navbar-nav me-auto mb-2 mb-lg-0">
-            <li className="nav-item"><NavLink className="nav-link" to="/">Inicio</NavLink></li>
-            <li className="nav-item"><NavLink className="nav-link" to="/combos">Combos</NavLink></li>
+            <li className="nav-item">
+              <NavLink className="nav-link" to="/">Inicio</NavLink>
+            </li>
+            <li className="nav-item">
+              <NavLink className="nav-link" to="/combos">Combos</NavLink>
+            </li>
             
-            {user?.rol === 'Jefe' && <li className="nav-item"><NavLink className="nav-link" to="/admin">Admin</NavLink></li>}
-            {user?.rol === 'Cliente' && <li className="nav-item"><NavLink className="nav-link" to="/cliente">Mi Pedido</NavLink></li>}
+            {/* --- ENLACES CONDICIONALES POR ROL --- */}
+
+            {/* Para Clientes: Muestra "Mi Pedido" */}
+            {user?.rol === 'Cliente' && (
+              <li className="nav-item">
+                {/* CORRECCIÓN: Apunta a la ruta principal del cliente */}
+                <NavLink className="nav-link" to="/hacer-un-pedido">Mi Pedido</NavLink>
+              </li>
+            )}
+
+            {/* Para Empleados y Jefes: Muestra "Punto de Venta" */}
+            {(user?.rol === 'Empleado' || user?.rol === 'Jefe') && (
+              <li className="nav-item">
+                <NavLink className="nav-link" to="/pos">Punto de Venta</NavLink>
+              </li>
+            )}
+            
+            {/* Solo para Jefes: Muestra "Admin" */}
+            {user?.rol === 'Jefe' && (
+              <li className="nav-item">
+                <NavLink className="nav-link" to="/admin">Admin</NavLink>
+              </li>
+            )}
           </ul>
 
+          {/* --- BOTONES DE TEMA Y SESIÓN --- */}
           <div className="d-flex align-items-center ms-lg-4">
             <ThemeToggleButton />
             {user ? (

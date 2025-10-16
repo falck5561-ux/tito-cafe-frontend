@@ -1,7 +1,8 @@
-// Archivo: src/pages/LoginPage.jsx (con enlace a registro)
+// Archivo: src/pages/LoginPage.jsx
 import React, { useState, useContext } from 'react';
-import { useNavigate, Link } from 'react-router-dom'; // <-- LINK IMPORTADO
+import { useNavigate, Link } from 'react-router-dom';
 import AuthContext from '../context/AuthContext';
+import toast from 'react-hot-toast'; // Importa toast para notificaciones
 
 function LoginPage() {
   const [email, setEmail] = useState('');
@@ -18,7 +19,9 @@ function LoginPage() {
       const loggedInUser = await login(email, password);
       
       if (loggedInUser) {
-        // --- LÓGICA DE REDIRECCIÓN POR ROL ---
+        toast.success(`¡Bienvenido, ${loggedInUser.nombre}!`);
+
+        // --- LÓGICA DE REDIRECCIÓN POR ROL MEJORADA ---
         switch (loggedInUser.rol) {
           case 'Jefe':
             navigate('/admin');
@@ -27,16 +30,18 @@ function LoginPage() {
             navigate('/pos');
             break;
           case 'Cliente':
-            navigate('/cliente');
+            // CORRECCIÓN: Redirigimos a la página principal del cliente.
+            navigate('/hacer-un-pedido'); 
             break;
           default:
-            navigate('/');
+            navigate('/'); // Redirección por defecto
         }
       } else {
         setError('Email o contraseña incorrectos.');
       }
     } catch (err) {
       setError('Ocurrió un error. Inténtelo de nuevo.');
+      console.error("Error en login:", err);
     }
   };
 
@@ -76,11 +81,9 @@ function LoginPage() {
             </div>
           </form>
 
-          {/* ---- ENLACE AÑADIDO ---- */}
           <p className="mt-3 text-center">
             ¿No tienes una cuenta? <Link to="/register">Crea una aquí</Link>
           </p>
-          {/* -------------------- */}
           
         </div>
       </div>
