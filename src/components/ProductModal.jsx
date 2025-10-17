@@ -1,137 +1,174 @@
-import React, { useContext } from 'react';
-import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom'; // Importación para la navegación
-import AuthContext from '../context/AuthContext';
+import React, { useState, useEffect } from 'react';
 
-const modalStyles = {
-  backdrop: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    width: '100%',
-    height: '100%',
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1050,
-  },
-  content: {
-    width: '90%',
-    maxWidth: '500px',
-    background: 'var(--bs-card-bg)',
-    borderRadius: '15px',
-    padding: '2rem',
-    position: 'relative',
-    color: 'var(--bs-body-color)',
-    boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
-  },
-  closeButton: {
-    position: 'absolute',
-    top: '10px',
-    right: '10px',
-    background: 'rgba(0,0,0,0.2)',
-    border: 'none',
-    borderRadius: '50%',
-    width: '32px',
-    height: '32px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '1.2rem',
-    color: 'var(--bs-body-color)',
-    cursor: 'pointer',
-    transition: 'background-color 0.2s',
-  },
-  productImage: {
-    width: '100%',
-    height: '250px',
-    objectFit: 'cover',
-    borderRadius: '10px',
-    marginBottom: '1.5rem',
-    border: '1px solid var(--bs-border-color)',
-  },
-  productTitle: {
-    fontFamily: "'Playfair Display', serif",
-  },
-  productDescription: {
-    margin: '1rem 0',
-    fontSize: '1rem',
-    lineHeight: '1.6',
-  },
-};
+function ProductModal({ show, handleClose, handleSave, productoActual }) {
+  // CAMBIO: El estado ahora maneja un arreglo 'imagenes' en lugar de 'imagen_url'
+  const [formData, setFormData] = useState({
+    nombre: '',
+    descripcion: '',
+    precio: '',
+    stock: '',
+    categoria: '',
+    imagenes: [''], // Se inicializa con un campo de imagen vacío
+    descuento_porcentaje: 0,
+    en_oferta: false,
+  });
 
-function ProductDetailModal({ product, onClose, onAddToCart }) {
-  const { user } = useContext(AuthContext);
-  const navigate = useNavigate(); // Hook para redirigir
+  useEffect(() => {
+    if (show) {
+      if (productoActual) {
+        // Si editamos, llenamos el form con los datos, incluyendo el arreglo de imágenes
+        setFormData({
+          id: productoActual.id,
+          nombre: productoActual.nombre || '',
+          descripcion: productoActual.descripcion || '',
+          precio: productoActual.precio || '',
+          stock: productoActual.stock || 0,
+          categoria: productoActual.categoria || '',
+          // CAMBIO: Si no hay imágenes o está vacío, se asegura de que haya al menos un campo
+          imagenes: (productoActual.imagenes && productoActual.imagenes.length > 0) ? productoActual.imagenes : [''],
+          descuento_porcentaje: productoActual.descuento_porcentaje || 0,
+          en_oferta: productoActual.en_oferta || false,
+        });
+      } else {
+        // Si añadimos uno nuevo, reseteamos el formulario con un campo de imagen
+        setFormData({
+          nombre: '',
+          descripcion: '',
+          precio: '',
+          stock: '',
+          categoria: '',
+          imagenes: [''],
+          descuento_porcentaje: 0,
+          en_oferta: false,
+        });
+      }
+    }
+  }, [productoActual, show]);
 
-  if (!product) return null;
+  if (!show) {
+    return null;
+  }
 
-  // Función que maneja el clic en "Hacer Pedido"
-  const handleOrderAndNavigate = (productToAdd) => {
-    // 1. Agrega el producto al carrito
-    onAddToCart(productToAdd);
-    // 2. Redirige al usuario a la página del pedido
-    navigate('/hacer-un-pedido');
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
+    }));
   };
 
-  const precioFinal = product.en_oferta && product.descuento_porcentaje > 0
-    ? Number(product.precio) * (1 - product.descuento_porcentaje / 100)
-    : Number(product.precio);
+  // --- NUEVAS FUNCIONES PARA MANEJAR MÚLTIPLES IMÁGENES ---
 
-  const displayImage = (product.imagenes && product.imagenes.length > 0)
-    ? product.imagenes[0]
-    : 'https://placehold.co/500x250/d7ccc8/4a2c2a?text=Sin+Imagen';
+  const handleImageChange = (index, value) => {
+    const newImages = [...formData.imagenes];
+    newImages[index] = value;
+    setFormData({ ...formData, imagenes: newImages });
+  };
+
+  const handleAddImageField = () => {
+    setFormData({ ...formData, imagenes: [...formData.imagenes, ''] });
+  };
+
+  const handleRemoveImageField = (index) => {
+    if (formData.imagenes.length <= 1) return; // No permitir eliminar el último campo
+    const newImages = formData.imagenes.filter((_, i) => i !== index);
+    setFormData({ ...formData, imagenes: newImages });
+  };
+
+  // --- NUEVA FUNCIÓN onSave para limpiar datos antes de guardar ---
+
+  const onSave = (e) => {
+    e.preventDefault();
+    // Filtramos las URLs vacías antes de enviar los datos
+    const cleanedData = {
+      ...formData,
+      imagenes: formData.imagenes.filter(url => url && url.trim() !== ''),
+    };
+    handleSave(cleanedData);
+  };
 
   return (
-    <motion.div
-      style={modalStyles.backdrop}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      onClick={onClose}
-    >
-      <motion.div
-        style={modalStyles.content}
-        initial={{ y: -50, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button style={modalStyles.closeButton} onClick={onClose}>&times;</button>
-        
-        <img 
-          src={displayImage} 
-          alt={product.nombre} 
-          style={modalStyles.productImage} 
-        />
+    <div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+      <div className="modal-dialog modal-dialog-centered">
+        <div className="modal-content">
+          <form onSubmit={onSave}>
+            <div className="modal-header">
+              <h5 className="modal-title">{formData.id ? 'Editar Producto' : 'Añadir Nuevo Producto'}</h5>
+              <button type="button" className="btn-close" onClick={handleClose}></button>
+            </div>
+            <div className="modal-body">
+              {/* --- CAMPOS EXISTENTES --- */}
+              <div className="mb-3">
+                <label htmlFor="nombre" className="form-label">Nombre del Producto</label>
+                <input type="text" className="form-control" id="nombre" name="nombre" value={formData.nombre} onChange={handleChange} required />
+              </div>
+              
+              <div className="mb-3">
+                <label htmlFor="descripcion" className="form-label">Descripción (Opcional)</label>
+                <textarea className="form-control" id="descripcion" name="descripcion" rows="3" value={formData.descripcion} onChange={handleChange}></textarea>
+              </div>
 
-        <h2 style={modalStyles.productTitle}>{product.nombre}</h2>
-        
-        {product.descripcion && (
-          <p style={modalStyles.productDescription}>{product.descripcion}</p>
-        )}
+              <div className="row">
+                <div className="col-md-6 mb-3">
+                  <label htmlFor="precio" className="form-label">Precio</label>
+                  <input type="number" step="0.01" className="form-control" id="precio" name="precio" value={formData.precio} onChange={handleChange} required />
+                </div>
+                <div className="col-md-6 mb-3">
+                  <label htmlFor="stock" className="form-label">Stock</label>
+                  <input type="number" className="form-control" id="stock" name="stock" value={formData.stock} onChange={handleChange} />
+                </div>
+              </div>
 
-        <div className="d-flex justify-content-between align-items-center mt-3">
-          <div>
-            {product.en_oferta && product.descuento_porcentaje > 0 ? (
-              <>
-                <span className="text-muted text-decoration-line-through me-2 fs-5">${Number(product.precio).toFixed(2)}</span>
-                <span className="fs-3 fw-bold text-success">${precioFinal.toFixed(2)}</span>
-              </>
-            ) : (
-              <span className="fs-3 fw-bold">${precioFinal.toFixed(2)}</span>
-            )}
-          </div>
+              <div className="mb-3">
+                <label htmlFor="categoria" className="form-label">Categoría</label>
+                <input type="text" className="form-control" id="categoria" name="categoria" value={formData.categoria} onChange={handleChange} />
+              </div>
+              
+              {/* --- CAMBIO: SECCIÓN DINÁMICA PARA MÚLTIPLES IMÁGENES --- */}
+              <div className="p-3 mb-3 border rounded">
+                <h6 className="mb-3">Imágenes del Producto</h6>
+                {formData.imagenes.map((url, index) => (
+                  <div key={index} className="d-flex align-items-center mb-2">
+                    <input
+                      type="text"
+                      className="form-control me-2"
+                      placeholder="https://ejemplo.com/imagen.jpg"
+                      value={url}
+                      onChange={(e) => handleImageChange(index, e.target.value)}
+                    />
+                    <button type="button" className="btn btn-outline-danger btn-sm" onClick={() => handleRemoveImageField(index)} disabled={formData.imagenes.length <= 1}>
+                      &times;
+                    </button>
+                  </div>
+                ))}
+                <button type="button" className="btn btn-outline-primary btn-sm mt-2" onClick={handleAddImageField}>
+                  Añadir URL de Imagen
+                </button>
+              </div>
 
-          {(!user || user.rol === 'Cliente') && (
-            <button className="btn btn-primary" onClick={() => handleOrderAndNavigate(product)}>
-              Hacer Pedido
-            </button>
-          )}
+              {/* --- CAMPOS PARA OFERTAS --- */}
+              <div className="p-3 mb-3 border rounded">
+                <h6 className="mb-3">Configuración de Oferta</h6>
+                <div className="mb-3">
+                  <label htmlFor="descuento_porcentaje" className="form-label">Porcentaje de Descuento (%)</label>
+                  <input type="number" className="form-control" id="descuento_porcentaje" name="descuento_porcentaje" value={formData.descuento_porcentaje} onChange={handleChange} />
+                </div>
+                <div className="form-check form-switch">
+                  <input className="form-check-input" type="checkbox" role="switch" id="en_oferta" name="en_oferta" checked={formData.en_oferta} onChange={handleChange} />
+                  <label className="form-check-label" htmlFor="en_oferta">Activar oferta para este producto</label>
+                </div>
+              </div>
+
+            </div>
+            <div className="modal-footer">
+              <button type="button" className="btn btn-secondary" onClick={handleClose}>Cancelar</button>
+              <button type="submit" className="btn btn-primary">Guardar Cambios</button>
+            </div>
+          </form>
         </div>
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 }
 
-export default ProductDetailModal;
-
+export default ProductModal;
