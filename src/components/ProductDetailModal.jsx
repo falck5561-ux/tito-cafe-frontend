@@ -1,8 +1,9 @@
 import React, { useContext } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom'; // Importación para la navegación
+// Quitamos useNavigate de aquí, ya no es necesario.
 import AuthContext from '../context/AuthContext';
 
+// Los estilos (modalStyles) permanecen exactamente iguales que antes...
 const modalStyles = {
   backdrop: {
     position: 'fixed',
@@ -61,28 +62,11 @@ const modalStyles = {
   },
 };
 
+// La prop 'onAddToCart' ahora será la única encargada de toda la lógica.
 function ProductDetailModal({ product, onClose, onAddToCart }) {
   const { user } = useContext(AuthContext);
-  const navigate = useNavigate(); // Hook para redirigir
 
   if (!product) return null;
-
-  // Función que maneja el clic en "Hacer Pedido"
-  const handleOrderAndNavigate = (productToAdd) => {
-    console.log('Paso 1: Se hizo clic en el botón "Hacer Pedido".');
-    
-    // 1. Agrega el producto al carrito
-    onAddToCart(productToAdd);
-    console.log('Paso 2: Se llamó a la función onAddToCart.');
-
-    // 2. Redirige al usuario a la página del pedido
-    try {
-      navigate('/hacer-un-pedido');
-      console.log('Paso 3: Redirección a /hacer-un-pedido ejecutada con éxito.');
-    } catch (error) {
-      console.error('¡ERROR! La redirección falló:', error);
-    }
-  };
 
   const precioFinal = product.en_oferta && product.descuento_porcentaje > 0
     ? Number(product.precio) * (1 - product.descuento_porcentaje / 100)
@@ -132,7 +116,8 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
           </div>
 
           {(!user || user.rol === 'Cliente') && (
-            <button className="btn btn-primary" onClick={() => handleOrderAndNavigate(product)}>
+            // El botón ahora solo llama a onAddToCart. Simple y directo.
+            <button className="btn btn-primary" onClick={() => onAddToCart(product)}>
               Hacer Pedido
             </button>
           )}
@@ -143,5 +128,4 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
 }
 
 export default ProductDetailModal;
-
 

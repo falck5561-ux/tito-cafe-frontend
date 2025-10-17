@@ -1,6 +1,6 @@
 import React, { useState, useContext } from 'react';
-// --- MODIFICACIÓN 1: Importamos 'Link' para una navegación correcta ---
-import { Link } from 'react-router-dom';
+// --- MODIFICACIÓN 1: Importamos 'useNavigate' para la redirección ---
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useMenuData } from '../hooks/useMenuData';
 import ProductCard from '../components/ProductCard';
@@ -16,6 +16,9 @@ function HomePage() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
 
+  // --- MODIFICACIÓN 2: Inicializamos el hook de navegación ---
+  const navigate = useNavigate();
+
   const handleShowDetails = (product) => {
     setSelectedProduct(product);
     setShowDetailModal(true);
@@ -26,11 +29,12 @@ function HomePage() {
     setSelectedProduct(null);
   };
 
-  // --- MODIFICACIÓN 2: Creamos una función solo para el modal ---
-  // Esta función agrega el producto y cierra el modal, permitiendo al usuario seguir comprando.
-  const handleAddToCartFromModal = (product) => {
+  // --- MODIFICACIÓN 3: Esta es la función final y correcta ---
+  // Agrega el producto al carrito, cierra el modal Y redirige al usuario.
+  const handleAddToCartAndNavigate = (product) => {
     agregarProductoAPedido(product);
     handleCloseDetails();
+    navigate('/hacer-un-pedido');
   };
 
   const heroStyle = {
@@ -48,8 +52,7 @@ function HomePage() {
         <h1 className="display-4 fw-bold">El Sabor de la Tradición en cada Taza</h1>
         <p className="fs-4">Descubre nuestra selección de cafés de especialidad, postres artesanales y un ambiente único.</p>
 
-        {/* --- MODIFICACIÓN 3: Usamos el componente Link para navegar correctamente --- */}
-        {/* Esto soluciona el error 'No routes matched' y no intenta agregar un producto vacío. */}
+        {/* Usamos el componente Link para el botón principal del banner */}
         <Link to="/hacer-un-pedido" className="btn btn-primary btn-lg mt-3">
           Haz tu Pedido
         </Link>
@@ -78,8 +81,8 @@ function HomePage() {
         <ProductDetailModal
           product={selectedProduct}
           onClose={handleCloseDetails}
-          // --- MODIFICACIÓN 4: Pasamos la nueva función al modal ---
-          onAddToCart={handleAddToCartFromModal} 
+          // --- MODIFICACIÓN 4: Pasamos la nueva función con navegación al modal ---
+          onAddToCart={handleAddToCartAndNavigate} 
         />
       )}
     </motion.div>
