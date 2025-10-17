@@ -1,13 +1,18 @@
 // Archivo: src/context/ThemeContext.jsx
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useContext } from 'react'; // <--- 1. AÑADE useContext AQUÍ
 
 const ThemeContext = createContext();
 
+// 2. AÑADE Y EXPORTA EL HOOK useTheme AQUÍ
+// Esta es la línea que soluciona el error de despliegue.
+export const useTheme = () => {
+  return useContext(ThemeContext);
+};
+
 export const ThemeProvider = ({ children }) => {
-  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
+  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark'); // Cambiado a 'dark' por defecto
 
   useEffect(() => {
-    // Aplica el tema al elemento <html> de la página
     document.documentElement.setAttribute('data-bs-theme', theme);
     localStorage.setItem('theme', theme);
   }, [theme]);
@@ -23,4 +28,5 @@ export const ThemeProvider = ({ children }) => {
   );
 };
 
+// Ya no es necesario exportar el contexto por defecto, pero no hace daño
 export default ThemeContext;
