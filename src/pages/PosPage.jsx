@@ -3,24 +3,10 @@ import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import apiClient from '../services/api';
 
-// --- COMPONENTE MODAL INTEGRADO ---
-const DetallesPedidoModal = ({ pedido, onClose }) => {
-  if (!pedido) return null;
-  return (
-    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1050 }} onClick={onClose}>
-      <div style={{ backgroundColor: 'var(--bs-card-bg)', color: 'var(--bs-body-color)', padding: '2rem', borderRadius: '0.5rem', width: '90%', maxWidth: '500px' }} onClick={e => e.stopPropagation()}>
-        <h3>Detalles del Pedido #{pedido.id}</h3>
-        <hr />
-        <p><strong>Cliente:</strong> {pedido.nombre_cliente}</p>
-        <p><strong>Fecha:</strong> {new Date(pedido.fecha).toLocaleString()}</p>
-        <p><strong>Total:</strong> ${Number(pedido.total).toFixed(2)}</p>
-        <p><strong>Tipo:</strong> {pedido.tipo_orden}</p>
-        <p><strong>Estado:</strong> {pedido.estado}</p>
-        <button className="btn btn-danger mt-3 w-100" onClick={onClose}>Cerrar</button>
-      </div>
-    </div>
-  );
-};
+// --- MODIFICACIÓN: Se importa el modal detallado desde su propio archivo ---
+import DetallesPedidoModal from '../components/DetallesPedidoModal'; // Asegúrate de que la ruta sea correcta
+
+// --- MODIFICACIÓN: Se eliminó el componente de modal simple que estaba aquí ---
 
 function PosPage() {
   const [activeTab, setActiveTab] = useState('pos');
@@ -37,9 +23,6 @@ function PosPage() {
   const [clienteEncontrado, setClienteEncontrado] = useState(null);
   const [recompensaAplicadaId, setRecompensaAplicadaId] = useState(null);
 
-  // ========================================================================
-  // INICIO DE LA CORRECCIÓN PRINCIPAL PARA EL ERROR 'NaN'
-  // ========================================================================
   const fetchData = async () => {
     setLoading(true);
     setError('');
@@ -50,7 +33,6 @@ function PosPage() {
           apiClient.get('/combos'),
         ]);
 
-        // Función unificada para procesar y estandarizar cualquier item.
         const estandarizarItem = (item) => {
           const precioFinal = Number(item.precio);
           let precioOriginal = precioFinal;
@@ -62,7 +44,7 @@ function PosPage() {
           return {
             ...item,
             precio: precioFinal,
-            precio_original: precioOriginal, // Asegura que todos los items tengan esta propiedad
+            precio_original: precioOriginal,
             nombre: item.nombre || item.titulo,
           };
         };
@@ -84,9 +66,6 @@ function PosPage() {
       console.error(err);
     } finally { setLoading(false); }
   };
-  // ========================================================================
-  // FIN DE LA CORRECCIÓN PRINCIPAL
-  // ========================================================================
 
   useEffect(() => { fetchData(); }, [activeTab]);
 
@@ -96,7 +75,6 @@ function PosPage() {
   }, [ventaActual]);
 
   const agregarProductoAVenta = (item) => {
-    // Usamos el 'precio' del item estandarizado, que ya es el precio final.
     const precioFinal = item.precio;
 
     setVentaActual(prevVenta => {

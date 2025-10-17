@@ -6,22 +6,29 @@ function DetallesPedidoModal({ pedido, onClose }) {
   // Aseguramos que productos siempre sea un array para evitar errores.
   const productos = Array.isArray(pedido.productos) ? pedido.productos : [];
 
-  // --- LÓGICA MEJORADA PARA GOOGLE MAPS ---
-  // Creamos el enlace de forma segura, priorizando coordenadas si existen,
-  // y si no, usamos la dirección de texto.
+  // --- CORRECCIÓN: LÓGICA DE GOOGLE MAPS MEJORADA ---
+  // Se crea el enlace estándar de Google Maps, que funciona correctamente.
   let googleMapsUrl = '';
   if (pedido.latitude && pedido.longitude) {
-    // Opción 1: Usar coordenadas (más preciso)
+    // Opción 1: Usar coordenadas (es la más precisa)
     googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${pedido.latitude},${pedido.longitude}`;
   } else if (pedido.direccion_entrega) {
-    // Opción 2: Usar la dirección de texto (si no hay coordenadas)
+    // Opción 2: Usar la dirección de texto como alternativa
     googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(pedido.direccion_entrega)}`;
   }
   
+  // Se calcula el subtotal de los productos.
   const totalProductos = productos.reduce(
     (sum, p) => sum + (p.cantidad * Number(p.precio || 0)),
     0
   );
+
+  // --- MEJORA: Cálculo del total más robusto ---
+  // Si `pedido.total` no viene, se calcula sumando productos + envío.
+  const costoEnvio = Number(pedido.costo_envio || 0);
+  const totalCalculado = totalProductos + costoEnvio;
+  const totalFinal = Number(pedido.total || totalCalculado);
+
 
   return (
     <div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.7)' }}>
@@ -41,7 +48,7 @@ function DetallesPedidoModal({ pedido, onClose }) {
               <ul className="list-group list-group-flush mb-4">
                 {productos.map((producto, index) => (
                   <li
-                    key={index}
+                    key={index} // Se mantiene el index si no hay un ID único por item
                     className="list-group-item d-flex justify-content-between align-items-center bg-dark text-white"
                   >
                     <span>{producto.cantidad}x {producto.nombre}</span>
@@ -71,14 +78,14 @@ function DetallesPedidoModal({ pedido, onClose }) {
                     )}
                     {/* El botón solo se muestra si se pudo crear una URL */}
                     {googleMapsUrl && (
-                       <a
-                        href={googleMapsUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="btn btn-info btn-sm"
-                      >
-                        Abrir en Google Maps
-                      </a>
+                        <a
+                          href={googleMapsUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn btn-info btn-sm"
+                        >
+                          Abrir en Google Maps
+                        </a>
                     )}
                   </div>
                 </div>
@@ -90,17 +97,17 @@ function DetallesPedidoModal({ pedido, onClose }) {
               <p className="mb-1">
                 Subtotal Productos: <strong>${totalProductos.toFixed(2)}</strong>
               </p>
-              {pedido.costo_envio > 0 && (
+              {costoEnvio > 0 && (
                 <p className="mb-1">
                   Costo de Envío:{' '}
-                  <strong>${Number(pedido.costo_envio).toFixed(2)}</strong>
+                  <strong>${costoEnvio.toFixed(2)}</strong>
                 </p>
               )}
               <hr className="my-1" />
               <h4 className="mb-0">
                 Total:{' '}
                 <span className="text-success">
-                  ${Number(pedido.total || totalProductos).toFixed(2)}
+                  ${totalFinal.toFixed(2)}
                 </span>
               </h4>
             </div>
