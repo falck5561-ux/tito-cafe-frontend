@@ -1,105 +1,108 @@
 import React from 'react';
+// IMPORTANTE: Asegúrate de que la ruta a tu ThemeContext sea correcta.
+import { useTheme } from '../context/ThemeContext'; 
 
 function DetallesPedidoModal({ pedido, onClose }) {
   if (!pedido) return null;
 
-  // Aseguramos que 'productos' siempre sea un array para evitar errores
+  // 1. Obtenemos el tema actual desde el contexto
+  const { theme } = useTheme();
+
   const productos = Array.isArray(pedido.productos) ? pedido.productos : [];
 
-  // Lógica para crear el enlace de Google Maps
   let googleMapsUrl = '';
   if (pedido.latitude && pedido.longitude) {
-    // Opción 1 (la mejor): Usar coordenadas
     googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${pedido.latitude},${pedido.longitude}`;
   } else if (pedido.direccion_entrega) {
-    // Opción 2 (alternativa): Usar la dirección de texto
     googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(pedido.direccion_entrega)}`;
   }
 
+  // 2. Definimos clases y estilos que cambiarán según el tema
+  const modalClass = theme === 'dark' ? 'modal-content text-bg-dark' : 'modal-content';
+  const closeButtonClass = theme === 'dark' ? 'btn-close btn-close-white' : 'btn-close';
+  const cardBgStyle = {
+    backgroundColor: theme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)'
+  };
+
   return (
     <div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.7)' }}>
-      <div className="modal-dialog modal-dialog-centered modal-lg">
-        <div className="modal-content text-bg-dark">
+      <div className="modal-dialog modal-dialog-centered">
+        {/* 3. Aplicamos la clase dinámica al contenido del modal */}
+        <div className={modalClass}>
           
-          <div className="modal-header">
-            <h5 className="modal-title">
-              Detalles del Pedido #{pedido.id}
-            </h5>
-            <button type="button" className="btn-close btn-close-white" onClick={onClose}></button>
+          <div className="modal-header border-0">
+            <h5 className="modal-title">Detalles del Pedido #{pedido.id}</h5>
+            {/* Y al botón de cerrar */}
+            <button type="button" className={closeButtonClass} onClick={onClose}></button>
           </div>
 
-          <div className="modal-body">
-            {/* SECCIÓN DE DATOS GENERALES */}
-            <div className="mb-4">
-              <p className="mb-1"><strong>Cliente:</strong> {pedido.nombre_cliente}</p>
-              <p className="mb-1"><strong>Fecha:</strong> {new Date(pedido.fecha).toLocaleString()}</p>
-              <p className="mb-1"><strong>Tipo:</strong> {pedido.tipo_orden}</p>
-              <p className="mb-1"><strong>Estado:</strong> <span className="fw-bold text-warning">{pedido.estado}</span></p>
+          <div className="modal-body pt-0">
+            {/* --- SECCIÓN DE INFORMACIÓN GENERAL --- */}
+            <div className="d-flex justify-content-between mb-2">
+              <span className="text-muted">Cliente:</span>
+              <span className="fw-bold">{pedido.nombre_cliente}</span>
             </div>
+            <div className="d-flex justify-content-between mb-2">
+              <span className="text-muted">Fecha:</span>
+              <span>{new Date(pedido.fecha).toLocaleString()}</span>
+            </div>
+            <div className="d-flex justify-content-between mb-2">
+              <span className="text-muted">Tipo:</span>
+              <span>{pedido.tipo_orden}</span>
+            </div>
+            <div className="d-flex justify-content-between mb-3">
+              <span className="text-muted">Estado:</span>
+              <span className="fw-bold text-warning">{pedido.estado}</span>
+            </div>
+            
             <hr />
 
-            {/* SECCIÓN DE PRODUCTOS */}
-            {productos.length > 0 && (
-              <div className="mb-4">
-                <h6>Productos:</h6>
-                <ul className="list-group list-group-flush">
-                  {productos.map((producto, index) => (
-                    <li
-                      key={index}
-                      className="list-group-item d-flex justify-content-between align-items-center bg-transparent text-white px-0"
-                    >
-                      <span>{producto.cantidad}x {producto.nombre}</span>
-                      <span className="badge bg-primary rounded-pill">
-                        ${(producto.cantidad * Number(producto.precio || 0)).toFixed(2)}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+            {/* --- SECCIÓN DE PRODUCTOS --- */}
+            <h6 className="mb-2">Productos:</h6>
+            <ul className="list-unstyled mb-3">
+              {productos.map((producto, index) => (
+                <li key={index} className="d-flex justify-content-between">
+                  <span>{producto.cantidad}x {producto.nombre}</span>
+                  <span className="text-end">${(producto.cantidad * Number(producto.precio || 0)).toFixed(2)}</span>
+                </li>
+              ))}
+            </ul>
+            
+            {/* --- SECCIÓN DE ENVÍO (SI APLICA) --- */}
+            {pedido.tipo_orden === 'domicilio' && (
+              <>
+                <hr />
+                <h6 className="mb-2">Detalles de Envío:</h6>
+                {/* Y el estilo dinámico al fondo de la tarjeta de envío */}
+                <div className="p-3 rounded" style={cardBgStyle}>
+                  <p className="mb-1">
+                    <strong>Dirección:</strong> {pedido.direccion_entrega || 'No especificada'}
+                  </p>
+                  {pedido.referencia && (
+                    <p className="mb-2">
+                      <strong>Referencia:</strong> {pedido.referencia}
+                    </p>
+                  )}
+                  {googleMapsUrl && (
+                    <a href={googleMapsUrl} target="_blank" rel="noopener noreferrer" className="btn btn-info btn-sm mt-1">
+                      Abrir en Google Maps
+                    </a>
+                  )}
+                </div>
+              </>
             )}
 
-            {/* SECCIÓN DE ENVÍO (SOLO PARA DOMICILIO) */}
-            {pedido.tipo_orden === 'domicilio' && (
-              <div className="mb-4">
-                <h6>Detalles de Envío:</h6>
-                <div className="card text-bg-secondary">
-                  <div className="card-body">
-                    <p className="card-text mb-1">
-                      <strong>Dirección:</strong> {pedido.direccion_entrega || 'No especificada'}
-                    </p>
-                    {pedido.referencia && (
-                      <p className="card-text mb-2">
-                        <strong>Referencia:</strong> {pedido.referencia}
-                      </p>
-                    )}
-                    {googleMapsUrl && (
-                        <a
-                          href={googleMapsUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="btn btn-info btn-sm mt-2"
-                        >
-                          Abrir en Google Maps
-                        </a>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
+            <hr />
             
-            {/* SECCIÓN DEL TOTAL */}
-            <div className="text-end mt-4">
-              <h4 className="mb-0">
-                Total:{' '}
-                <span className="text-success fw-bold">
-                  ${Number(pedido.total).toFixed(2)}
-                </span>
-              </h4>
+            {/* --- SECCIÓN DE TOTAL --- */}
+            <div className="d-flex justify-content-between align-items-center mt-3">
+              <h5 className="mb-0">Total:</h5>
+              <h5 className="mb-0 text-success fw-bold">${Number(pedido.total).toFixed(2)}</h5>
             </div>
           </div>
 
-          <div className="modal-footer">
-            <button type="button" className="btn btn-danger" onClick={onClose}>
+          <div className="modal-footer border-0">
+            <button type="button" className="btn btn-danger w-100" onClick={onClose}>
               Cerrar
             </button>
           </div>
