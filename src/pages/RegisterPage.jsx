@@ -2,6 +2,7 @@
 import React, { useState, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import AuthContext from '../context/AuthContext';
+import toast from 'react-hot-toast'; // Es una buena práctica añadir notificaciones
 
 function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -10,7 +11,7 @@ function RegisterPage() {
     password: '',
   });
   const [error, setError] = useState('');
-  const { register } = useContext(AuthContext); // Usaremos una nueva función 'register'
+  const { register } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const { nombre, email, password } = formData;
@@ -24,7 +25,12 @@ function RegisterPage() {
     try {
       const registerExitoso = await register(nombre, email, password);
       if (registerExitoso) {
-        navigate('/cliente'); // Redirige a la vista del cliente después de registrarse
+        toast.success('¡Cuenta creada con éxito! Bienvenido.');
+        // ============================================
+        // === ¡AQUÍ ESTÁ LA CORRECCIÓN! ===
+        // ============================================
+        // Redirigimos a la página principal para darle tiempo a la app de procesar la sesión.
+        navigate('/');
       } else {
         setError('No se pudo completar el registro. Es posible que el correo ya esté en uso.');
       }
