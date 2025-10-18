@@ -16,7 +16,7 @@ function DinoGame() {
         let score = 0;
         let gameSpeed = 3;
         let isGameOver = false;
-        let dino = null;
+        let player = null;
         let obstacles = [];
         let keys = {};
 
@@ -26,8 +26,8 @@ function DinoGame() {
         document.addEventListener('keydown', keydownHandler);
         document.addEventListener('keyup', keyupHandler);
 
-        // --- Clases de los Personajes ---
-        class Dino {
+        // --- Clase del Personaje (Ahora dibuja un erizo) ---
+        class Player {
             constructor(x, y, w, h) {
                 this.x = x;
                 this.y = y;
@@ -41,8 +41,26 @@ function DinoGame() {
             }
 
             draw() {
+                ctx.fillStyle = '#555'; // Color del erizo
+                
+                // Cuerpo del erizo (un semicírculo)
+                ctx.beginPath();
+                ctx.arc(this.x + this.w / 2, this.y + this.h / 2, this.w / 2, Math.PI, 0, false);
+                ctx.fill();
+
+                // Púas
                 ctx.fillStyle = '#666';
-                ctx.fillRect(this.x, this.y, this.w, this.h);
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y + this.h / 2);
+                ctx.lineTo(this.x + this.w / 2, this.y - 5);
+                ctx.lineTo(this.x + this.w, this.y + this.h / 2);
+                ctx.fill();
+
+                // Ojo
+                ctx.fillStyle = 'white';
+                ctx.beginPath();
+                ctx.arc(this.x + this.w - 5, this.y + this.h / 2, 2, 0, Math.PI * 2);
+                ctx.fill();
             }
 
             update() {
@@ -100,11 +118,11 @@ function DinoGame() {
             ctx.fillText(`Score: ${Math.floor(score / 5)}`, GAME_WIDTH - 10, 30);
         }
 
-        function checkCollision(d, o) {
-            return d.x < o.x + o.w &&
-                   d.x + d.w > o.x &&
-                   d.y < o.y + o.h &&
-                   d.y + d.h > o.y;
+        function checkCollision(p, o) {
+            return p.x < o.x + o.w &&
+                   p.x + p.w > o.x &&
+                   p.y < o.y + o.h &&
+                   p.y + p.h > o.y;
         }
 
         // --- Bucle principal del juego ---
@@ -112,16 +130,6 @@ function DinoGame() {
         let obstacleTimer = 200;
 
         function animate() {
-            if (isGameOver) {
-                ctx.fillStyle = '#333';
-                ctx.font = '30px sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillText('Game Over', GAME_WIDTH / 2, GAME_HEIGHT / 2);
-                ctx.font = '16px sans-serif';
-                ctx.fillText('Recarga la página para reintentar', GAME_WIDTH / 2, GAME_HEIGHT / 2 + 30);
-                return;
-            }
-
             animationFrameId = requestAnimationFrame(animate);
             ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
@@ -129,7 +137,24 @@ function DinoGame() {
             ctx.fillStyle = '#ddd';
             ctx.fillRect(0, GAME_HEIGHT - 2, GAME_WIDTH, 2);
 
-            dino.update();
+            player.update();
+
+            // Lógica de Game Over y Reinicio
+            if (isGameOver) {
+                ctx.fillStyle = '#333';
+                ctx.font = '30px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('Game Over', GAME_WIDTH / 2, GAME_HEIGHT / 2);
+                ctx.font = '16px sans-serif';
+                ctx.fillText('Presiona Espacio para reiniciar', GAME_WIDTH / 2, GAME_HEIGHT / 2 + 30);
+                
+                // Si se presiona espacio, se reinicia el juego.
+                if (keys['Space']) {
+                    init();
+                }
+                return; // Detiene el bucle de animación aquí
+            }
+
 
             // Obstáculos
             obstacleTimer--;
@@ -144,7 +169,7 @@ function DinoGame() {
                 if (o.x + o.w < 0) {
                     obstacles.splice(i, 1);
                 }
-                if (checkCollision(dino, o)) {
+                if (checkCollision(player, o)) {
                     isGameOver = true;
                 }
             }
@@ -159,7 +184,12 @@ function DinoGame() {
             score = 0;
             gameSpeed = 3;
             obstacles = [];
-            dino = new Dino(25, GAME_HEIGHT - 30, 20, 30);
+            player = new Player(25, GAME_HEIGHT - 30, 30, 30); // Ajustamos tamaño para el erizo
+            
+            // Si ya hay un bucle corriendo, lo cancelamos antes de empezar uno nuevo
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+            }
             animate();
         }
 
