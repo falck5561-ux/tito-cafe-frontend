@@ -58,28 +58,64 @@ function AdminPage() {
     fetchData();
   }, [activeTab]);
 
-  const handleOpenProductModal = (producto = null) => { setProductoActual(producto); setShowProductModal(true); };
-  const handleCloseProductModal = () => { setShowProductModal(false); setProductoActual(null); };
+  // ✅ CORRECCIÓN: Al abrir el modal, se asegura que la URL de la imagen se pase correctamente.
+  const handleOpenProductModal = (producto = null) => {
+    if (producto) {
+      // El backend envía 'imagen_url' (texto), pero el modal espera 'imagenes' (array).
+      // Hacemos la conversión aquí.
+      const productoParaModal = {
+        ...producto,
+        imagenes: producto.imagen_url ? [producto.imagen_url] : []
+      };
+      setProductoActual(productoParaModal);
+    } else {
+      setProductoActual(null); // Para crear un producto nuevo
+    }
+    setShowProductModal(true);
+  };
+  
+  const handleCloseProductModal = () => {
+    setShowProductModal(false);
+    setProductoActual(null);
+  };
+  
+  // ✅ CORRECCIÓN: Al guardar, se asegura de enviar los datos que el backend espera.
   const handleSaveProducto = async (producto) => {
     const action = producto.id ? 'actualizado' : 'creado';
+    
+    // El modal devuelve 'imagenes' (array), pero el backend espera 'imagen_url' (texto).
+    // Hacemos la conversión inversa.
+    const datosParaEnviar = {
+      ...producto,
+      imagen_url: (producto.imagenes && producto.imagenes.length > 0) ? producto.imagenes[0] : null,
+    };
+    // Eliminamos el campo 'imagenes' porque el backend no lo conoce y podría causar un error.
+    delete datosParaEnviar.imagenes; 
+
     try {
-      if (producto.id) {
-        await updateProduct(producto.id, producto);
+      if (datosParaEnviar.id) {
+        await updateProduct(datosParaEnviar.id, datosParaEnviar);
       } else {
-        await createProduct(producto);
+        await createProduct(datosParaEnviar);
       }
       toast.success(`Producto ${action} con éxito.`);
-      fetchData();
+      fetchData(); // Recargamos la lista de productos
       handleCloseProductModal();
-    } catch (err) { toast.error(`No se pudo guardar el producto.`); }
+    } catch (err) {
+      toast.error(`No se pudo guardar el producto.`);
+    }
   };
+
+  // ✅ CORRECCIÓN: Se actualiza el texto y el mensaje de éxito para reflejar la desactivación.
   const handleDeleteProducto = async (id) => {
-    if (window.confirm('¿Seguro que quieres eliminar este producto?')) {
+    if (window.confirm('¿Seguro que quieres DESACTIVAR este producto? Ya no aparecerá en el menú de clientes.')) {
       try {
-        await deleteProduct(id);
-        toast.success('Producto eliminado.');
-        fetchData();
-      } catch (err) { toast.error('No se pudo eliminar el producto.'); }
+        await deleteProduct(id); // Esta función ahora llama al endpoint que desactiva, no borra.
+        toast.success('Producto desactivado con éxito.');
+        fetchData(); // Recargamos la lista de productos
+      } catch (err) {
+        toast.error(err.response?.data?.msg || 'No se pudo desactivar el producto.');
+      }
     }
   };
 
@@ -104,10 +140,8 @@ function AdminPage() {
     }
   };
   
-  // --- FUNCIÓN CORREGIDA ---
   const handleUpdateStatus = async (pedidoId, nuevoEstado) => {
     try {
-      // CORRECCIÓN: Se cambió el método de PATCH a PUT para coincidir con el backend.
       await apiClient.put(`/pedidos/${pedidoId}/estado`, { estado: nuevoEstado });
       toast.success(`Pedido #${pedidoId} actualizado.`);
       fetchData();
@@ -151,7 +185,6 @@ function AdminPage() {
       {loading && <div className="text-center"><div className="spinner-border" role="status"></div></div>}
       {error && <div className="alert alert-danger">{error}</div>}
 
-      {/* El resto del código de renderizado no necesita cambios */}
       {!loading && !error && activeTab === 'pedidosEnLinea' && (
         <div>
           <h1 className="mb-4">Gestión de Pedidos en Línea</h1>
@@ -223,7 +256,7 @@ function AdminPage() {
                 {combos.map((combo) => (
                   <tr key={combo.id}>
                     <td>{combo.id}</td>
-                    <td>{combo.titulo}</td>{/* Usamos titulo que viene de la API */}
+                    <td>{combo.titulo}</td>
                     <td>${Number(combo.precio).toFixed(2)}</td>
                     <td>
                       <button className="btn btn-sm btn-outline-warning me-2" onClick={() => handleOpenComboModal(combo)}>Editar</button>
