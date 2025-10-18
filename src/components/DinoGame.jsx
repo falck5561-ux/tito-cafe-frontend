@@ -5,10 +5,9 @@ function DinoGame() {
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
     const ctx = canvas.getContext('2d');
 
-    // --- Ajuste responsivo ---
+    // === RESPONSIVE ===
     function resizeCanvas() {
       canvas.width = Math.min(window.innerWidth * 0.9, 600);
       canvas.height = Math.min(window.innerHeight * 0.3, 200);
@@ -16,85 +15,100 @@ function DinoGame() {
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
+    // === VARIABLES ===
     let GAME_WIDTH = canvas.width;
     let GAME_HEIGHT = canvas.height;
-
-    // --- Variables ---
     let score = 0;
     let gameSpeed = 3;
     let isGameOver = false;
     let player, obstacles;
     let keys = {};
 
-    // --- Controles (teclado + táctil) ---
-    const keydownHandler = (e) => (keys[e.code] = true);
-    const keyupHandler = (e) => (keys[e.code] = false);
-    document.addEventListener('keydown', keydownHandler);
-    document.addEventListener('keyup', keyupHandler);
+    // === EVENTOS ===
+    const keyDown = (e) => (keys[e.code] = true);
+    const keyUp = (e) => (keys[e.code] = false);
+    document.addEventListener('keydown', keyDown);
+    document.addEventListener('keyup', keyUp);
 
     canvas.addEventListener('touchstart', () => {
       if (isGameOver) init();
-      else if (player.isGrounded) player.dy = -player.jumpForce;
+      else if (player.isGrounded) player.jump();
     });
 
-    // --- Jugador (Erizo) ---
+    canvas.addEventListener('click', () => {
+      if (isGameOver) init();
+      else if (player.isGrounded) player.jump();
+    });
+
+    // === ERIZO ===
     class Player {
       constructor(x, y, w, h) {
         this.x = x;
         this.y = y;
         this.w = w;
         this.h = h;
-        this.originalY = y;
         this.dy = 0;
         this.jumpForce = 9;
         this.gravity = 0.4;
         this.isGrounded = true;
+        this.originalY = y;
+      }
+
+      jump() {
+        this.dy = -this.jumpForce;
+        this.isGrounded = false;
       }
 
       draw() {
         const cx = this.x + this.w / 2;
         const cy = this.y + this.h / 2;
 
-        // Cuerpo redondo
-        ctx.fillStyle = '#5a4634';
+        // Detecta modo oscuro/claro
+        const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+        // Fondo erizo (cuerpo)
+        const grad = ctx.createRadialGradient(cx, cy, 5, cx, cy, this.w / 1.5);
+        grad.addColorStop(0, dark ? '#70513D' : '#8B5E3C');
+        grad.addColorStop(1, dark ? '#3E2A1F' : '#5C3B25');
+        ctx.fillStyle = grad;
         ctx.beginPath();
-        ctx.arc(cx, cy, this.w / 2, 0, Math.PI * 2);
+        ctx.ellipse(cx, cy, this.w / 2, this.h / 2, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        // Púas traseras
-        ctx.fillStyle = '#3a2e22';
-        for (let i = 0; i < 8; i++) {
-          const px = this.x + (i * this.w) / 10;
-          const py = this.y + Math.sin(i * 0.8) * 3;
+        // Púas
+        ctx.fillStyle = dark ? '#2E1C14' : '#CBB79E';
+        for (let i = 0; i < 7; i++) {
+          const px = this.x + i * 4;
+          const py = this.y - 3 - Math.sin(i) * 3;
           ctx.beginPath();
           ctx.moveTo(px, py);
           ctx.lineTo(px + 5, py - 10);
-          ctx.lineTo(px + 10, py);
+          ctx.lineTo(px + 8, py);
           ctx.fill();
         }
 
-        // Ojo
-        ctx.fillStyle = 'white';
+        // Carita
+        ctx.fillStyle = dark ? '#E8DCC5' : '#FFF9EE';
         ctx.beginPath();
-        ctx.arc(cx + this.w / 4, cy - 4, 3, 0, Math.PI * 2);
+        ctx.ellipse(cx + this.w / 4, cy, this.w / 3.5, this.h / 3.5, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        ctx.fillStyle = 'black';
+        // Ojo
+        ctx.fillStyle = '#000';
         ctx.beginPath();
-        ctx.arc(cx + this.w / 4, cy - 4, 1.5, 0, Math.PI * 2);
+        ctx.arc(cx + this.w / 3, cy - 4, 2, 0, Math.PI * 2);
         ctx.fill();
 
         // Nariz
-        ctx.fillStyle = '#222';
+        ctx.fillStyle = '#000';
         ctx.beginPath();
-        ctx.arc(cx + this.w / 2, cy, 2, 0, Math.PI * 2);
+        ctx.arc(cx + this.w / 2.1, cy, 2.2, 0, Math.PI * 2);
         ctx.fill();
       }
 
       update() {
-        if ((keys['Space'] || keys['ArrowUp']) && this.isGrounded) {
-          this.dy = -this.jumpForce;
-          this.isGrounded = false;
+        if ((keys['Space'] || keys['Enter'] || keys['ArrowUp']) && this.isGrounded) {
+          this.jump();
         }
 
         this.dy += this.gravity;
@@ -110,7 +124,7 @@ function DinoGame() {
       }
     }
 
-    // --- Obstáculos ---
+    // === OBSTÁCULOS ===
     class Obstacle {
       constructor(x, y, w, h) {
         this.x = x;
@@ -120,10 +134,9 @@ function DinoGame() {
       }
 
       draw() {
-        ctx.fillStyle = '#8b5e3c';
+        const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        ctx.fillStyle = dark ? '#8b6f56' : '#c8a478';
         ctx.fillRect(this.x, this.y, this.w, this.h);
-        ctx.fillStyle = '#654321';
-        ctx.fillRect(this.x + 2, this.y, this.w - 4, this.h - 3);
       }
 
       update() {
@@ -132,7 +145,7 @@ function DinoGame() {
       }
     }
 
-    // --- Funciones del juego ---
+    // === FUNCIONES ===
     function spawnObstacle() {
       const size = Math.random() > 0.5 ? 25 : 40;
       const obstacle = new Obstacle(GAME_WIDTH, GAME_HEIGHT - size - 2, 15, size);
@@ -149,36 +162,37 @@ function DinoGame() {
     }
 
     function drawScore() {
-      ctx.fillStyle = '#333';
+      ctx.fillStyle = window.matchMedia('(prefers-color-scheme: dark)').matches ? '#E0E0E0' : '#333';
       ctx.font = `${Math.floor(canvas.height / 10)}px Poppins, sans-serif`;
       ctx.textAlign = 'right';
       ctx.fillText(`Puntos: ${Math.floor(score / 5)}`, GAME_WIDTH - 10, 25);
     }
 
-    // --- Bucle del juego ---
+    // === LOOP ===
     let animationFrameId;
     let obstacleTimer = 100;
 
     function animate() {
       animationFrameId = requestAnimationFrame(animate);
-      ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+      GAME_WIDTH = canvas.width;
+      GAME_HEIGHT = canvas.height;
 
-      ctx.fillStyle = '#f4ede3';
+      const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      ctx.fillStyle = dark ? '#1E1E1E' : '#F7F3EF';
       ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
-      // Suelo
-      ctx.fillStyle = '#cbb89d';
+      ctx.fillStyle = dark ? '#A6895C' : '#D9C7A4';
       ctx.fillRect(0, GAME_HEIGHT - 2, GAME_WIDTH, 2);
 
       player.update();
 
       if (isGameOver) {
-        ctx.fillStyle = '#333';
+        ctx.fillStyle = dark ? '#FFF9EE' : '#2B2B2B';
         ctx.font = '24px Poppins, sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('🐾 Game Over 🐾', GAME_WIDTH / 2, GAME_HEIGHT / 2);
+        ctx.fillText('🦔 Game Over 🦔', GAME_WIDTH / 2, GAME_HEIGHT / 2);
         ctx.font = '16px Poppins, sans-serif';
-        ctx.fillText('Toca o presiona Espacio para reiniciar', GAME_WIDTH / 2, GAME_HEIGHT / 2 + 30);
+        ctx.fillText('Presiona Espacio, Enter o toca para reiniciar', GAME_WIDTH / 2, GAME_HEIGHT / 2 + 30);
         return;
       }
 
@@ -201,8 +215,6 @@ function DinoGame() {
     }
 
     function init() {
-      GAME_WIDTH = canvas.width;
-      GAME_HEIGHT = canvas.height;
       isGameOver = false;
       score = 0;
       gameSpeed = 3;
@@ -215,12 +227,12 @@ function DinoGame() {
 
     init();
 
-    // --- Limpieza ---
+    // === LIMPIEZA ===
     return () => {
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener('resize', resizeCanvas);
-      document.removeEventListener('keydown', keydownHandler);
-      document.removeEventListener('keyup', keyupHandler);
+      document.removeEventListener('keydown', keyDown);
+      document.removeEventListener('keyup', keyUp);
     };
   }, []);
 
@@ -229,24 +241,25 @@ function DinoGame() {
       className="text-center"
       style={{
         paddingTop: '4rem',
-        color: '#2b2b2b',
         fontFamily: 'Poppins, sans-serif',
       }}
     >
       <h2>¡Oops! Parece que no hay conexión.</h2>
-      <p className="lead">Mientras vuelve el internet, ¿por qué no juegas con el erizo?</p>
+      <p className="lead">Mientras vuelve el internet, ¡juega con el erizo! 🦔</p>
       <div className="mt-4 d-flex justify-content-center">
         <canvas
           ref={canvasRef}
           style={{
-            border: '2px solid #d8c9b0',
-            borderRadius: '10px',
-            background: '#fffaf3',
+            borderRadius: '12px',
+            border: '2px solid #bca788',
+            background: 'transparent',
             touchAction: 'none',
           }}
         />
       </div>
-      <p className="mt-2 text-muted">Presiona o toca para saltar</p>
+      <p style={{ marginTop: '10px', opacity: 0.7 }}>
+        Presiona o toca para saltar
+      </p>
     </div>
   );
 }
