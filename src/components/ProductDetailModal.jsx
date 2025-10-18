@@ -1,9 +1,7 @@
 import React, { useContext } from 'react';
 import { motion } from 'framer-motion';
-// Quitamos useNavigate de aquí, ya no es necesario.
 import AuthContext from '../context/AuthContext';
 
-// Los estilos (modalStyles) permanecen exactamente iguales que antes...
 const modalStyles = {
   backdrop: {
     position: 'fixed',
@@ -51,6 +49,7 @@ const modalStyles = {
     borderRadius: '10px',
     marginBottom: '1.5rem',
     border: '1px solid var(--bs-border-color)',
+    backgroundColor: 'var(--bs-tertiary-bg)', // Color de fondo mientras carga
   },
   productTitle: {
     fontFamily: "'Playfair Display', serif",
@@ -62,7 +61,6 @@ const modalStyles = {
   },
 };
 
-// La prop 'onAddToCart' ahora será la única encargada de toda la lógica.
 function ProductDetailModal({ product, onClose, onAddToCart }) {
   const { user } = useContext(AuthContext);
 
@@ -72,9 +70,15 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
     ? Number(product.precio) * (1 - product.descuento_porcentaje / 100)
     : Number(product.precio);
 
-  const displayImage = (product.imagenes && product.imagenes.length > 0)
-    ? product.imagenes[0]
-    : 'https://placehold.co/500x250/d7ccc8/4a2c2a?text=Sin+Imagen';
+  // =======================================================
+  // === ¡AQUÍ ESTÁ LA CORRECCIÓN FINAL! ===
+  // =======================================================
+  // 1. Buscamos la URL en 'product.imagen_url', que es el campo correcto.
+  const displayImage = product.imagen_url
+    ? product.imagen_url
+    : `https://placehold.co/500x250/333333/CCCCCC?text=${encodeURIComponent(product.nombre)}`;
+    
+  const placeholderImage = `https://placehold.co/500x250/333333/CCCCCC?text=${encodeURIComponent(product.nombre)}`;
 
   return (
     <motion.div
@@ -91,10 +95,12 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
       >
         <button style={modalStyles.closeButton} onClick={onClose}>&times;</button>
         
+        {/* 2. La imagen ahora usa la URL correcta y tiene un fallback 'onError'. */}
         <img 
           src={displayImage} 
           alt={product.nombre} 
-          style={modalStyles.productImage} 
+          style={modalStyles.productImage}
+          onError={(e) => { e.target.onerror = null; e.target.src = placeholderImage; }}
         />
 
         <h2 style={modalStyles.productTitle}>{product.nombre}</h2>
@@ -116,7 +122,6 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
           </div>
 
           {(!user || user.rol === 'Cliente') && (
-            // El botón ahora solo llama a onAddToCart. Simple y directo.
             <button className="btn btn-primary" onClick={() => onAddToCart(product)}>
               Hacer Pedido
             </button>
@@ -128,4 +133,3 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
 }
 
 export default ProductDetailModal;
-
