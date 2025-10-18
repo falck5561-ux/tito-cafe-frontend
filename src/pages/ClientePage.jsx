@@ -38,7 +38,6 @@ const styles = {
   },
 };
 
-// --- MODIFICACIÓN: Función centralizada para notificaciones ---
 const notify = (type, message) => {
   switch (type) {
     case 'success':
@@ -54,19 +53,19 @@ const notify = (type, message) => {
 };
 
 function ClientePage() {
-  const { 
-    pedidoActual, 
-    subtotal, 
-    incrementarCantidad, 
-    decrementarCantidad, 
-    eliminarProducto, 
+  const {
+    pedidoActual,
+    subtotal,
+    incrementarCantidad,
+    decrementarCantidad,
+    eliminarProducto,
     limpiarPedido,
-    agregarProductoAPedido 
+    agregarProductoAPedido
   } = useCart();
 
   const [activeTab, setActiveTab] = useState('crear');
   const [ordenExpandida, setOrdenExpandida] = useState(null);
-  const [menuItems, setMenuItems] = useState([]); 
+  const [menuItems, setMenuItems] = useState([]);
   const [tipoOrden, setTipoOrden] = useState('llevar');
   const [direccion, setDireccion] = useState(null);
   const [costoEnvio, setCostoEnvio] = useState(0);
@@ -118,7 +117,7 @@ function ClientePage() {
 
         const productosEstandarizados = productosRes.data.map(estandarizarItem);
         const combosEstandarizados = combosRes.data.map(estandarizarItem);
-        
+
         setMenuItems([...productosEstandarizados, ...combosEstandarizados]);
 
         if (direccionRes.data) {
@@ -138,7 +137,7 @@ function ClientePage() {
   useEffect(() => {
     const fetchTabData = async () => {
       if (activeTab === 'crear') return;
-      
+
       setLoading(true);
       setError('');
       try {
@@ -192,16 +191,16 @@ function ClientePage() {
     }
   };
 
-  const usarDireccionGuardada = () => { 
-    if (direccionGuardada) { 
-      handleLocationSelect(direccionGuardada); 
-      if (direccionGuardada.referencia) { 
-        setReferencia(direccionGuardada.referencia); 
-      } 
-      notify('success', 'Usando dirección guardada.'); 
-    } 
+  const usarDireccionGuardada = () => {
+    if (direccionGuardada) {
+      handleLocationSelect(direccionGuardada);
+      if (direccionGuardada.referencia) {
+        setReferencia(direccionGuardada.referencia);
+      }
+      notify('success', 'Usando dirección guardada.');
+    }
   };
-  
+
   const handleProcederAlPago = async () => {
     if (totalFinal <= 0) return;
     if (tipoOrden === 'domicilio' && !direccion) { return notify('error', 'Por favor, selecciona o escribe tu ubicación.'); }
@@ -209,20 +208,20 @@ function ClientePage() {
     setPaymentLoading(true);
     try {
       const productosParaEnviar = pedidoActual.map(({ id, cantidad, precio, nombre }) => ({ id, cantidad, precio: Number(precio), nombre }));
-      const pedidoData = { 
-        total: totalFinal, 
-        productos: productosParaEnviar, 
-        tipo_orden: tipoOrden, 
-        costo_envio: costoEnvio, 
-        direccion_entrega: tipoOrden === 'domicilio' ? direccion?.description : null, 
-        latitude: tipoOrden === 'domicilio' ? direccion?.lat : null, 
-        longitude: tipoOrden === 'domicilio' ? direccion?.lng : null, 
-        referencia: tipoOrden === 'domicilio' ? referencia : null 
+      const pedidoData = {
+        total: totalFinal,
+        productos: productosParaEnviar,
+        tipo_orden: tipoOrden,
+        costo_envio: costoEnvio,
+        direccion_entrega: tipoOrden === 'domicilio' ? direccion?.description : null,
+        latitude: tipoOrden === 'domicilio' ? direccion?.lat : null,
+        longitude: tipoOrden === 'domicilio' ? direccion?.lng : null,
+        referencia: tipoOrden === 'domicilio' ? referencia : null
       };
       setDatosParaCheckout(pedidoData);
-      
+
       const res = await apiClient.post('/payments/create-payment-intent', { amount: totalFinal });
-      
+
       setShowCartModal(false);
       setModalView('cart');
       setClientSecret(res.data.clientSecret);
@@ -294,15 +293,72 @@ function ClientePage() {
         <div className="form-check"><input className="form-check-input" type="radio" name={isModal ? "tipoOrdenModal" : "tipoOrden"} id={isModal ? "llevarModal" : "llevar"} value="llevar" checked={tipoOrden === 'llevar'} onChange={(e) => setTipoOrden(e.target.value)} /><label className="form-check-label" htmlFor={isModal ? "llevarModal" : "llevar"}>Para Recoger</label></div>
         <div className="form-check"><input className="form-check-input" type="radio" name={isModal ? "tipoOrdenModal" : "tipoOrden"} id={isModal ? "localModal" : "local"} value="local" checked={tipoOrden === 'local'} onChange={(e) => setTipoOrden(e.target.value)} /><label className="form-check-label" htmlFor={isModal ? "localModal" : "local"}>Para Comer Aquí</label></div>
         <div className="form-check"><input className="form-check-input" type="radio" name={isModal ? "tipoOrdenModal" : "tipoOrden"} id={isModal ? "domicilioModal" : "domicilio"} value="domicilio" checked={tipoOrden === 'domicilio'} onChange={(e) => setTipoOrden(e.target.value)} /><label className="form-check-label" htmlFor={isModal ? "domicilioModal" : "domicilio"}>Entrega a Domicilio</label></div>
+
+        {/* ============================================= */}
+        {/* === INICIO DE LA CORRECCIÓN PARA ESCRITORIO === */}
+        {/* ============================================= */}
+
+        {/* Este bloque SÓLO se mostrará si es "domicilio" Y NO estamos en el modal de móvil */}
+        {tipoOrden === 'domicilio' && !isModal && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-3">
+            <hr />
+            {direccionGuardada && (<button className="btn btn-outline-info w-100 mb-3" onClick={usarDireccionGuardada}>Usar mi dirección guardada</button>)}
+
+            <label className="form-label">Busca tu dirección:</label>
+            <MapSelector onLocationSelect={handleLocationSelect} initialAddress={direccion} />
+
+            <div className="mt-3">
+              <label htmlFor="referenciaDesktop" className="form-label">Referencia:</label>
+              <input type="text" id="referenciaDesktop" className="form-control" value={referencia} onChange={(e) => setReferencia(e.target.value)} />
+            </div>
+
+            <div className="form-check mt-3">
+              <input className="form-check-input" type="checkbox" id="guardarDireccionDesktop" checked={guardarDireccion} onChange={(e) => setGuardarDireccion(e.target.checked)} />
+              <label className="form-check-label" htmlFor="guardarDireccionDesktop">Guardar dirección</label>
+            </div>
+          </motion.div>
+        )}
+
+        {/* =========================================== */}
+        {/* === FIN DE LA CORRECCIÓN PARA ESCRITORIO === */}
+        {/* =========================================== */}
+
         <hr />
         <p className="d-flex justify-content-between">Subtotal: <span>${subtotal.toFixed(2)}</span></p>
         {tipoOrden === 'domicilio' && (<motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="d-flex justify-content-between">Costo de Envío: {calculandoEnvio ? <span className="spinner-border spinner-border-sm"></span> : <span>${costoEnvio.toFixed(2)}</span>}</motion.p>)}
         <h4>Total: ${totalFinal.toFixed(2)}</h4>
       </div>
+
+      {/* ========================================== */}
+      {/* === INICIO DE LA CORRECCIÓN DEL BOTÓN === */}
+      {/* ========================================== */}
       <div className={isModal ? "modal-footer d-grid gap-2" : "card-footer d-grid gap-2 mt-auto"}>
-        <button className="btn btn-primary" onClick={handleContinue} disabled={pedidoActual.length === 0 || paymentLoading}>{tipoOrden === 'domicilio' ? 'Siguiente' : 'Proceder al Pago'}</button>
+
+        {isModal ? (
+          // Lógica de botón para MODAL (móvil) - Sigue como estaba
+          <button
+            className="btn btn-primary"
+            onClick={handleContinue}
+            disabled={pedidoActual.length === 0 || paymentLoading}
+          >
+            {tipoOrden === 'domicilio' ? 'Siguiente' : 'Proceder al Pago'}
+          </button>
+        ) : (
+          // Lógica de botón para DESKTOP - Va directo al pago
+          <button
+            className="btn btn-primary"
+            onClick={handleProcederAlPago}
+            disabled={pedidoActual.length === 0 || paymentLoading || (tipoOrden === 'domicilio' && !direccion) || calculandoEnvio}
+          >
+            {paymentLoading ? 'Iniciando...' : 'Proceder al Pago'}
+          </button>
+        )}
+
         <button className="btn btn-outline-danger" onClick={limpiarPedidoCompleto}>Vaciar Carrito</button>
       </div>
+      {/* ======================================== */}
+      {/* === FIN DE LA CORRECCIÓN DEL BOTÓN === */}
+      {/* ======================================== */}
     </>
   );
 
@@ -341,24 +397,21 @@ function ClientePage() {
               ))}
             </div>
           </div>
-          
-          {/* --- MODIFICACIÓN: COLUMNA DE CARRITO FIJA PARA ESCRITORIO --- */}
+
           <div className="col-md-4 d-none d-md-block">
-            <div className="card shadow-sm position-sticky" style={{top: '20px'}}> {/* Ajusta el valor de 'top' según necesites */}
+            <div className="card shadow-sm position-sticky" style={{ top: '20px' }}>
               <CarritoContent isModal={false} />
             </div>
           </div>
         </motion.div>
       )}
 
-      {/* --- BOTÓN DE CARRITO FLOTANTE (SOLO VISIBLE EN MÓVIL) --- */}
       {activeTab === 'crear' && pedidoActual.length > 0 && (
         <button className="boton-carrito-flotante d-md-none" onClick={() => setShowCartModal(true)}>
           🛒 <span className="badge-carrito">{totalItemsEnCarrito}</span>
         </button>
       )}
 
-      {/* --- MODAL DEL CARRITO PARA MÓVIL --- */}
       {showCartModal && (
         <div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
           <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="modal-dialog modal-dialog-scrollable">
@@ -389,7 +442,6 @@ function ClientePage() {
         </div>
       )}
 
-      {/* --- El resto del renderizado para las otras pestañas no cambia --- */}
       {!loading && activeTab === 'ver' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <h2>Mis Pedidos</h2>
@@ -475,7 +527,7 @@ function ClientePage() {
           )}
         </motion.div>
       )}
-      
+
       {showPaymentModal && clientSecret && (
         <div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
           <motion.div initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="modal-dialog">
@@ -486,8 +538,8 @@ function ClientePage() {
               </div>
               <div className="modal-body">
                 <Elements stripe={stripePromise} options={{ clientSecret }}>
-                  <CheckoutForm 
-                    handleSuccess={handleSuccessfulPayment} 
+                  <CheckoutForm
+                    handleSuccess={handleSuccessfulPayment}
                     total={totalFinal}
                     datosPedido={datosParaCheckout}
                   />
