@@ -3,12 +3,17 @@ import { motion } from 'framer-motion';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination } from 'swiper/modules';
 
-// 1. Aceptar 'onCardClick' como prop
 function ProductCard({ product, index, onCardClick }) {
   const precioConDescuento = Number(product.precio) * (1 - (product.descuento_porcentaje || 0) / 100);
   
-  const images = Array.isArray(product.imagenes) ? product.imagenes : [];
+  // =======================================================
+  // === ¡AQUÍ ESTÁ LA CORRECCIÓN DEFINITIVA! ===
+  // =======================================================
+  // 1. Buscamos la URL en 'product.imagen_url' que viene de la base de datos.
+  // 2. Si existe, la convertimos en un arreglo de una sola imagen para que el resto del código funcione.
+  const images = product.imagen_url ? [product.imagen_url] : [];
   const hasImages = images.length > 0;
+  // La lógica de 'hasMultipleImages' seguirá funcionando si en el futuro decides soportar más de una.
   const hasMultipleImages = images.length > 1;
 
   const getPlaceholderImage = (categoria) => {
@@ -16,7 +21,7 @@ function ProductCard({ product, index, onCardClick }) {
     if (cat.includes('caliente') || cat.includes('café')) return '/placeholder-cafe.jpg';
     if (cat.includes('fría')) return '/placeholder-fria.jpg';
     if (cat.includes('postre') || cat.includes('pastel')) return '/placeholder-postre.jpg';
-    return '/placeholder-cafe.jpg';
+    return '/placeholder-cafe.jpg'; // Imagen por defecto
   };
 
   return (
@@ -27,14 +32,14 @@ function ProductCard({ product, index, onCardClick }) {
       animate={{ opacity: 1, y: 0 }} 
       transition={{ delay: index * 0.05 }}
     >
-      {/* 2. Añadir el evento onClick aquí, pasando el 'product' completo */}
       <div 
         className={`card h-100 shadow-sm position-relative ${product.en_oferta ? 'en-oferta' : ''}`}
         onClick={() => onCardClick(product)}
-        style={{ cursor: 'pointer' }} // Mantener el cursor para indicar que es clickeable
+        style={{ cursor: 'pointer' }}
       >
         {product.en_oferta && (<span className="discount-badge">-{product.descuento_porcentaje}%</span>)}
         
+        {/* El resto del código ya no necesita cambios, porque ahora 'images' tendrá la URL correcta */}
         {hasMultipleImages ? (
           <Swiper modules={[Navigation, Pagination]} spaceBetween={0} slidesPerView={1} navigation pagination={{ clickable: true }} className="card-img-top" style={{ height: '200px' }}>
             {images.map((url, i) => (<SwiperSlide key={i}><img src={url} className="img-fluid" alt={`${product.nombre} ${i + 1}`} style={{ height: '200px', width: '100%', objectFit: 'cover' }} /></SwiperSlide>))}
