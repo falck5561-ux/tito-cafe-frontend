@@ -1,41 +1,56 @@
-import React, { useContext, useRef } from 'react'; // <-- 1. Importar useRef
-import { Link, NavLink } from 'react-router-dom';
+import React, { useContext, useRef } from 'react';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import AuthContext from '../context/AuthContext';
 import ThemeToggleButton from './ThemeToggleButton';
 
-// ✅ CORRECCIÓN: El componente ahora acepta una nueva prop 'onLinkClick'
+
+// --- COMPONENTE DE ENLACES DEL MENÚ ---
 const MenuLinks = ({ onLinkClick }) => {
   const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
 
-  // Cada vez que se haga clic en un enlace, se llamará a la función onLinkClick
-  const handleClick = () => {
-    if (onLinkClick) {
-      onLinkClick();
-    }
+  // 🔧 Nuevo handler: cierra el menú y luego navega
+  const handleClick = (e, to) => {
+    e.preventDefault(); // evita la navegación inmediata
+    if (onLinkClick) onLinkClick(); // cierra el offcanvas
+    setTimeout(() => navigate(to), 250); // navega tras el cierre (animación dura ~200ms)
   };
 
   return (
     <>
       <li className="nav-item">
-        <NavLink className="nav-link" to="/" onClick={handleClick}>Inicio</NavLink>
+        <NavLink className="nav-link" to="/" onClick={(e) => handleClick(e, "/")}>
+          Inicio
+        </NavLink>
       </li>
+
       <li className="nav-item">
-        <NavLink className="nav-link" to="/combos" onClick={handleClick}>Combos</NavLink>
+        <NavLink className="nav-link" to="/combos" onClick={(e) => handleClick(e, "/combos")}>
+          Combos
+        </NavLink>
       </li>
+
       {user?.rol === 'Cliente' && (
         <li className="nav-item">
-          <NavLink className="nav-link" to="/hacer-un-pedido" onClick={handleClick}>Mi Pedido</NavLink>
+          <NavLink className="nav-link" to="/hacer-un-pedido" onClick={(e) => handleClick(e, "/hacer-un-pedido")}>
+            Mi Pedido
+          </NavLink>
         </li>
       )}
+
       {user?.rol === 'Jefe' && (
         <li className="nav-item">
-          <NavLink className="nav-link" to="/admin" onClick={handleClick}>Admin</NavLink>
+          <NavLink className="nav-link" to="/admin" onClick={(e) => handleClick(e, "/admin")}>
+            Admin
+          </NavLink>
         </li>
       )}
     </>
   );
 };
 
+
+// --- COMPONENTE DE CONTROLES DE USUARIO (modo oscuro y logout) ---
 const UserControls = ({ isMobile = false }) => {
   const { user, logout } = useContext(AuthContext);
   const buttonClass = isMobile ? "" : "ms-3";
@@ -57,18 +72,15 @@ const UserControls = ({ isMobile = false }) => {
 };
 
 
+// --- NAVBAR PRINCIPAL ---
 function Navbar() {
-  // --- 2. Lógica para controlar el cierre del menú ---
-  const offcanvasRef = useRef(null); // Referencia al div del menú lateral
+  const offcanvasRef = useRef(null);
 
-  // Esta función simula un clic en el botón de cierre del menú
+  // ✅ Cierra el menú programáticamente
   const handleCloseOffcanvas = () => {
     const closeButton = offcanvasRef.current?.querySelector('[data-bs-dismiss="offcanvas"]');
-    if (closeButton) {
-      closeButton.click();
-    }
+    if (closeButton) closeButton.click();
   };
-  // --- FIN DE LA NUEVA LÓGICA ---
 
   return (
     <nav className="navbar fixed-top">
@@ -80,14 +92,14 @@ function Navbar() {
         {/* --- MENÚ DE ESCRITORIO --- */}
         <div className="d-none d-lg-flex align-items-center">
           <ul className="navbar-nav flex-row">
-            <MenuLinks /> {/* En escritorio, no necesita la función de cierre */}
+            <MenuLinks /> {/* En escritorio no necesita cerrar el offcanvas */}
           </ul>
           <div className="ms-lg-3">
-             <UserControls />
+            <UserControls />
           </div>
         </div>
 
-        {/* --- BOTÓN PARA MENÚ MÓVIL --- */}
+        {/* --- BOTÓN DEL MENÚ MÓVIL --- */}
         <button
           className="navbar-toggler d-lg-none"
           type="button"
@@ -99,28 +111,30 @@ function Navbar() {
           <span className="navbar-toggler-icon"></span>
         </button>
 
-        {/* --- CONTENIDO DEL MENÚ LATERAL (OFFCANVAS) --- */}
+        {/* --- CONTENIDO DEL MENÚ MÓVIL (OFFCANVAS) --- */}
         <div
           className="offcanvas offcanvas-end"
           tabIndex="-1"
           id="offcanvasNavbar"
           aria-labelledby="offcanvasNavbarLabel"
-          ref={offcanvasRef} // <-- 3. Asignamos la referencia aquí
+          ref={offcanvasRef}
         >
           <div className="offcanvas-header">
             <h5 className="offcanvas-title" id="offcanvasNavbarLabel">Menú</h5>
             <button
               type="button"
               className="btn-close btn-close-white"
-              data-bs-dismiss="offcanvas" // Este botón SÍ debe tenerlo
+              data-bs-dismiss="offcanvas"
               aria-label="Close"
             ></button>
           </div>
+
           <div className="offcanvas-body d-flex flex-column">
             <ul className="navbar-nav flex-grow-1">
-              {/* ✅ CORRECCIÓN 4: Pasamos la función de cierre a los enlaces del menú */}
+              {/* ✅ Ahora los enlaces cierran el menú y navegan correctamente */}
               <MenuLinks onLinkClick={handleCloseOffcanvas} />
             </ul>
+
             <div className="offcanvas-footer mt-auto">
               <UserControls isMobile={true} />
             </div>
@@ -132,4 +146,3 @@ function Navbar() {
 }
 
 export default Navbar;
-
