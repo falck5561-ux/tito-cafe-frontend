@@ -7,8 +7,46 @@ import ProductSalesReport from '../components/ProductSalesReport';
 import DetallesPedidoModal from '../components/DetallesPedidoModal';
 import { getProducts, createProduct, updateProduct, deleteProduct } from '../services/productService';
 import apiClient from '../services/api';
+import { useTheme } from '../context/ThemeContext';
+
+// --- NUEVO COMPONENTE: Modal de Confirmación Estético y Reutilizable ---
+const ConfirmationModal = ({ show, onClose, onConfirm, title, message, theme }) => {
+  if (!show) return null;
+
+  // Adapta el estilo del modal al tema actual (luz/noche)
+  const modalClass = theme === 'dark' ? 'modal-content text-bg-dark' : 'modal-content';
+  const closeButtonClass = theme === 'dark' ? 'btn-close btn-close-white' : 'btn-close';
+
+  return (
+    <div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.6)' }}>
+      <div className="modal-dialog modal-dialog-centered">
+        <div className={modalClass}>
+          <div className="modal-header">
+            <h5 className="modal-title">{title}</h5>
+            <button type="button" className={closeButtonClass} onClick={onClose}></button>
+          </div>
+          <div className="modal-body">
+            <p>{message}</p>
+          </div>
+          <div className="modal-footer">
+            <button type="button" className="btn btn-secondary" onClick={onClose}>
+              Cancelar
+            </button>
+            <button type="button" className="btn btn-danger" onClick={onConfirm}>
+              Confirmar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 
 function AdminPage() {
+  const { theme } = useTheme(); // Obtenemos el tema actual
+
+  // ... (otros estados sin cambios)
   const [activeTab, setActiveTab] = useState('pedidosEnLinea');
   const [productos, setProductos] = useState([]);
   const [pedidos, setPedidos] = useState([]);
@@ -16,18 +54,20 @@ function AdminPage() {
   const [combos, setCombos] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  
   const [showProductModal, setShowProductModal] = useState(false);
   const [productoActual, setProductoActual] = useState(null);
-
   const [showComboModal, setShowComboModal] = useState(false);
   const [comboActual, setComboActual] = useState(null);
-
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedOrderDetails, setSelectedOrderDetails] = useState(null);
-
   const [showPurgeModal, setShowPurgeModal] = useState(false);
   const [purgeConfirmText, setPurgeConfirmText] = useState('');
+
+  // --- NUEVOS ESTADOS para manejar el contenido dinámico del modal ---
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [confirmAction, setConfirmAction] = useState(null);
+  const [confirmTitle, setConfirmTitle] = useState('');
+  const [confirmMessage, setConfirmMessage] = useState('');
 
   const fetchData = async () => {
     setLoading(true);
@@ -57,39 +97,28 @@ function AdminPage() {
   useEffect(() => {
     fetchData();
   }, [activeTab]);
-
-  // ✅ CORRECCIÓN: Al abrir el modal, se asegura que la URL de la imagen se pase correctamente.
+  
   const handleOpenProductModal = (producto = null) => {
     if (producto) {
-      // El backend envía 'imagen_url' (texto), pero el modal espera 'imagenes' (array).
-      // Hacemos la conversión aquí.
       const productoParaModal = {
         ...producto,
         imagenes: producto.imagen_url ? [producto.imagen_url] : []
       };
       setProductoActual(productoParaModal);
     } else {
-      setProductoActual(null); // Para crear un producto nuevo
+      setProductoActual(null);
     }
-    setShowProductModal(true);
+    setShowProductModal(true); 
   };
   
-  const handleCloseProductModal = () => {
-    setShowProductModal(false);
-    setProductoActual(null);
-  };
+  const handleCloseProductModal = () => { setShowProductModal(false); setProductoActual(null); };
   
-  // ✅ CORRECCIÓN: Al guardar, se asegura de enviar los datos que el backend espera.
   const handleSaveProducto = async (producto) => {
     const action = producto.id ? 'actualizado' : 'creado';
-    
-    // El modal devuelve 'imagenes' (array), pero el backend espera 'imagen_url' (texto).
-    // Hacemos la conversión inversa.
     const datosParaEnviar = {
       ...producto,
       imagen_url: (producto.imagenes && producto.imagenes.length > 0) ? producto.imagenes[0] : null,
     };
-    // Eliminamos el campo 'imagenes' porque el backend no lo conoce y podría causar un error.
     delete datosParaEnviar.imagenes; 
 
     try {
@@ -99,24 +128,26 @@ function AdminPage() {
         await createProduct(datosParaEnviar);
       }
       toast.success(`Producto ${action} con éxito.`);
-      fetchData(); // Recargamos la lista de productos
+      fetchData();
       handleCloseProductModal();
-    } catch (err) {
-      toast.error(`No se pudo guardar el producto.`);
-    }
+    } catch (err) { toast.error(`No se pudo guardar el producto.`); }
   };
-
-  // ✅ CORRECCIÓN: Se actualiza el texto y el mensaje de éxito para reflejar la desactivación.
-  const handleDeleteProducto = async (id) => {
-    if (window.confirm('¿Seguro que quieres DESACTIVAR este producto? Ya no aparecerá en el menú de clientes.')) {
+  
+  // ✅ MEJORA: La función ahora establece un título y mensaje específicos antes de abrir el modal
+  const handleDeleteProducto = (producto) => {
+    setConfirmTitle('Desactivar Producto');
+    setConfirmMessage(`¿Seguro que quieres desactivar "${producto.nombre}"? Ya no aparecerá en el menú de clientes.`);
+    setConfirmAction(() => async () => {
       try {
-        await deleteProduct(id); // Esta función ahora llama al endpoint que desactiva, no borra.
-        toast.success('Producto desactivado con éxito.');
-        fetchData(); // Recargamos la lista de productos
-      } catch (err) {
+        await deleteProduct(producto.id);
+        toast.success(`"${producto.nombre}" desactivado con éxito.`);
+        fetchData();
+      } catch (err) { 
         toast.error(err.response?.data?.msg || 'No se pudo desactivar el producto.');
       }
-    }
+      setShowConfirmModal(false); // Cierra el modal después de la acción
+    });
+    setShowConfirmModal(true);
   };
 
   const handleOpenComboModal = (combo = null) => { setComboActual(combo); setShowComboModal(true); };
@@ -130,14 +161,20 @@ function AdminPage() {
       handleCloseComboModal();
     } catch (err) { toast.error(`No se pudo guardar el combo.`); }
   };
-  const handleDeleteCombo = async (id) => {
-    if (window.confirm('¿Seguro que quieres eliminar este combo?')) {
+
+  // ✅ MEJORA: La función de eliminar combo también es específica
+  const handleDeleteCombo = (combo) => {
+    setConfirmTitle('Eliminar Combo');
+    setConfirmMessage(`¿Estás seguro de que quieres eliminar el combo "${combo.titulo}"? Esta acción es permanente.`);
+    setConfirmAction(() => async () => {
       try {
-        await apiClient.delete(`/combos/${id}`);
+        await apiClient.delete(`/combos/${combo.id}`);
         toast.success('Combo eliminado.');
         fetchData();
       } catch (err) { toast.error('No se pudo eliminar el combo.'); }
-    }
+      setShowConfirmModal(false);
+    });
+    setShowConfirmModal(true);
   };
   
   const handleUpdateStatus = async (pedidoId, nuevoEstado) => {
@@ -185,6 +222,36 @@ function AdminPage() {
       {loading && <div className="text-center"><div className="spinner-border" role="status"></div></div>}
       {error && <div className="alert alert-danger">{error}</div>}
 
+      {!loading && !error && activeTab === 'productos' && (
+        <div>
+          <div className="d-flex justify-content-between align-items-center mb-4">
+            <h1>Gestión de Productos</h1>
+            <button className="btn btn-primary" onClick={() => handleOpenProductModal()}>Añadir Nuevo Producto</button>
+          </div>
+          <div className="table-responsive">
+            <table className="table table-hover align-middle">
+              <thead className="table-dark">
+                <tr><th>ID</th><th>Nombre</th><th>Precio</th><th>Oferta</th><th>Stock</th><th>Categoría</th><th>Acciones</th></tr>
+              </thead>
+              <tbody>
+                {productos.map((p) => (
+                  <tr key={p.id}>
+                    <td>{p.id}</td><td>{p.nombre}</td><td>${Number(p.precio).toFixed(2)}</td><td>{p.en_oferta ? `${p.descuento_porcentaje}%` : 'No'}</td>
+                    <td>{p.stock}</td><td>{p.categoria}</td>
+                    <td>
+                      <button className="btn btn-sm btn-outline-warning me-2" onClick={() => handleOpenProductModal(p)}>Editar</button>
+                      {/* ✅ MEJORA: Pasamos el objeto 'p' completo para usar su nombre en el mensaje */}
+                      <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteProducto(p)}>Eliminar</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+      
+      {/* ... (el resto del código de las otras pestañas no cambia y se omite por brevedad) ... */}
       {!loading && !error && activeTab === 'pedidosEnLinea' && (
         <div>
           <h1 className="mb-4">Gestión de Pedidos en Línea</h1>
@@ -214,33 +281,6 @@ function AdminPage() {
           </div>
         </div>
       )}
-      {!loading && !error && activeTab === 'productos' && (
-        <div>
-          <div className="d-flex justify-content-between align-items-center mb-4">
-            <h1>Gestión de Productos</h1>
-            <button className="btn btn-primary" onClick={() => handleOpenProductModal()}>Añadir Nuevo Producto</button>
-          </div>
-          <div className="table-responsive">
-            <table className="table table-hover align-middle">
-              <thead className="table-dark">
-                <tr><th>ID</th><th>Nombre</th><th>Precio</th><th>Oferta</th><th>Stock</th><th>Categoría</th><th>Acciones</th></tr>
-              </thead>
-              <tbody>
-                {productos.map((p) => (
-                  <tr key={p.id}>
-                    <td>{p.id}</td><td>{p.nombre}</td><td>${Number(p.precio).toFixed(2)}</td><td>{p.en_oferta ? `${p.descuento_porcentaje}%` : 'No'}</td>
-                    <td>{p.stock}</td><td>{p.categoria}</td>
-                    <td>
-                      <button className="btn btn-sm btn-outline-warning me-2" onClick={() => handleOpenProductModal(p)}>Editar</button>
-                      <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteProducto(p.id)}>Eliminar</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
       {!loading && !error && activeTab === 'combos' && (
         <div>
           <div className="d-flex justify-content-between align-items-center mb-4">
@@ -260,7 +300,7 @@ function AdminPage() {
                     <td>${Number(combo.precio).toFixed(2)}</td>
                     <td>
                       <button className="btn btn-sm btn-outline-warning me-2" onClick={() => handleOpenComboModal(combo)}>Editar</button>
-                      <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteCombo(combo.id)}>Eliminar</button>
+                      <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteCombo(combo)}>Eliminar</button>
                     </td>
                   </tr>
                 ))}
@@ -280,9 +320,21 @@ function AdminPage() {
         </div>
       )}
       {activeTab === 'reporteProductos' && <ProductSalesReport />}
+
       <ProductModal show={showProductModal} handleClose={handleCloseProductModal} handleSave={handleSaveProducto} productoActual={productoActual} />
       <ComboModal show={showComboModal} handleClose={handleCloseComboModal} handleSave={handleSaveCombo} comboActual={comboActual} />
       {showDetailsModal && (<DetallesPedidoModal pedido={selectedOrderDetails} onClose={handleCloseDetailsModal} />)}
+
+      {/* ✅ MEJORA: El modal ahora usa los estados dinámicos para el título y el mensaje */}
+      <ConfirmationModal
+        show={showConfirmModal}
+        onClose={() => setShowConfirmModal(false)}
+        onConfirm={confirmAction}
+        title={confirmTitle}
+        message={confirmMessage}
+        theme={theme}
+      />
+
       {showPurgeModal && (
         <div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
           <div className="modal-dialog modal-dialog-centered">
@@ -306,3 +358,4 @@ function AdminPage() {
 }
 
 export default AdminPage;
+
