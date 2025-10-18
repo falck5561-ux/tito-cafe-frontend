@@ -66,7 +66,7 @@ function DinoGame() {
         // Detecta modo oscuro/claro
         const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
 
-        // Fondo erizo (cuerpo)
+        // Cuerpo
         const grad = ctx.createRadialGradient(cx, cy, 5, cx, cy, this.w / 1.5);
         grad.addColorStop(0, dark ? '#70513D' : '#8B5E3C');
         grad.addColorStop(1, dark ? '#3E2A1F' : '#5C3B25');
@@ -74,18 +74,6 @@ function DinoGame() {
         ctx.beginPath();
         ctx.ellipse(cx, cy, this.w / 2, this.h / 2, 0, 0, Math.PI * 2);
         ctx.fill();
-
-        // Púas
-        ctx.fillStyle = dark ? '#2E1C14' : '#CBB79E';
-        for (let i = 0; i < 7; i++) {
-          const px = this.x + i * 4;
-          const py = this.y - 3 - Math.sin(i) * 3;
-          ctx.beginPath();
-          ctx.moveTo(px, py);
-          ctx.lineTo(px + 5, py - 10);
-          ctx.lineTo(px + 8, py);
-          ctx.fill();
-        }
 
         // Carita
         ctx.fillStyle = dark ? '#E8DCC5' : '#FFF9EE';
@@ -122,6 +110,16 @@ function DinoGame() {
 
         this.draw();
       }
+
+      get hitbox() {
+        // Caja de colisión más ajustada al cuerpo visible
+        return {
+          x: this.x + this.w * 0.15,
+          y: this.y + this.h * 0.15,
+          w: this.w * 0.7,
+          h: this.h * 0.7,
+        };
+      }
     }
 
     // === OBSTÁCULOS ===
@@ -137,11 +135,19 @@ function DinoGame() {
         const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         ctx.fillStyle = dark ? '#8b6f56' : '#c8a478';
         ctx.fillRect(this.x, this.y, this.w, this.h);
+
+        // Detalle superior
+        ctx.fillStyle = dark ? '#a78b73' : '#e2c6a4';
+        ctx.fillRect(this.x, this.y, this.w, 3);
       }
 
       update() {
         this.x -= gameSpeed;
         this.draw();
+      }
+
+      get hitbox() {
+        return { x: this.x, y: this.y, w: this.w, h: this.h };
       }
     }
 
@@ -153,11 +159,13 @@ function DinoGame() {
     }
 
     function checkCollision(p, o) {
+      const a = p.hitbox;
+      const b = o.hitbox;
       return (
-        p.x < o.x + o.w &&
-        p.x + p.w > o.x &&
-        p.y < o.y + o.h &&
-        p.y + p.h > o.y
+        a.x < b.x + b.w &&
+        a.x + a.w > b.x &&
+        a.y < b.y + b.h &&
+        a.y + a.h > b.y
       );
     }
 
