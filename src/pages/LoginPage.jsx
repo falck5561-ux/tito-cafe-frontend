@@ -1,15 +1,41 @@
 // Archivo: src/pages/LoginPage.jsx
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react'; // <-- 1. Importar useEffect
 import { useNavigate, Link } from 'react-router-dom';
 import AuthContext from '../context/AuthContext';
-import toast from 'react-hot-toast'; // Importa toast para notificaciones
+import toast from 'react-hot-toast'; 
 
 function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const { login } = useContext(AuthContext);
+  const { login, user } = useContext(AuthContext); // <-- 2. Obtener 'user' del contexto
   const navigate = useNavigate();
+
+  // --- 3. NUEVA LÓGICA DE REDIRECCIÓN ---
+  useEffect(() => {
+    // Si el 'user' ya existe en el contexto, significa que el usuario está logueado
+    if (user) {
+      // Damos una pequeña notificación
+      toast('Ya tienes una sesión activa.', { icon: 'ℹ️' });
+
+      // Redirigir basado en el rol (la misma lógica de handleSubmit)
+      switch (user.rol) {
+        case 'Jefe':
+          navigate('/admin');
+          break;
+        case 'Empleado':
+          navigate('/pos');
+          break;
+        case 'Cliente':
+          navigate('/'); // Esta es la ruta principal (corregida en el paso anterior)
+          break;
+        default:
+          navigate('/');
+      }
+    }
+  }, [user, navigate]); // Este efecto se ejecuta si 'user' o 'navigate' cambian
+  // --- FIN DE LA NUEVA LÓGICA ---
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -21,7 +47,7 @@ function LoginPage() {
       if (loggedInUser) {
         toast.success('¡Bienvenido a Tito Café!');
 
-        // --- LÓGICA DE REDIRECCIÓN POR ROL MEJORADA ---
+        // Esta lógica de redirección se ejecuta DESPUÉS de un login exitoso
         switch (loggedInUser.rol) {
           case 'Jefe':
             navigate('/admin');
@@ -30,14 +56,10 @@ function LoginPage() {
             navigate('/pos');
             break;
           case 'Cliente':
-            // =============================================
-            // === ¡AQUÍ ESTÁ LA CORRECCIÓN! ===
-            // =============================================
-            // Ahora redirige a la página principal ('/') en lugar de '/hacer-un-pedido'
-            navigate('/'); 
+            navigate('/'); // Correcto
             break;
           default:
-            navigate('/'); // Redirección por defecto
+            navigate('/');
         }
       } else {
         setError('Email o contraseña incorrectos.');
@@ -48,6 +70,21 @@ function LoginPage() {
     }
   };
 
+  // --- 4. RENDER CONDICIONAL ---
+  // Si el usuario ya está logueado, mostramos un 'cargando' en lugar del formulario
+  // mientras el useEffect lo redirige. Esto evita el "parpadeo".
+  if (user) {
+    return (
+      <div className="text-center p-5">
+        <div className="spinner-border" role="status">
+          <span className="visually-hidden">Redirigiendo...</span>
+        </div>
+        <p className="mt-3">Ya has iniciado sesión. Redirigiendo...</p>
+      </div>
+    );
+  }
+
+  // Si el usuario NO está logueado (user es null), muestra el formulario de login
   return (
     <div className="row justify-content-center">
       <div className="col-md-6 col-lg-4">
