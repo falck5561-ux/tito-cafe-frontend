@@ -3,25 +3,32 @@ import { Link, NavLink } from 'react-router-dom';
 import AuthContext from '../context/AuthContext';
 import ThemeToggleButton from './ThemeToggleButton';
 
-// Para no repetir código, creamos un componente con los enlaces principales del menú.
-const MenuLinks = () => {
+// ✅ CORRECCIÓN 1: El componente ahora acepta una prop 'isMobile'
+// Le pasaremos 'true' solo cuando estemos en el menú lateral.
+const MenuLinks = ({ isMobile = false }) => {
   const { user } = useContext(AuthContext);
+
+  // Un objeto que solo se añadirá a los NavLink si 'isMobile' es true.
+  // Este atributo le dice a Bootstrap que cierre el offcanvas.
+  const mobileProps = isMobile ? { 'data-bs-dismiss': 'offcanvas' } : {};
+
   return (
     <>
       <li className="nav-item">
-        <NavLink className="nav-link" to="/">Inicio</NavLink>
+        {/* ✅ CORRECCIÓN 2: Se añaden las props móviles al enlace */}
+        <NavLink className="nav-link" to="/" {...mobileProps}>Inicio</NavLink>
       </li>
       <li className="nav-item">
-        <NavLink className="nav-link" to="/combos">Combos</NavLink>
+        <NavLink className="nav-link" to="/combos" {...mobileProps}>Combos</NavLink>
       </li>
       {user?.rol === 'Cliente' && (
         <li className="nav-item">
-          <NavLink className="nav-link" to="/hacer-un-pedido">Mi Pedido</NavLink>
+          <NavLink className="nav-link" to="/hacer-un-pedido" {...mobileProps}>Mi Pedido</NavLink>
         </li>
       )}
       {user?.rol === 'Jefe' && (
         <li className="nav-item">
-          <NavLink className="nav-link" to="/admin">Admin</NavLink>
+          <NavLink className="nav-link" to="/admin" {...mobileProps}>Admin</NavLink>
         </li>
       )}
     </>
@@ -59,9 +66,9 @@ function Navbar() {
         </Link>
 
         {/* --- MENÚ DE ESCRITORIO --- */}
-        {/* Se muestra solo en pantallas grandes (d-none lo oculta en móvil) */}
         <div className="d-none d-lg-flex align-items-center">
           <ul className="navbar-nav flex-row">
+            {/* Aquí no pasamos 'isMobile', por lo que los enlaces no cerrarán nada */}
             <MenuLinks />
           </ul>
           <div className="ms-lg-3">
@@ -70,7 +77,6 @@ function Navbar() {
         </div>
 
         {/* --- BOTÓN PARA MENÚ MÓVIL --- */}
-        {/* Se muestra solo en pantallas pequeñas (d-lg-none lo oculta en PC) */}
         <button
           className="navbar-toggler d-lg-none"
           type="button"
@@ -100,7 +106,8 @@ function Navbar() {
           </div>
           <div className="offcanvas-body d-flex flex-column">
             <ul className="navbar-nav flex-grow-1">
-              <MenuLinks />
+              {/* ✅ CORRECCIÓN 3: Le pasamos 'isMobile={true}' a los enlaces del menú lateral */}
+              <MenuLinks isMobile={true} />
             </ul>
             <div className="offcanvas-footer mt-auto">
               <UserControls isMobile={true} />
