@@ -19,8 +19,6 @@ function LoginPage() {
       const loggedInUser = await login(email, password);
       
       if (loggedInUser) {
-        // --- CORRECCIÓN DEL MENSAJE DE BIENVENIDA ---
-        // Se cambia el mensaje para que sea más general y profesional.
         toast.success('¡Bienvenido a Tito Café!');
 
         // --- LÓGICA DE REDIRECCIÓN POR ROL MEJORADA ---
@@ -32,8 +30,11 @@ function LoginPage() {
             navigate('/pos');
             break;
           case 'Cliente':
-            // CORRECCIÓN: Redirigimos a la página principal del cliente.
-            navigate('/hacer-un-pedido'); 
+            // =============================================
+            // === ¡AQUÍ ESTÁ LA CORRECCIÓN! ===
+            // =============================================
+            // Ahora redirige a la página principal ('/') en lugar de '/hacer-un-pedido'
+            navigate('/'); 
             break;
           default:
             navigate('/'); // Redirección por defecto
