@@ -2,18 +2,25 @@ import React, { useContext, useRef } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import AuthContext from '../context/AuthContext';
 import ThemeToggleButton from './ThemeToggleButton';
+import { useInstallPWA } from '../context/InstallPwaContext'; // <-- 1. IMPORTA EL HOOK
 
-
-// --- COMPONENTE DE ENLACES DEL MENÚ ---
+// --- COMPONENTE DE ENLACESE DEL MENÚ ---
 const MenuLinks = ({ onLinkClick }) => {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
+  const { installPrompt, handleInstall } = useInstallPWA(); // <-- 2. LLAMA AL HOOK
 
   // 🔧 Nuevo handler: cierra el menú y luego navega
   const handleClick = (e, to) => {
-    e.preventDefault(); // evita la navegación inmediata
-    if (onLinkClick) onLinkClick(); // cierra el offcanvas
-    setTimeout(() => navigate(to), 250); // navega tras el cierre (animación dura ~200ms)
+    e.preventDefault();
+    if (onLinkClick) onLinkClick();
+    setTimeout(() => navigate(to), 250);
+  };
+
+  // ✅ Nuevo handler para el botón de instalar
+  const handleInstallClick = () => {
+    if (onLinkClick) onLinkClick(); // Cierra el menú si está en móvil
+    handleInstall(); // Llama a la función de instalación
   };
 
   return (
@@ -43,6 +50,16 @@ const MenuLinks = ({ onLinkClick }) => {
           <NavLink className="nav-link" to="/admin" onClick={(e) => handleClick(e, "/admin")}>
             Admin
           </NavLink>
+        </li>
+      )}
+
+      {/* <-- 3. AGREGA EL BOTÓN DE INSTALACIÓN AQUÍ --> */}
+      {installPrompt && (
+        <li className="nav-item">
+          {/* Usamos un <a> simple porque no es un enlace de React Router */}
+          <a className="nav-link" href="#" onClick={handleInstallClick} style={{ cursor: 'pointer' }}>
+            Instalar App
+          </a>
         </li>
       )}
     </>
@@ -76,7 +93,6 @@ const UserControls = ({ isMobile = false }) => {
 function Navbar() {
   const offcanvasRef = useRef(null);
 
-  // ✅ Cierra el menú programáticamente
   const handleCloseOffcanvas = () => {
     const closeButton = offcanvasRef.current?.querySelector('[data-bs-dismiss="offcanvas"]');
     if (closeButton) closeButton.click();
@@ -92,7 +108,7 @@ function Navbar() {
         {/* --- MENÚ DE ESCRITORIO --- */}
         <div className="d-none d-lg-flex align-items-center">
           <ul className="navbar-nav flex-row">
-            <MenuLinks /> {/* En escritorio no necesita cerrar el offcanvas */}
+            <MenuLinks />
           </ul>
           <div className="ms-lg-3">
             <UserControls />
@@ -131,7 +147,6 @@ function Navbar() {
 
           <div className="offcanvas-body d-flex flex-column">
             <ul className="navbar-nav flex-grow-1">
-              {/* ✅ Ahora los enlaces cierran el menú y navegan correctamente */}
               <MenuLinks onLinkClick={handleCloseOffcanvas} />
             </ul>
 
