@@ -16,7 +16,7 @@ export default defineConfig({
         icons: [
           {
             src: 'tito-icon.png', // <-- Tu archivo de la carpeta public
-            sizes: '180x180',     // <-- Revisa que este sea el tamaño real
+            sizes: '160x160',     // <-- Revisa que este sea el tamaño real
             type: 'image/png'
           },
           {

@@ -1,6 +1,7 @@
 // src/context/InstallPwaContext.jsx
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { toast } from 'react-hot-toast'; // <-- 1. IMPORTA EL TOAST
 
 // 1. Crear el contexto
 const InstallPwaContext = createContext();
@@ -29,22 +30,30 @@ export const InstallPwaProvider = ({ children }) => {
 
   // Función que llamará nuestro botón
   const handleInstall = async () => {
-    if (!installPrompt) return; // Si no hay evento, no hacemos nada
+    if (!installPrompt) {
+      toast.error('La aplicación no se puede instalar ahora.'); // <-- Notificación de error
+      return; 
+    }
 
     // Muestra el diálogo de instalación del navegador
     installPrompt.prompt();
 
-    // Esperamos a que el usuario elija
-    const { outcome } = await installPrompt.userChoice;
+    try {
+      // Esperamos a que el usuario elija
+      const { outcome } = await installPrompt.userChoice;
 
-    if (outcome === 'accepted') {
-      console.log('El usuario aceptó instalar la PWA');
-    } else {
-      console.log('El usuario rechazó instalar la PWA');
+      // 2. REEMPLAZA LOS CONSOLE.LOG CON NOTIFICACIONES
+      if (outcome === 'accepted') {
+        toast.success('¡Aplicación instalada con éxito!'); // <-- Notificación de éxito
+        setInstallPrompt(null); // Oculta el botón solo si acepta
+      } else {
+        toast.error('Instalación cancelada.'); // <-- Notificación de cancelación
+      }
+
+    } catch (error) {
+      toast.error('Ocurrió un error durante la instalación.'); // <-- Notificación de error inesperado
+      console.error('Error al instalar PWA:', error);
     }
-
-    // Ya sea que acepte o rechace, limpiamos el evento
-    setInstallPrompt(null);
   };
 
   return (
