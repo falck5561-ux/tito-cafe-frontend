@@ -1,58 +1,64 @@
 // src/context/InstallPwaContext.jsx
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { toast } from 'react-hot-toast'; // <-- 1. IMPORTA EL TOAST
+import { toast } from 'react-hot-toast';
 
-// 1. Crear el contexto
 const InstallPwaContext = createContext();
 
-// 2. Crear el Proveedor (Provider)
 export const InstallPwaProvider = ({ children }) => {
   const [installPrompt, setInstallPrompt] = useState(null);
 
   useEffect(() => {
-    // Esta función captura el evento de instalación
     const handleBeforeInstallPrompt = (e) => {
-      // Previene que se muestre la mini-barra de info de Chrome
       e.preventDefault();
-      // Guarda el evento para que podamos usarlo después
       setInstallPrompt(e);
     };
-
-    // Escuchamos el evento
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-    // Limpiamos el listener cuando el componente se desmonte
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
   }, []);
 
-  // Función que llamará nuestro botón
   const handleInstall = async () => {
     if (!installPrompt) {
-      toast.error('La aplicación no se puede instalar ahora.'); // <-- Notificación de error
-      return; 
+      toast.error('La aplicación no se puede instalar ahora.');
+      return;
     }
 
-    // Muestra el diálogo de instalación del navegador
     installPrompt.prompt();
 
     try {
-      // Esperamos a que el usuario elija
+      // 1. Añadimos un listener para el evento 'appinstalled' ANTES de esperar la elección.
+      const handleAppInstalled = () => {
+        // 3. ¡ÉXITO REAL! La app ya se instaló.
+        toast.success('¡Aplicación instalada con éxito!');
+        setInstallPrompt(null); // Ocultamos el botón
+        // Limpiamos este listener
+        window.removeEventListener('appinstalled', handleAppInstalled);
+      };
+
+      window.addEventListener('appinstalled', handleAppInstalled);
+
+      // 2. Esperamos la elección del usuario
       const { outcome } = await installPrompt.userChoice;
 
-      // 2. REEMPLAZA LOS CONSOLE.LOG CON NOTIFICACIONES
       if (outcome === 'accepted') {
-        toast.success('¡Aplicación instalada con éxito!'); // <-- Notificación de éxito
-        setInstallPrompt(null); // Oculta el botón solo si acepta
+        // El usuario aceptó.
+        // YA NO MOSTRAMOS EL TOAST AQUÍ.
+        // Simplemente esperamos a que el evento 'appinstalled' se dispare.
+        console.log('El usuario aceptó. Esperando a que se instale...');
       } else {
-        toast.error('Instalación cancelada.'); // <-- Notificación de cancelación
+        // El usuario canceló el diálogo.
+        toast.error('Instalación cancelada.');
+        // Como canceló, quitamos el listener que acabamos de poner.
+        window.removeEventListener('appinstalled', handleAppInstalled);
       }
 
     } catch (error) {
-      toast.error('Ocurrió un error durante la instalación.'); // <-- Notificación de error inesperado
+      toast.error('Ocurrió un error durante la instalación.');
       console.error('Error al instalar PWA:', error);
+      // Si hay un error, también quitamos el listener.
+      window.removeEventListener('appinstalled', handleAppInstalled);
     }
   };
 
@@ -63,7 +69,6 @@ export const InstallPwaProvider = ({ children }) => {
   );
 };
 
-// 3. Crear un hook personalizado para usarlo fácil
 export const useInstallPWA = () => {
   return useContext(InstallPwaContext);
 };
