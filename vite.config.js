@@ -15,8 +15,8 @@ export default defineConfig({
         theme_color: '#ffffff', // Puedes cambiar este color
         icons: [
           {
-            src: 'icon.png', // <-- Tu archivo de la carpeta public
-            sizes: '192x192',     // <-- Revisa que este sea el tamaño real
+            src: 'tito-icon.png', // <-- Tu archivo de la carpeta public
+            sizes: '180x180',     // <-- Revisa que este sea el tamaño real
             type: 'image/png'
           },
           {
