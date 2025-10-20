@@ -1,26 +1,26 @@
 import React, { useContext, useRef } from 'react';
+// <-- 1. Asegúrate que 'useNavigate' está importado
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import AuthContext from '../context/AuthContext';
 import ThemeToggleButton from './ThemeToggleButton';
-import { useInstallPWA } from '../context/InstallPwaContext'; // <-- 1. IMPORTA EL HOOK
+import { useInstallPWA } from '../context/InstallPwaContext';
 
-// --- COMPONENTE DE ENLACESE DEL MENÚ ---
+// --- COMPONENTE DE ENLACES DEL MENÚ ---
+// (Este componente no cambia)
 const MenuLinks = ({ onLinkClick }) => {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
-  const { installPrompt, handleInstall } = useInstallPWA(); // <-- 2. LLAMA AL HOOK
+  const { installPrompt, handleInstall } = useInstallPWA();
 
-  // 🔧 Nuevo handler: cierra el menú y luego navega
   const handleClick = (e, to) => {
     e.preventDefault();
     if (onLinkClick) onLinkClick();
     setTimeout(() => navigate(to), 250);
   };
 
-  // ✅ Nuevo handler para el botón de instalar
   const handleInstallClick = () => {
-    if (onLinkClick) onLinkClick(); // Cierra el menú si está en móvil
-    handleInstall(); // Llama a la función de instalación
+    if (onLinkClick) onLinkClick();
+    handleInstall();
   };
 
   return (
@@ -30,13 +30,11 @@ const MenuLinks = ({ onLinkClick }) => {
           Inicio
         </NavLink>
       </li>
-
       <li className="nav-item">
         <NavLink className="nav-link" to="/combos" onClick={(e) => handleClick(e, "/combos")}>
           Combos
         </NavLink>
       </li>
-
       {user?.rol === 'Cliente' && (
         <li className="nav-item">
           <NavLink className="nav-link" to="/hacer-un-pedido" onClick={(e) => handleClick(e, "/hacer-un-pedido")}>
@@ -44,7 +42,6 @@ const MenuLinks = ({ onLinkClick }) => {
           </NavLink>
         </li>
       )}
-
       {user?.rol === 'Jefe' && (
         <li className="nav-item">
           <NavLink className="nav-link" to="/admin" onClick={(e) => handleClick(e, "/admin")}>
@@ -52,11 +49,8 @@ const MenuLinks = ({ onLinkClick }) => {
           </NavLink>
         </li>
       )}
-
-      {/* <-- 3. AGREGA EL BOTÓN DE INSTALACIÓN AQUÍ --> */}
       {installPrompt && (
         <li className="nav-item">
-          {/* Usamos un <a> simple porque no es un enlace de React Router */}
           <a className="nav-link" href="#" onClick={handleInstallClick} style={{ cursor: 'pointer' }}>
             Instalar App
           </a>
@@ -68,21 +62,41 @@ const MenuLinks = ({ onLinkClick }) => {
 
 
 // --- COMPONENTE DE CONTROLES DE USUARIO (modo oscuro y logout) ---
-const UserControls = ({ isMobile = false }) => {
+// <-- 2. Añadimos 'onControlClick' a las props
+const UserControls = ({ isMobile = false, onControlClick }) => {
   const { user, logout } = useContext(AuthContext);
   const buttonClass = isMobile ? "" : "ms-3";
+  const navigate = useNavigate(); // <-- 3. Usamos el hook
+
+  // <-- 4. Creamos un handler para el botón de Login
+  const handleLoginClick = (e) => {
+    e.preventDefault();
+    if (onControlClick) onControlClick(); // Cierra el menú
+    setTimeout(() => navigate('/login'), 250); // Navega después
+  };
+
+  // <-- 5. Creamos un handler para el botón de Logout
+  const handleLogoutClick = () => {
+    if (onControlClick) onControlClick(); // Cierra el menú
+    setTimeout(logout, 250); // Hace logout después
+  };
 
   return (
     <>
-      <ThemeToggleButton />
+      {/* <-- 6. Envolvemos el botón de tema para que cierre el menú --> */}
+      <span onClick={onControlClick}>
+        <ThemeToggleButton />
+      </span>
+      
       {user ? (
-        <button onClick={logout} className={`btn btn-outline-secondary ${buttonClass}`}>
+        <button onClick={handleLogoutClick} className={`btn btn-outline-secondary ${buttonClass}`}>
           Cerrar Sesión
         </button>
       ) : (
-        <Link to="/login" className={`btn btn-primary ${buttonClass}`}>
+        // <-- 7. Cambiamos <Link> por <a> para usar nuestro propio handler -->
+        <a href="/login" onClick={handleLoginClick} className={`btn btn-primary ${buttonClass}`}>
           Login
-        </Link>
+        </a>
       )}
     </>
   );
@@ -151,7 +165,8 @@ function Navbar() {
             </ul>
 
             <div className="offcanvas-footer mt-auto">
-              <UserControls isMobile={true} />
+              {/* <-- 8. Pasamos la función de cierre a UserControls --> */}
+              <UserControls isMobile={true} onControlClick={handleCloseOffcanvas} />
             </div>
           </div>
         </div>
