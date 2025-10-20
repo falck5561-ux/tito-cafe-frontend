@@ -6,7 +6,8 @@ import App from './App.jsx';
 import { AuthProvider } from './context/AuthContext.jsx';
 import { ThemeProvider } from './context/ThemeContext.jsx';
 import { CartProvider } from './context/CartContext.jsx'; 
-import { InstallPwaProvider } from './context/InstallPwaContext.jsx'; // <-- 1. IMPORTA EL NUEVO PROVIDER
+import { InstallPwaProvider } from './context/InstallPwaContext.jsx';
+import { GoogleOAuthProvider } from '@react-oauth/google'; // <-- 1. IMPORTA GOOGLE
 import axios from 'axios';
 
 // Establecemos la URL base para todas las peticiones
@@ -27,16 +28,22 @@ axios.interceptors.request.use(config => {
 });
 
 
+// <-- 2. TU ID DE CLIENTE
+const GOOGLE_CLIENT_ID = "410811838547-ltq555co1hve1m8c891u6olhf4on7nrd.apps.googleusercontent.com";
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <InstallPwaProvider> {/* <-- 2. ENVUELVE TODO CON EL PROVIDER DE PWA */}
-      <AuthProvider>
-        <ThemeProvider>
-          <CartProvider>
-            <App />
-          </CartProvider>
-        </ThemeProvider>
-      </AuthProvider>
-    </InstallPwaProvider> {/* <-- No olvides cerrar la etiqueta */}
+    {/* <-- 3. ENVUELVE TODO CON EL PROVIDER DE GOOGLE */}
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+      <InstallPwaProvider>
+        <AuthProvider>
+          <ThemeProvider>
+            <CartProvider>
+              <App />
+            </CartProvider>
+          </ThemeProvider>
+        </AuthProvider>
+      </InstallPwaProvider>
+    </GoogleOAuthProvider>
   </React.StrictMode>,
 );

@@ -1,24 +1,25 @@
 // Archivo: src/pages/LoginPage.jsx
-import React, { useState, useContext, useEffect } from 'react'; // <-- 1. Importar useEffect
+import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import AuthContext from '../context/AuthContext';
 import toast from 'react-hot-toast'; 
+
+// --- 1. IMPORTA EL BOTÓN DE GOOGLE Y AXIOS ---
+import { GoogleLogin } from '@react-oauth/google';
+import axios from 'axios';
+
 
 function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const { login, user } = useContext(AuthContext); // <-- 2. Obtener 'user' del contexto
+  const { login, user } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  // --- 3. NUEVA LÓGICA DE REDIRECCIÓN ---
+  // --- Lógica de redirección (sin cambios) ---
   useEffect(() => {
-    // Si el 'user' ya existe en el contexto, significa que el usuario está logueado
     if (user) {
-      // Damos una pequeña notificación
       toast('Ya tienes una sesión activa.', { icon: 'ℹ️' });
-
-      // Redirigir basado en el rol (la misma lógica de handleSubmit)
       switch (user.rol) {
         case 'Jefe':
           navigate('/admin');
@@ -27,16 +28,16 @@ function LoginPage() {
           navigate('/pos');
           break;
         case 'Cliente':
-          navigate('/'); // Esta es la ruta principal (corregida en el paso anterior)
+          navigate('/');
           break;
         default:
           navigate('/');
       }
     }
-  }, [user, navigate]); // Este efecto se ejecuta si 'user' o 'navigate' cambian
-  // --- FIN DE LA NUEVA LÓGICA ---
+  }, [user, navigate]);
 
 
+  // --- Lógica de login con email/pass (sin cambios) ---
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -47,7 +48,6 @@ function LoginPage() {
       if (loggedInUser) {
         toast.success('¡Bienvenido a Tito Café!');
 
-        // Esta lógica de redirección se ejecuta DESPUÉS de un login exitoso
         switch (loggedInUser.rol) {
           case 'Jefe':
             navigate('/admin');
@@ -56,7 +56,7 @@ function LoginPage() {
             navigate('/pos');
             break;
           case 'Cliente':
-            navigate('/'); // Correcto
+            navigate('/');
             break;
           default:
             navigate('/');
@@ -70,9 +70,38 @@ function LoginPage() {
     }
   };
 
-  // --- 4. RENDER CONDICIONAL ---
-  // Si el usuario ya está logueado, mostramos un 'cargando' en lugar del formulario
-  // mientras el useEffect lo redirige. Esto evita el "parpadeo".
+  // --- 2. NUEVAS FUNCIONES PARA GOOGLE ---
+  const handleGoogleSuccess = async (credentialResponse) => {
+    try {
+      // 1. Enviamos el token de Google a nuestro backend
+      const res = await axios.post('/api/auth/google-login', { 
+        token: credentialResponse.credential 
+      });
+
+      // 2. Nuestro backend nos da nuestro propio token
+      const { token } = res.data;
+
+      // 3. Guardamos el token en localStorage
+      localStorage.setItem('token', token);
+
+      // 4. Mostramos éxito y forzamos un re-inicio de la app
+      // Esto permite que tu AuthContext lea el nuevo token y te loguee
+      toast.success('¡Bienvenido a Tito Café! Redirigiendo...');
+      navigate('/');
+      window.location.reload();
+
+    } catch (error) {
+      console.error("Error en login de Google:", error);
+      toast.error('Fallo el inicio de sesión con Google.');
+    }
+  };
+
+  const handleGoogleError = () => {
+    toast.error('Fallo el inicio de sesión con Google.');
+  };
+
+  
+  // --- Render condicional (sin cambios) ---
   if (user) {
     return (
       <div className="text-center p-5">
@@ -84,13 +113,14 @@ function LoginPage() {
     );
   }
 
-  // Si el usuario NO está logueado (user es null), muestra el formulario de login
+  // --- 3. JSX ACTUALIZADO CON EL BOTÓN ---
   return (
     <div className="row justify-content-center">
       <div className="col-md-6 col-lg-4">
         <div className="card shadow-sm p-4">
           <h2 className="text-center mb-4">Iniciar Sesión</h2>
           <form onSubmit={handleSubmit}>
+            {/* ... (inputs de email y password, sin cambios) ... */}
             <div className="mb-3">
               <label htmlFor="email" className="form-label">Correo Electrónico</label>
               <input
@@ -124,6 +154,20 @@ function LoginPage() {
           <p className="mt-3 text-center">
             ¿No tienes una cuenta? <Link to="/register">Crea una aquí</Link>
           </p>
+
+          {/* --- AQUÍ VA EL BOTÓN DE GOOGLE --- */}
+          <div className="text-center">
+            <hr />
+            <p className="mb-3">O inicia sesión con</p>
+            <div className="d-flex justify-content-center">
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+                useOneTap // Intenta el login automático si ya está logueado en Google
+              />
+            </div>
+          </div>
+          {/* --- FIN DEL BOTÓN DE GOOGLE --- */}
           
         </div>
       </div>
