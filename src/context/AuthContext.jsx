@@ -27,7 +27,8 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const res = await apiClient.post('/usuarios/login', {
+      // --- MODIFICADO ---
+      const res = await apiClient.post('/auth/login', {
         email,
         password,
       });
@@ -45,7 +46,8 @@ export const AuthProvider = ({ children }) => {
   
   const register = async (nombre, email, password) => {
     try {
-      const res = await apiClient.post('/usuarios/register', {
+      // --- MODIFICADO ---
+      const res = await apiClient.post('/auth/register', {
         nombre,
         email,
         password,
