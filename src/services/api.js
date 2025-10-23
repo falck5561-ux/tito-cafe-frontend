@@ -1,4 +1,4 @@
-// Archivo: src/services/api.js (Versión Corregida Definitiva)
+// Archivo: src/services/api.js (Versión FINAL con 'crearPedidoAPI' y 'Authorization')
 
 import axios from 'axios';
 
@@ -26,11 +26,10 @@ apiClient.interceptors.request.use(
     // --- AÑADIMOS EL ID DE LA TIENDA ---
     config.headers['x-tienda-id'] = TIENDA_ID;
 
-    // --- AÑADIMOS EL TOKEN (Regresamos a 'x-auth-token') ---
+    // --- AÑADIMOS EL TOKEN (CON 'Authorization' - El correcto) ---
     const token = localStorage.getItem('token');
     if (token) {
-      // Usamos 'x-auth-token' que es lo que tu authMiddleware espera
-      config.headers['x-auth-token'] = token; 
+      config.headers['Authorization'] = `Bearer ${token}`; 
     }
     
     return config; 
@@ -41,7 +40,7 @@ apiClient.interceptors.request.use(
 );
 
 // =======================================================
-// ▼▼▼ ¡AÑADIMOS DE VUELTA LA FUNCIÓN QUE FALTABA! ▼▼▼
+// ▼▼▼ ¡LA FUNCIÓN QUE ARREGLÓ EL ERROR DE PÁGINA BLANCA! ▼▼▼
 // =======================================================
 export const crearPedidoAPI = async (datosPedido) => {
   const { data } = await apiClient.post('/pedidos', datosPedido);
