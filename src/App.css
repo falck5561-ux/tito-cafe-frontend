@@ -230,22 +230,20 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
 
 
 /* ========================================================== */
-/* === ¡NUEVO v5! ESTILOS PARA HERO COMO EN LA IMAGEN DESEADA === */
+/* === ¡NUEVO v6! ESTILOS PARA HERO - SIN FONDO, LOGO GRANDE === */
 /* ========================================================== */
 .hero-section {
   position: relative; /* ¡MUY IMPORTANTE! Padre para elementos absolutos */
   width: 100%;
   /* === ¡CLAVE! Define la altura deseada (hasta la línea roja) === */
-  /* Usa VH para altura relativa o PX para fija. AJUSTA ESTE VALOR */
-  height: 60vh; /* <<--- PRUEBA CON 60% de la altura de pantalla. AJUSTA (ej: 55vh, 65vh, 450px) */
+  height: 60vh; /* <<--- AJUSTA ESTE VALOR (ej: 55vh, 65vh, 450px) */
 
   /* --- ¡IMPORTANTE! Reemplaza con la ruta correcta a tu imagen de fondo --- */
-  background-image: url('/parallax-erizos.jpg'); /* ¡CAMBIA ESTO! (ej: /public/mi-fondo.jpg o importa la imagen) */
+  background-image: url('/parallax-erizos.jpg'); /* ¡CAMBIA ESTO! */
   background-size: cover;      /* Cubre sin distorsión */
   background-position: center center; /* Centra */
   background-repeat: no-repeat;
   overflow: hidden; /* Evita desbordes */
-  /* Quitamos display:flex, ya que posicionaremos con 'absolute' */
 }
 
 /* Capa oscura opcional sobre el fondo */
@@ -253,64 +251,61 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
   content: "";
   position: absolute;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.35); /* Capa oscura - AJUSTA OPACIDAD (0.35 = 35%) */
+  background-color: rgba(0, 0, 0, 0.35); /* Capa oscura - AJUSTA OPACIDAD */
   z-index: 1;
 }
 
 /* Contenedor del logo del erizo (POSICIONADO ABSOLUTO) */
 .hero-hedgehog-logo-container {
-  position: absolute; /* Posicionado relativo a .hero-section */
+  position: absolute;
   /* === ¡CLAVE! Ajusta 'top' para centrarlo DEBAJO de la navbar === */
-  /* 50% lo centra verticalmente DENTRO del hero. Ajusta si es necesario */
-  top: 48%;           /* <<--- Puedes probar valores como 45%, 55% si 50% no es exacto */
-  left: 50%;          /* Centrado horizontalmente */
-  transform: translate(-50%, -50%); /* Ajuste final para centrado perfecto */
-  z-index: 2;         /* Encima de la capa oscura ::before */
+  top: 50%;           /* <<--- AJUSTA ESTE % (Ligeramente arriba del centro) */
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
 
-  width: 210px;      /* <<--- TAMAÑO MÁS GRANDE */
-  height: 210px;     /* <<--- TAMAÑO MÁS GRANDE */
-  border-radius: 50%;
-  /* === ¡CAMBIO! Fondo semi-transparente para integrar === */
-  background-color: rgba(253, 250, 246, 0.9); /* Crema semi-transparente (ajusta opacidad 0.9) */
-  /* background-color: transparent; */ /* Opción 2: Completamente transparente */
+  /* === ¡CAMBIO CLAVE! Quitamos fondo y borde === */
+  background-color: transparent; /* SIN FONDO */
+  border: none;                  /* SIN BORDE */
+  box-shadow: none;              /* SIN SOMBRA EN EL CONTENEDOR */
+
+  /* === ¡CAMBIO CLAVE! Aumentamos tamaño del contenedor para dar espacio al logo === */
+  width: 280px;      /* <<--- AJUSTA ESTE TAMAÑO (Más grande) */
+  height: 280px;     /* <<--- AJUSTA ESTE TAMAÑO (Igual al ancho) */
+  /* El contenedor sigue siendo cuadrado/circular conceptualmente para posicionar */
 
   display: flex;
   justify-content: center;
   align-items: center;
-  overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); /* Sombra más pronunciada */
-
-  /* --- Efecto Hover --- */
-  border: 5px solid transparent; /* Borde inicial transparente */
-  transition: border-color 0.3s ease, box-shadow 0.3s ease; /* Transición suave */
+  overflow: visible; /* Permitimos que la imagen se vea aunque el contenedor sea conceptual */
 }
 
 /* Imagen del erizo DENTRO del contenedor */
 .hero-hedgehog-logo-container img {
-  max-width: 75%;  /* <<--- AJUSTA ESTE % (Quizás necesites 80% o más) */
-  max-height: 75%; /* <<--- AJUSTA ESTE % */
-  object-fit: contain; /* Escala sin distorsión */
+  /* === ¡CAMBIO CLAVE! Hacemos la imagen más grande === */
+  max-width: 100%; /* Permitimos que ocupe todo el contenedor */
+  max-height: 100%;/* Permitimos que ocupe todo el contenedor */
+  object-fit: contain;
   width: auto;
   height: auto;
+  /* Añadimos una sombra sutil directamente a la imagen si es PNG/SVG transparente */
+  /* filter: drop-shadow(0 5px 15px rgba(0, 0, 0, 0.3)); */ /* Descomenta si tu logo tiene fondo transparente */
 }
 
-/* --- Efecto Hover --- */
-.hero-hedgehog-logo-container:hover {
-  border-color: var(--cafe-medium); /* Cambia color del borde al pasar el cursor */
-  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.3); /* Sombra un poco más intensa en hover */
-}
+/* Quitamos el hover del contenedor ya que no tiene borde/fondo visible */
+
 
 /* Contenedor del TEXTO (POSICIONADO ABSOLUTO EN LA PARTE INFERIOR) */
 .hero-text-content {
-  position: absolute; /* Posicionado relativo a .hero-section */
+  position: absolute;
   /* === ¡CLAVE! Ajusta 'bottom' para que NO tape el logo === */
   bottom: 10%;        /* <<--- AJUSTA ESTE % (Más abajo, ej: 8%, 12%) */
-  left: 0;           /* Ocupa todo el ancho */
+  left: 0;
   right: 0;
-  z-index: 3;        /* Asegura que esté sobre el logo si hay superposición accidental */
-  padding: 1rem 1.5rem; /* Espaciado interno */
-  text-align: center; /* Centra el texto */
-  color: white;       /* Color del texto */
+  z-index: 3; /* Asegura que esté sobre el logo si hay superposición accidental */
+  padding: 1rem 1.5rem;
+  text-align: center;
+  color: white;
   text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.9); /* Sombra MÁS fuerte para legibilidad */
 }
 
@@ -322,10 +317,10 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
 
 .hero-subtitle {
   font-size: 1.05rem; /* <<--- AJUSTA TAMAÑO */
-  max-width: 550px; /* Limita ancho */
-  margin: 0 auto;   /* Centra */
+  max-width: 550px;
+  margin: 0 auto;
   line-height: 1.5;
-  opacity: 0.95; /* Casi opaco */
+  opacity: 0.95;
 }
 
 /* Botón "Haz tu Pedido" */

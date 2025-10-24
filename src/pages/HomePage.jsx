@@ -1,5 +1,6 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+// --- Añadido: Importa useNavigate ---
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useMenuData } from '../hooks/useMenuData';
 import ProductCard from '../components/ProductCard';
@@ -9,6 +10,7 @@ import { useCart } from '../context/CartContext';
 function HomePage() {
   const { productos, loading, error } = useMenuData();
   const { agregarProductoAPedido } = useCart();
+  const navigate = useNavigate(); // <-- Hook de navegación
 
   const [showDetailModal, setShowDetailModal] = React.useState(false);
   const [selectedProduct, setSelectedProduct] = React.useState(null);
@@ -26,8 +28,8 @@ function HomePage() {
   const handleAddToCartAndNavigate = (product) => {
     agregarProductoAPedido(product);
     handleCloseDetails();
-    // Considera usar navigate('/hacer-un-pedido') si importas useNavigate
-    window.location.href = '/hacer-un-pedido';
+    // --- Mejorado: Usa navigate ---
+    navigate('/hacer-un-pedido');
   };
 
   return (
@@ -36,9 +38,9 @@ function HomePage() {
       <section className="hero-section">
         <div className="hero-hedgehog-logo-container">
           <motion.img
-            // --- ¡VERIFICA ESTA RUTA! ¿Es '/icon.png', '/logo-inicio.png' o '/tito-icon.png'? ---
-            src="/icon.png"
-            alt="Tito Café Logo"
+            // --- ¡RUTA CORREGIDA! ---
+            src="/icon.png" // <-- Asume que este es tu logo principal en /public
+            alt="Tito Café Logo Erizo"
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.6 }}
@@ -53,7 +55,7 @@ function HomePage() {
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.3 }}
           >
-            TITO CAFETERÍA {/* O "El Sabor de la Tradición..." si prefieres */}
+            TITO CAFETERÍA {/* O "El Sabor de la Tradición..." */}
           </motion.h1>
           <motion.p
             className="hero-subtitle"
