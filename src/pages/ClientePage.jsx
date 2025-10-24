@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import toast from 'react-hot-toast';
+import React, { useState, useEffect, useCallback } from 'react';import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
@@ -175,8 +174,7 @@ function ClientePage() {
     setShowCartModal(false);
   };
 
-  const handleLocationSelect = async (location) => {
-    setDireccion(location);
+const handleLocationSelect = useCallback(async (location) => {    setDireccion(location);
     setCalculandoEnvio(true);
     setCostoEnvio(0);
     try {
@@ -189,7 +187,7 @@ function ClientePage() {
     } finally {
       setCalculandoEnvio(false);
     }
-  };
+  }, []); 
 
   const usarDireccionGuardada = () => {
     if (direccionGuardada) {
