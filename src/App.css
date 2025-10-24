@@ -62,7 +62,6 @@ body {
   color: var(--bs-body-color);
   transition: background-color 0.3s ease, color 0.3s ease;
   /* --- ¡REVISA LA ALTURA DE TU NAVBAR CON INSPECCIONAR Y AJUSTA ESTE VALOR! --- */
-  /* Este padding evita que el contenido quede *detrás* de la navbar fija */
   padding-top: 70px; /* Ajusta este valor EXACTAMENTE a la altura de tu .navbar */
 }
 
@@ -73,7 +72,6 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
 
 .section-padding {
   padding: 4rem 1.5rem;
-  /* animation: fadeUp 0.8s ease;  Puedes descomentar si quieres la animación */
 }
 
 /* =============================== */
@@ -125,24 +123,24 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
 /* Asegúrate de añadir la clase 'navbar-dark' a tu <nav> en Navbar.jsx para el icono blanco */
 
 
-/* --- OFFCANVAS (Menú Lateral Móvil - CORREGIDO) --- */
+/* --- OFFCANVAS (Menú Lateral Móvil - CORREGIDO v2) --- */
 .offcanvas {
   background-color: var(--bs-card-bg) !important; /* Fondo adaptable */
   color: var(--bs-body-color);
   border-left: 1px solid var(--bs-border-color);
   width: 100%;
   max-width: 300px;
-  height: 100vh; /* Ocupa toda la altura */
+  /* ¡CLAVE! Asegura altura completa y permite scroll interno */
+  height: 100vh;
   display: flex;
   flex-direction: column;
-  /* Añadido: Evita que el contenido interno desborde el offcanvas */
-  overflow: hidden;
+  /* Quitamos overflow: hidden para permitir scroll del body */
 }
 
 .offcanvas-header {
   border-bottom: 1px solid var(--bs-border-color);
   padding: 1.25rem;
-  flex-shrink: 0; /* Evita que el header se encoja */
+  flex-shrink: 0;
 }
 
 .offcanvas-title {
@@ -154,16 +152,16 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
 .offcanvas-body {
   display: flex;
   flex-direction: column;
-  padding: 0; /* Quitamos padding aquí */
-  flex-grow: 1; /* Ocupa el espacio vertical disponible */
-  /* ¡CLAVE! Hacemos que el body permita scroll si es necesario */
+  padding: 0; /* Quitamos padding del body */
+  flex-grow: 1; /* Ocupa el espacio */
+  /* ¡CLAVE! Hacemos que el body sea scrollable */
   overflow-y: auto;
 }
 
 /* Lista de enlaces en offcanvas */
 .offcanvas-body .navbar-nav {
   padding: 0.5rem 0; /* Padding vertical */
-  /* Quitamos flex-grow:1 de aquí, el body ya lo controla */
+  /* Quitamos flex-grow y overflow, el body lo maneja */
 }
 
 .offcanvas-body .nav-link {
@@ -176,7 +174,6 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
   border-bottom: 1px solid var(--bs-border-color);
   transition: all 0.2s ease;
 }
-/* Mantenemos el último sin borde */
 .offcanvas-body .nav-item:last-of-type .nav-link {
   border-bottom: none;
 }
@@ -186,9 +183,9 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
   color: var(--cafe-medium) !important;
   background-color: var(--bs-tertiary-bg);
 }
-/* ¡CORRECCIÓN CONTRASTE MODO OSCURO! */
+/* Contraste Modo Oscuro */
 [data-bs-theme="dark"] .offcanvas-body .nav-link {
-   color: var(--texto-principal) !important; /* Asegura texto claro en oscuro */
+   color: var(--texto-principal) !important;
 }
 [data-bs-theme="dark"] .offcanvas-body .nav-link:hover,
 [data-bs-theme="dark"] .offcanvas-body .nav-link.active {
@@ -196,45 +193,50 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
    background-color: var(--bs-tertiary-bg);
 }
 
-
 /* Footer del offcanvas (botones tema/login - CORREGIDO) */
 .offcanvas-footer {
   border-top: 1px solid var(--bs-border-color);
   padding: 1rem 1.25rem;
   background-color: var(--bs-body-bg);
-  /* Quitamos mt-auto, el body con overflow-y lo posiciona */
-  flex-shrink: 0; /* Evita que se encoja */
+  /* Quitamos mt-auto, el body scrollable lo posiciona */
+  flex-shrink: 0; /* No se encoge */
 }
-/* Estilos para UserControls dentro del footer (flexbox) */
 .offcanvas-footer .d-flex {
   justify-content: space-between;
   align-items: center;
   width: 100%;
 }
 .offcanvas-footer .btn {
-  margin-left: 1rem; /* Espacio entre botones */
-  /* ¡CORRECCIÓN CONTRASTE! Asegura visibilidad en modo claro */
-  color: var(--texto-secundario);
-  border-color: var(--cafe-light);
+  margin-left: 1rem;
+  /* ¡CORRECCIÓN CONTRASTE CLARO! */
+  color: var(--texto-secundario); /* Texto más oscuro */
+  border-color: var(--cafe-light); /* Borde claro */
 }
-.offcanvas-footer .btn-danger { /* Específico para logout */
+.offcanvas-footer .btn-danger {
     color: #dc3545;
     border-color: #dc3545;
 }
 .offcanvas-footer .btn:hover {
     background-color: var(--bs-tertiary-bg);
+    color: var(--texto-principal); /* Oscurece texto en hover */
 }
+/* Contraste Oscuro */
 [data-bs-theme="dark"] .offcanvas-footer .btn {
-   color: var(--texto-secundario); /* Mantiene color en oscuro */
+   color: var(--texto-secundario);
    border-color: var(--bs-border-color);
 }
 [data-bs-theme="dark"] .offcanvas-footer .btn-danger {
-   color: #f88; /* Rojo claro en oscuro */
+   color: #f88;
    border-color: #f88;
 }
+[data-bs-theme="dark"] .offcanvas-footer .btn:hover {
+   background-color: var(--bs-tertiary-bg);
+   color: var(--texto-principal);
+}
+
 
 /* ========================================================== */
-/* === ESTILOS PARA LA SECCIÓN HERO INICIAL CORREGIDA === */
+/* === ESTILOS PARA LA SECCIÓN HERO INICIAL CORREGIDA v2 === */
 /* ========================================================== */
 .hero-section {
   position: relative;
@@ -245,14 +247,15 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
   background-repeat: no-repeat;
 
   /* === ¡CLAVE! Ajusta la altura deseada (hasta la línea roja) === */
-  height: 55vh; /* <<--- Usa VH para altura relativa a pantalla, AJUSTA ESTE VALOR (ej: 50vh, 60vh) */
-                /* O usa px si prefieres altura fija: height: 400px; */
+  /* Usa VH para altura relativa a pantalla, o PX para fija */
+  height: 60vh; /* <<--- AJUSTA ESTE VALOR (ej: 50vh, 70vh, 450px) */
 
   width: 100%;
-  overflow: hidden;
-  display: flex; /* Añadido para centrar el contenedor del logo si es relative */
+  display: flex; /* Para centrar el contenedor del logo */
   justify-content: center;
   align-items: center;
+  overflow: hidden;
+  /* Quitamos el margin-top negativo, el padding-top del body ya lo compensa */
 }
 
 /* Capa oscura opcional */
@@ -260,13 +263,13 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
   content: "";
   position: absolute;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.2); /* Capa oscura más sutil */
+  background-color: rgba(0, 0, 0, 0.25); /* Capa oscura sutil */
   z-index: 1;
 }
 
-/* Contenedor del logo del erizo (POSICIONADO RELATIVO para centrar con flex) */
+/* Contenedor del logo del erizo (POSICIONADO RELATIVO) */
 .hero-hedgehog-logo-container {
-  position: relative; /* ¡CAMBIO! Relativo para que flex lo centre */
+  position: relative; /* Centrado por flex */
   z-index: 2;
   width: 180px;      /* <<--- AJUSTA ESTE TAMAÑO */
   height: 180px;     /* <<--- AJUSTA ESTE TAMAÑO */
@@ -277,7 +280,6 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
   align-items: center;
   overflow: hidden;
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
-  /* Quitamos posicionamiento absoluto */
 }
 
 /* Imagen del erizo */
@@ -312,7 +314,6 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
   margin: 0 auto;
   line-height: 1.6;
 }
-
 
 /* ======================= */
 /* === TARJETAS === */
@@ -516,7 +517,7 @@ footer a:hover {
 
 /* --- ESTILOS PARA EL ICONO (MÁS ESPECÍFICO) --- */
 .recompensas-caja-vacia img.recompensas-icono {
-  width: 70px; /* Tamaño ajustado */
+  width: 70px;         /* <<<--- TAMAÑO AJUSTADO */
   max-width: 100%;
   height: auto;
   opacity: 0.7;
