@@ -61,7 +61,8 @@ body {
   background-color: var(--bs-body-bg);
   color: var(--bs-body-color);
   transition: background-color 0.3s ease, color 0.3s ease;
-  padding-top: 80px; /* Ajustado para la nueva navbar */
+  /* --- ¡REVISA ESTE VALOR CON INSPECCIONAR ELEMENTO! --- */
+  padding-top: 70px; /* Ajusta según la altura real de tu navbar */
 }
 
 h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title {
@@ -88,6 +89,7 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title {
 
 .navbar-brand img { /* Estilo para el logo imagen */
   max-height: 40px; /* Asegura que no sea demasiado alto */
+  height: auto; /* Mantiene proporción */
 }
 
 .navbar.navbar-light-theme .nav-link {
@@ -251,7 +253,6 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title {
 /* ======================= */
 /* === PRECIOS === */
 /* ======================= */
-/* (Los estilos de Miss Donitas para precios original/descuento son buenos, los mantenemos) */
 .precio-original {
   text-decoration: line-through;
   color: #9E9E9E; /* Gris estándar */
@@ -303,7 +304,6 @@ footer a:hover {
 /* === BOTÓN FLOTANTE === */
 /* ======================= */
 .boton-carrito-flotante {
-  /* (Los estilos de Miss Donitas son buenos, los mantenemos usando variables de Tito) */
   position: fixed;
   z-index: 1000;
   bottom: 20px;
@@ -343,7 +343,6 @@ footer a:hover {
 /* ===================================== */
 /* === SUB-NAVEGACIÓN PÁGINA (Tabs) === */
 /* ===================================== */
-/* (Los estilos de Miss Donitas son buenos, adaptamos colores) */
 .nav-tabs {
   border-bottom: 1px solid var(--bs-border-color);
 }
