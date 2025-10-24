@@ -130,11 +130,10 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
   border-left: 1px solid var(--bs-border-color);
   width: 100%;
   max-width: 300px;
-  /* ¡CLAVE! Asegura altura completa y permite scroll interno */
-  height: 100vh;
+  height: 100vh; /* Ocupa toda la altura */
   display: flex;
   flex-direction: column;
-  /* Quitamos overflow: hidden para permitir scroll del body */
+  overflow: hidden; /* Evita que el offcanvas tenga su propio scroll */
 }
 
 .offcanvas-header {
@@ -152,21 +151,18 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
 .offcanvas-body {
   display: flex;
   flex-direction: column;
-  padding: 0; /* Quitamos padding del body */
+  padding: 0;
   flex-grow: 1; /* Ocupa el espacio */
-  /* ¡CLAVE! Hacemos que el body sea scrollable */
-  overflow-y: auto;
+  overflow-y: auto; /* Permite scroll interno si es necesario */
 }
 
 /* Lista de enlaces en offcanvas */
 .offcanvas-body .navbar-nav {
-  padding: 0.5rem 0; /* Padding vertical */
-  /* Quitamos flex-grow y overflow, el body lo maneja */
+  padding: 0.5rem 0;
 }
 
 .offcanvas-body .nav-link {
   font-size: 1.2rem !important;
-  /* ¡CORRECCIÓN CONTRASTE! Usa texto principal en modo claro */
   color: var(--texto-principal) !important;
   text-align: left;
   font-weight: 500;
@@ -198,7 +194,6 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
   border-top: 1px solid var(--bs-border-color);
   padding: 1rem 1.25rem;
   background-color: var(--bs-body-bg);
-  /* Quitamos mt-auto, el body scrollable lo posiciona */
   flex-shrink: 0; /* No se encoge */
 }
 .offcanvas-footer .d-flex {
@@ -208,9 +203,8 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
 }
 .offcanvas-footer .btn {
   margin-left: 1rem;
-  /* ¡CORRECCIÓN CONTRASTE CLARO! */
-  color: var(--texto-secundario); /* Texto más oscuro */
-  border-color: var(--cafe-light); /* Borde claro */
+  color: var(--texto-secundario);
+  border-color: var(--cafe-light);
 }
 .offcanvas-footer .btn-danger {
     color: #dc3545;
@@ -218,7 +212,7 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
 }
 .offcanvas-footer .btn:hover {
     background-color: var(--bs-tertiary-bg);
-    color: var(--texto-principal); /* Oscurece texto en hover */
+    color: var(--texto-principal);
 }
 /* Contraste Oscuro */
 [data-bs-theme="dark"] .offcanvas-footer .btn {
@@ -236,7 +230,7 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
 
 
 /* ========================================================== */
-/* === ESTILOS PARA LA SECCIÓN HERO INICIAL CORREGIDA v2 === */
+/* === ESTILOS PARA LA SECCIÓN HERO INICIAL CORREGIDA v3 === */
 /* ========================================================== */
 .hero-section {
   position: relative;
@@ -247,15 +241,11 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
   background-repeat: no-repeat;
 
   /* === ¡CLAVE! Ajusta la altura deseada (hasta la línea roja) === */
-  /* Usa VH para altura relativa a pantalla, o PX para fija */
   height: 60vh; /* <<--- AJUSTA ESTE VALOR (ej: 50vh, 70vh, 450px) */
 
   width: 100%;
-  display: flex; /* Para centrar el contenedor del logo */
-  justify-content: center;
-  align-items: center;
   overflow: hidden;
-  /* Quitamos el margin-top negativo, el padding-top del body ya lo compensa */
+  /* Quitamos display: flex para usar posicionamiento absoluto */
 }
 
 /* Capa oscura opcional */
@@ -263,23 +253,28 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
   content: "";
   position: absolute;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.25); /* Capa oscura sutil */
+  background-color: rgba(0, 0, 0, 0.3); /* Capa oscura - AJUSTA OPACIDAD */
   z-index: 1;
 }
 
-/* Contenedor del logo del erizo (POSICIONADO RELATIVO) */
+/* Contenedor del logo del erizo (POSICIONADO ABSOLUTO) */
 .hero-hedgehog-logo-container {
-  position: relative; /* Centrado por flex */
+  position: absolute;
+  /* === ¡CLAVE! Ajusta 'top' para centrarlo DEBAJO de la navbar === */
+  top: 50%; /* <<--- AJUSTA ESTE % (ej. 45%, 55%) */
+  left: 50%;
+  transform: translate(-50%, -50%);
   z-index: 2;
-  width: 180px;      /* <<--- AJUSTA ESTE TAMAÑO */
-  height: 180px;     /* <<--- AJUSTA ESTE TAMAÑO */
+
+  width: 170px;      /* <<--- AJUSTA ESTE TAMAÑO */
+  height: 170px;     /* <<--- AJUSTA ESTE TAMAÑO (Igual al ancho) */
   border-radius: 50%;
   background-color: var(--crema);
   display: flex;
   justify-content: center;
   align-items: center;
   overflow: hidden;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25); /* Sombra un poco más intensa */
 }
 
 /* Imagen del erizo */
@@ -291,69 +286,62 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
   height: auto;
 }
 
-/* ========================================================== */
-/* === ESTILOS PARA LA SECCIÓN DE TEXTO DEBAJO DEL HERO === */
-/* ========================================================== */
-.intro-text-section {
+/* Contenedor del TEXTO (POSICIONADO ABSOLUTO EN LA PARTE INFERIOR) */
+.hero-text-content {
+  position: absolute;
+  /* === ¡CLAVE! Ajusta 'bottom' para la posición del texto === */
+  bottom: 10%;        /* <<--- AJUSTA ESTE % (ej: 5%, 15%) */
+  left: 0;
+  right: 0;
+  z-index: 2;
+  padding: 1rem 1.5rem;
   text-align: center;
-  padding: 3rem 1rem;
-  background-color: var(--bs-body-bg);
+  color: white;
+  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.8); /* Sombra más fuerte */
 }
 
-.intro-text-section h1 {
-  font-size: 2.5rem;
+.hero-title {
+  font-size: 2.5rem; /* <<--- AJUSTA TAMAÑO */
   font-weight: 800;
-  color: var(--texto-principal);
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
 }
 
-.intro-text-section p {
-  font-size: 1.1rem;
-  color: var(--texto-secundario);
-  max-width: 600px;
+.hero-subtitle {
+  font-size: 1.05rem; /* <<--- AJUSTA TAMAÑO */
+  max-width: 550px;
   margin: 0 auto;
   line-height: 1.6;
+  opacity: 0.95; /* Casi opaco */
 }
+
+/* Botón "Haz tu Pedido" */
+.hero-text-content .btn-primary {
+  margin-top: 1.5rem;
+  /* Sobrescribimos estilos si es necesario */
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  box-shadow: 0 4px 15px rgba(0,0,0, 0.2);
+}
+.hero-text-content .btn-primary:hover {
+   background-color: var(--cafe-dark);
+   border-color: var(--cafe-dark);
+}
+[data-bs-theme="dark"] .hero-text-content .btn-primary {
+   background-color: var(--primary-color);
+   border-color: var(--primary-color);
+}
+[data-bs-theme="dark"] .hero-text-content .btn-primary:hover {
+   background-color: var(--cafe-dark);
+   border-color: var(--cafe-dark);
+}
+
 
 /* ======================= */
 /* === TARJETAS === */
 /* ======================= */
-.card {
-  background-color: var(--bs-card-bg);
-  border: 1px solid var(--bs-border-color);
-  border-radius: 12px;
-  overflow: hidden;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-}
+/* ... (El resto de los estilos: Tarjetas, Precios, Footer, Botón Flotante, Tabs, Recompensas, Login, Otros, Pantalla Carga ... se mantienen igual que en la respuesta anterior) ... */
+/* Asegúrate de copiar TODO desde la sección === TARJETAS === hasta el final del archivo de la respuesta anterior */
 
-.card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.1);
-}
-
-.card.en-oferta {
-  border: 2px solid var(--cafe-medium);
-}
-
-/* --- Etiqueta de Descuento --- */
-.discount-badge {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background-color: var(--cafe-medium);
-  color: white;
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.8em;
-  font-weight: 700;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-  z-index: 2;
-}
 
 /* ======================= */
 /* === PRECIOS === */
@@ -517,7 +505,7 @@ footer a:hover {
 
 /* --- ESTILOS PARA EL ICONO (MÁS ESPECÍFICO) --- */
 .recompensas-caja-vacia img.recompensas-icono {
-  width: 70px;         /* <<<--- TAMAÑO AJUSTADO */
+  width: 70px; /* Tamaño ajustado */
   max-width: 100%;
   height: auto;
   opacity: 0.7;
