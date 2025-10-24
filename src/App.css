@@ -276,54 +276,47 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
   transform: translate(-50%, -50%);
   z-index: 2;
 
-  /* --- ¡MODIFICACIÓN 2! (Hover de borde) --- */
+  /* --- ¡MODIFICACIÓN AQUÍ! Eliminamos el borde del contenedor --- */
   background-color: transparent; /* SIN FONDO */
-  border-radius: 50%; /* Mantenemos forma circular */
+  border-radius: 50%;            /* Mantenemos forma circular */
+  border: none; /* ¡QUITADO! El borde ahora va en la imagen */
+  transition: none; /* ¡QUITADO! La transición ahora va en la imagen */
   
-  /* Borde inicial transparente */
-  border: 4px solid transparent; /* <<--- AJUSTA GROSOR (ej. 3px, 5px) */
-  
-  /* Transición SÓLO para el borde */
-  transition: border-color 0.3s ease; 
-  
-  /* --- ¡MODIFICACIÓN 3! (Icono más grande) --- */
-  width: 250px; /* <<--- AJUSTADO (Era 230px) */
-  height: 250px; /* <<--- AJUSTADO (Era 230px) */
+  /* --- Tamaño del CONTENEDOR (era 250px) para envolver la imagen --- */
+  /* Lo hago un poco más grande para que la sombra de la imagen no se corte */
+  width: 270px;  /* Ajustado un poco más grande para la sombra de la imagen */
+  height: 270px; /* Ajustado un poco más grande para la sombra de la imagen */
 
   display: flex;
   justify-content: center;
   align-items: center;
-  overflow: visible; /* Permitimos que la imagen se vea */
+  overflow: visible; /* Permitimos que la imagen y su sombra se vean */
   cursor: pointer; /* Indica que es interactivo */
-  box-shadow: none; /* Quitamos sombra del contenedor si la tuviera */
+  box-shadow: none;  /* Quitamos sombra del contenedor si la tuviera */
 }
 
 /* Imagen del erizo DENTRO del contenedor */
 .hero-hedgehog-logo-container img {
-  /* --- ¡MODIFICACIÓN 3! (Icono más grande) --- */
-  max-width: 100%; /* <<--- AJUSTADO (Era 90%) */
-  max-height: 100%;/* <<--- AJUSTADO (Era 90%) */
+  /* --- ¡MODIFICACIÓN AQUÍ! Tamaño de la IMAGEN --- */
+  width: 200px;  /* <<--- TAMAÑO DEL ÍCONO, AJÚSTALO A TU GUSTO */
+  height: 200px; /* <<--- TAMAÑO DEL ÍCONO, DEBE SER IGUAL AL ANCHO */
   object-fit: contain;
-  width: auto;
-  height: auto;
   border-radius: 50%; 
 
-  /* --- ¡MODIFICACIÓN 2! (Hover de borde) --- */
-  /* Quitamos el borde de la imagen, el borde ahora está en el CONTENEDOR */
-  border: none; 
+  /* --- ¡MODIFICACIÓN AQUÍ! Borde inicial de la IMAGEN --- */
+  border: 4px solid rgba(255, 255, 255, 0.15); /* Borde blanco muy sutil al inicio */
   
-  /* Mantenemos la sombra para profundidad */
+  /* Sombra para darle profundidad */
   box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2); 
-  transition: box-shadow 0.3s ease; /* Solo transicionamos la sombra */
+  
+  /* Transición suave para el borde y la sombra de la IMAGEN */
+  transition: border-color 0.3s ease, box-shadow 0.3s ease; 
 }
 
-/* --- ¡MODIFICACIÓN 2! Efecto Hover (Borde Café en el CONTENEDOR) --- */
-.hero-hedgehog-logo-container:hover {
-  border-color: var(--cafe-medium); /* Borde café al pasar el cursor */
-}
-
-/* Opcional: intensificar la sombra de la imagen al hacer hover en el contenedor */
+/* --- ¡MODIFICACIÓN AQUÍ! Efecto Hover (Borde Café y Sombra en la IMAGEN) --- */
+/* Cuando el cursor pasa por el CONTENEDOR, cambia la IMAGEN DENTRO */
 .hero-hedgehog-logo-container:hover img {
+  border-color: var(--cafe-medium); /* Borde café al pasar el cursor */
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3); /* Sombra un poco más intensa */
 }
 
