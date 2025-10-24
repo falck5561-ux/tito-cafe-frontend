@@ -155,11 +155,12 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title {
   flex-direction: column;
   padding: 0; /* Quitamos padding para que los enlaces ocupen todo */
   flex-grow: 1; /* Ocupa el espacio disponible */
+  overflow: hidden; /* Evita doble scrollbar */
 }
 
 /* Lista de enlaces en offcanvas */
 .offcanvas-body .navbar-nav {
-  padding-top: 0.5rem;
+  padding: 0.5rem 0; /* Padding vertical en la lista */
   flex-grow: 1; /* Permite que la lista crezca */
   overflow-y: auto; /* AÑADIDO: Permite scroll si hay muchos enlaces */
 }
@@ -189,6 +190,7 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title {
   padding: 1rem 1.25rem;
   background-color: var(--bs-body-bg); /* Fondo base */
   margin-top: auto; /* Se pega abajo */
+  flex-shrink: 0; /* Evita que el footer se encoja */
 }
 /* Estilos para UserControls dentro del footer (flexbox) */
 .offcanvas-footer .d-flex {
@@ -199,11 +201,6 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title {
 .offcanvas-footer .btn {
   margin-left: 1rem; /* Espacio entre botones */
 }
-/* Botón específico para cerrar sesión en offcanvas */
-.offcanvas-logout-btn {
-  /* Puedes darle estilos específicos si quieres, o usar btn-danger como abajo */
-}
-
 
 /* ============================ */
 /* === SECCIÓN HERO (Opcional) === */
@@ -392,7 +389,7 @@ footer a:hover {
 }
 
 /* =============================================================== */
-/* === ESTILOS "AÚN NO TIENES RECOMPENSAS" (CAJA - ¡CORREGIDO!) === */
+/* === ESTILOS "AÚN NO TIENES RECOMPENSAS" (CAJA - ¡CORREGIDO v3!) === */
 /* =============================================================== */
 .recompensas-container {
   display: flex;
@@ -404,36 +401,41 @@ footer a:hover {
 
 .recompensas-caja-vacia {
   text-align: center;
-  padding: 2rem 1.5rem; /* Ajuste padding */
+  padding: 2rem 1.5rem;
   border: 1px solid var(--bs-border-color);
   border-radius: 15px;
-  max-width: 450px; /* Un poco más ancho */
+  max-width: 450px;
   background-color: var(--bs-card-bg);
   box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+  /* Añadido: Asegura que el contenido se alinee bien */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-/* --- ESTILOS PARA EL ICONO (AJUSTA EL TAMAÑO SI ES NECESARIO) --- */
-.recompensas-icono {
-  width: 80px;   /* <<<--- AJUSTA ESTE TAMAÑO (ej: 100px, 120px) */
+/* --- ESTILOS PARA EL ICONO (MÁS ESPECÍFICO) --- */
+.recompensas-caja-vacia img.recompensas-icono {
+  width: 100px;         /* <<<--- AJUSTA ESTE TAMAÑO (ej: 80px, 120px) */
+  max-width: 100%;      /* Asegura que no se desborde si la caja es muy pequeña */
   height: auto;
-  margin-bottom: 1.25rem; /* Menos margen */
-  opacity: 0.6; /* Un poco más visible */
-  /* Quité el fondo circular, si lo quieres, descomenta abajo */
-  /* border-radius: 50%; */
-  /* padding: 10px; */
-  /* background-color: var(--primary-color-light); */
+  margin-bottom: 1.5rem; /* Aumentamos un poco el margen */
+  opacity: 0.7;         /* Un poco más visible */
+  object-fit: contain;  /* Asegura que la imagen completa se vea sin distorsión */
+  /* Si aún no funciona, DESCOMENTA la línea !important de abajo como último recurso */
+  /* width: 100px !important; */
 }
 
 .recompensas-caja-vacia h3 {
   font-family: 'Playfair Display', serif;
-  font-size: 1.6rem; /* Un poco más pequeño */
+  font-size: 1.6rem;
   font-weight: 700;
   color: var(--texto-principal);
   margin-bottom: 0.5rem;
+  margin-top: 0; /* Asegura que no haya margen extra arriba */
 }
 
 .recompensas-caja-vacia p {
-  font-size: 0.95rem; /* Un poco más pequeño */
+  font-size: 0.95rem;
   color: var(--texto-secundario);
   line-height: 1.5;
 }
