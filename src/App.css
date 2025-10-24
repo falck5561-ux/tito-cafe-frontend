@@ -61,11 +61,11 @@ body {
   background-color: var(--bs-body-bg);
   color: var(--bs-body-color);
   transition: background-color 0.3s ease, color 0.3s ease;
-  /* --- ¡REVISA ESTE VALOR CON INSPECCIONAR ELEMENTO! --- */
+  /* --- ¡REVISA LA ALTURA DE TU NAVBAR CON INSPECCIONAR Y AJUSTA ESTE VALOR! --- */
   padding-top: 70px; /* Ajusta según la altura real de tu navbar */
 }
 
-h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title {
+h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-title {
   font-family: 'Playfair Display', serif;
   letter-spacing: 0.5px;
 }
@@ -85,6 +85,7 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
   padding: 0.75rem 1rem; /* Ajustamos padding */
+  z-index: 1030; /* Asegura que esté por encima de otros elementos */
 }
 
 .navbar-brand img { /* Estilo para el logo imagen */
@@ -120,9 +121,7 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title {
   color: #FFFFFF !important; /* Texto blanco al pasar/activo */
 }
 
-/* CORRECCIÓN 1: Se eliminaron las reglas conflictivas para .navbar-toggler y .navbar-toggler-icon */
-/* Ahora se asume que usarás <nav className="navbar navbar-expand-lg navbar-dark ..."> en Navbar.jsx */
-/* O si prefieres mantener el fondo oscuro siempre, puedes añadir 'navbar-dark' a la etiqueta <nav> */
+/* Asegúrate de añadir la clase 'navbar-dark' a tu <nav> en Navbar.jsx para el icono blanco */
 
 
 /* --- OFFCANVAS (Menú Lateral Móvil) --- */
@@ -200,10 +199,83 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title {
   margin-left: 1rem; /* Espacio entre botones */
 }
 
-/* ============================ */
-/* === SECCIÓN HERO (Opcional) === */
-/* ============================ */
-/* Si tienes una sección Hero similar a Miss Donitas, puedes adaptar los estilos aquí */
+/* ========================================================== */
+/* === ESTILOS PARA LA SECCIÓN HERO INICIAL CORREGIDA === */
+/* ========================================================== */
+.hero-section {
+  position: relative; /* Necesario para posicionar el logo del erizo */
+  /* --- ¡IMPORTANTE! Reemplaza con la ruta correcta a tu imagen de fondo --- */
+  /* Puedes ponerla en /public o importarla en tu componente Home */
+  background-image: url('/parallax-erizos.jpg'); /* EJEMPLO - ¡CAMBIA ESTO! */
+  background-size: cover;      /* La imagen cubre el área sin distorsión */
+  background-position: center center; /* Centra la imagen mejor */
+  background-repeat: no-repeat; /* Evita que la imagen se repita */
+
+  /* === ¡CLAVE! Ajusta la altura de tu sección Hero === */
+  height: 450px; /* <<--- AJUSTA ESTA ALTURA (ej. 400px, 500px, 60vh) */
+
+  display: flex; /* Para centrar contenido */
+  justify-content: center;
+  align-items: center;
+  overflow: hidden; /* Asegura que nada se desborde */
+
+  color: white; /* O un color que contraste bien */
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6); /* Sombra más sutil */
+  text-align: center;
+}
+
+/* Capa oscura opcional sobre el fondo para mejorar contraste del texto/logo */
+.hero-section::before {
+  content: "";
+  position: absolute;
+  inset: 0; /* Cubre todo el div */
+  background-color: rgba(0, 0, 0, 0.3); /* Capa oscura semi-transparente */
+  z-index: 1; /* Detrás del contenido pero sobre el fondo */
+}
+
+
+/* Contenedor del logo del erizo DENTRO de la hero-section */
+.hero-hedgehog-logo-container {
+  position: relative; /* Cambiado a relativo para que flex lo centre */
+  z-index: 2; /* Encima de la capa oscura ::before */
+  width: 200px; /* <<--- AJUSTA ESTE TAMAÑO (Ancho del círculo) */
+  height: 200px; /* <<--- AJUSTA ESTE TAMAÑO (Alto del círculo) */
+  border-radius: 50%;
+  background-color: var(--crema); /* Fondo crema */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+}
+
+/* Imagen del erizo DENTRO del contenedor */
+.hero-hedgehog-logo-container img {
+  max-width: 75%; /* <<--- AJUSTA ESTE % (Qué tan grande es el erizo dentro del círculo) */
+  max-height: 75%;/* <<--- AJUSTA ESTE % */
+  object-fit: contain; /* Escala sin distorsión */
+  width: auto;
+  height: auto;
+}
+
+/* Estilos para el texto descriptivo si lo pones DENTRO de hero-section */
+/* Si el texto va FUERA (debajo) del hero, estos estilos no aplican */
+.hero-text-content {
+  position: relative; /* O absoluto si lo quieres superponer */
+  z-index: 2; /* Encima de la capa oscura */
+  margin-top: 1.5rem; /* Espacio si el logo está arriba */
+  padding: 0 1rem; /* Padding horizontal para texto */
+}
+.hero-title {
+  font-size: 2.8rem; /* Ajusta tamaño */
+  margin-bottom: 0.8rem;
+}
+.hero-subtitle {
+  font-size: 1.1rem; /* Ajusta tamaño */
+  max-width: 550px;
+  margin-left: auto;
+  margin-right: auto;
+}
 
 
 /* ======================= */
@@ -359,7 +431,6 @@ footer a:hover {
 }
 .nav-tabs .nav-link:hover,
 .nav-tabs .nav-link:focus {
-  /* CORRECCIÓN 2: Se eliminó el comentario mal ubicado */
   color: var(--cafe-medium);
   border-color: transparent;
   isolation: isolate;
@@ -371,7 +442,7 @@ footer a:hover {
   border-color: transparent;
   border-bottom: 3px solid var(--cafe-medium);
 }
-/* Fix para Dark Mode (asegura colores correctos) */
+/* Fix para Dark Mode */
 [data-bs-theme="dark"] .nav-tabs .nav-link {
   color: var(--texto-secundario) !important;
 }
@@ -385,57 +456,60 @@ footer a:hover {
 }
 
 /* =============================================================== */
-/* === ESTILOS "AÚN NO TIENES RECOMPENSAS" (CAJA - ¡CORREGIDO v3!) === */
+/* === ESTILOS "AÚN NO TIENES RECOMPENSAS" (¡ALINEADO IZQUIERDA!) === */
 /* =============================================================== */
 .recompensas-container {
   display: flex;
-  justify-content: center; /* Centrado horizontalmente */
+  justify-content: center; /* Centra la caja horizontalmente */
   align-items: center;
   min-height: 40vh;
   padding: 2rem;
 }
 
 .recompensas-caja-vacia {
-  text-align: center;
+  /* --- ¡CAMBIO! Alineación a la izquierda --- */
+  text-align: left; /* Alinea el texto a la izquierda */
   padding: 2rem 1.5rem;
   border: 1px solid var(--bs-border-color);
   border-radius: 15px;
   max-width: 450px;
   background-color: var(--bs-card-bg);
   box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-  /* Añadido: Asegura que el contenido se alinee bien */
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  /* --- ¡CAMBIO! Usamos flex para alinear icono y texto --- */
+  display: flex; /* Activa flexbox */
+  align-items: center; /* Centra verticalmente icono y texto */
+  gap: 1.5rem; /* Espacio entre icono y texto */
 }
 
 /* --- ESTILOS PARA EL ICONO (MÁS ESPECÍFICO) --- */
 .recompensas-caja-vacia img.recompensas-icono {
-  /* CORRECCIÓN 3: Se eliminó el comentario mal ubicado */
-  width: 100px;         /* <<<--- AJUSTA ESTE TAMAÑO (ej: 80px, 120px) */
-  max-width: 100%;      /* Asegura que no se desborde si la caja es muy pequeña */
+  width: 70px;         /* <<<--- TAMAÑO AJUSTADO (más pequeño para alinear a la izquierda) */
+  max-width: 100%;
   height: auto;
-  margin-bottom: 1.5rem; /* Aumentamos un poco el margen */
-  opacity: 0.7;         /* Un poco más visible */
-  object-fit: contain;  /* Asegura que la imagen completa se vea sin distorsión */
-  /* Si aún no funciona, DESCOMENTA la línea !important de abajo como último recurso */
-  /* width: 100px !important; */
+  opacity: 0.7;
+  object-fit: contain;
+  margin-bottom: 0; /* Quitamos margen inferior ya que flex lo maneja */
+  flex-shrink: 0; /* Evita que el icono se encoja */
 }
+
+/* Contenedor para el texto (h3 y p) - No necesita estilos */
 
 .recompensas-caja-vacia h3 {
   font-family: 'Playfair Display', serif;
-  font-size: 1.6rem;
+  font-size: 1.5rem; /* Ajustamos tamaño */
   font-weight: 700;
   color: var(--texto-principal);
-  margin-bottom: 0.5rem;
-  margin-top: 0; /* Asegura que no haya margen extra arriba */
+  margin-bottom: 0.25rem; /* Menos espacio abajo */
+  margin-top: 0;
 }
 
 .recompensas-caja-vacia p {
-  font-size: 0.95rem;
+  font-size: 0.9rem; /* Ajustamos tamaño */
   color: var(--texto-secundario);
-  line-height: 1.5;
+  line-height: 1.4;
+  margin-bottom: 0; /* Quitamos margen inferior */
 }
+
 
 /* ===================================== */
 /* === ESTILOS LOGIN (Adaptados) === */
@@ -483,7 +557,6 @@ footer a:hover {
 }
 [data-bs-theme="dark"] .table th,
 [data-bs-theme="dark"] .table td {
-  /* CORRECCIÓN 4: Se eliminó el typo 'col or' */
   color: var(--texto-principal) !important;
   border-color: var(--bs-border-color) !important;
 }
@@ -494,7 +567,6 @@ footer a:hover {
 
 /* Detalles del pedido */
 .detalle-pedido-productos {
-  /* CORRECCIÓN 5: Se eliminó el comentario mal ubicado */
   background-color: var(--bs-tertiary-bg);
   padding: 1rem; /* Menos padding */
   margin: 0.5rem 0;
@@ -509,7 +581,6 @@ footer a:hover {
 }
 .detalle-pedido-item {
   display: flex;
-  /* CORRECCIÓN 6: Se eliminó el comentario mal ubicado */
   justify-content: space-between;
   padding: 0.4rem 0; /* Menos padding */
   font-size: 0.9rem; /* Texto más pequeño */
@@ -519,16 +590,12 @@ footer a:hover {
 .btn-primary {
   background-color: var(--cafe-medium);
   border-color: var(--cafe-medium);
-  color: #fff; /* Asegura texto blanco */
+  color: #fff !important; /* Asegura texto blanco siempre */
 }
 .btn-primary:hover {
   background-color: var(--cafe-dark);
   border-color: var(--cafe-dark);
-  color: #fff;
-}
-/* Forzar color blanco en tema oscuro si es necesario */
-[data-bs-theme="dark"] .btn-primary {
-    color: #fff !important;
+  color: #fff !important;
 }
 
 /* Ajuste botones Outline (ej. Vaciar Carrito) */
@@ -549,58 +616,43 @@ footer a:hover {
   color: #121212; /* Texto oscuro sobre fondo claro */
 }
 
-/* --- ELIMINAR REGLA VACÍA --- */
-/* (Se eliminó la regla vacía .offcanvas-logout-btn {}) */
-
 /* =============================================== */
 /* === CORRECCIÓN PANTALLA DE CARGA INICIAL === */
 /* =============================================== */
-
-/* Estilos para el contenedor principal de la pantalla de carga (si usas uno) */
-/* Reemplaza '.loading-screen' con el ID o clase real que uses en tu index.html */
 .loading-screen {
-  position: fixed; /* Ocupa toda la pantalla */
+  position: fixed;
   inset: 0;
-  background-color: var(--crema); /* Fondo base claro */
+  background-color: var(--crema);
   display: flex;
-  flex-direction: column; /* Alinea logo y texto verticalmente */
+  flex-direction: column;
   justify-content: center;
   align-items: center;
-  z-index: 9999; /* Asegura que esté por encima de todo */
-  transition: opacity 0.5s ease-out; /* Para desvanecer al cargar */
+  z-index: 9999;
+  transition: opacity 0.5s ease-out;
 }
-
-/* Si el body tiene tema oscuro inicialmente (menos común) */
 body[data-bs-theme="dark"] .loading-screen {
-   background-color: #1e1e1e; /* Fondo base oscuro */
+   background-color: #1e1e1e;
 }
-
-/* Contenedor de la imagen central */
 .loading-logo-container {
-  width: 90%; /* Ancho relativo al contenedor */
-  max-width: 400px; /* Ancho máximo para el contenedor del logo */
-  background-color: var(--card-bg); /* Fondo blanco/gris claro */
-  padding: 2rem; /* Espacio alrededor */
-  border-radius: 15px; /* Bordes redondeados */
-  box-shadow: 0 10px 30px rgba(0,0,0,0.1); /* Sombra */
-  display: flex; /* Centra la imagen adentro */
+  width: 90%;
+  max-width: 400px; /* Ajusta este ancho máximo si quieres */
+  background-color: var(--card-bg);
+  padding: 2rem;
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  display: flex;
   justify-content: center;
   align-items: center;
 }
 [data-bs-theme="dark"] .loading-logo-container {
-   background-color: #2a2a2a; /* Fondo tarjeta oscuro */
+   background-color: #2a2a2a;
 }
-
-
-/* Estilos para la imagen del logo */
 .loading-logo-container img {
-  max-width: 100%; /* La imagen no será más ancha que su contenedor */
-  max-height: 70vh; /* Limita la altura máxima de la imagen */
-  height: auto;     /* Mantiene la proporción */
-  object-fit: contain; /* ¡CLAVE! Escala la imagen para que quepa sin distorsión */
+  max-width: 100%;
+  max-height: 70vh; /* Limita la altura de la imagen */
+  height: auto;
+  object-fit: contain; /* ¡CLAVE! Escala sin distorsión */
 }
-
-/* Opcional: Si quieres añadir texto debajo */
 .loading-screen p {
   margin-top: 1.5rem;
   font-size: 1.1rem;
@@ -609,3 +661,5 @@ body[data-bs-theme="dark"] .loading-screen {
 [data-bs-theme="dark"] .loading-screen p {
    color: var(--texto-secundario);
 }
+
+/* --- FIN DEL ARCHIVO --- */
