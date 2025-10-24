@@ -62,7 +62,8 @@ body {
   color: var(--bs-body-color);
   transition: background-color 0.3s ease, color 0.3s ease;
   /* --- ¡REVISA LA ALTURA DE TU NAVBAR CON INSPECCIONAR Y AJUSTA ESTE VALOR! --- */
-  padding-top: 70px; /* Ajusta según la altura real de tu navbar */
+  /* Este padding evita que el contenido quede *detrás* de la navbar fija */
+  padding-top: 70px; /* Ajusta este valor EXACTAMENTE a la altura de tu .navbar */
 }
 
 h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-title {
@@ -124,70 +125,85 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
 /* Asegúrate de añadir la clase 'navbar-dark' a tu <nav> en Navbar.jsx para el icono blanco */
 
 
-/* --- OFFCANVAS (Menú Lateral Móvil) --- */
+/* --- OFFCANVAS (Menú Lateral Móvil - CORREGIDO) --- */
 .offcanvas {
   background-color: var(--bs-card-bg) !important; /* Fondo adaptable */
   color: var(--bs-body-color);
   border-left: 1px solid var(--bs-border-color);
   width: 100%;
-  max-width: 300px; /* Un poco más estrecho */
-  height: 100vh;
+  max-width: 300px;
+  height: 100vh; /* Ocupa toda la altura */
   display: flex;
   flex-direction: column;
+  /* Añadido: Evita que el contenido interno desborde el offcanvas */
+  overflow: hidden;
 }
 
 .offcanvas-header {
   border-bottom: 1px solid var(--bs-border-color);
   padding: 1.25rem;
+  flex-shrink: 0; /* Evita que el header se encoja */
 }
 
 .offcanvas-title {
   font-size: 1.6rem;
   font-weight: 700;
-  color: var(--cafe-medium); /* Color café */
+  color: var(--cafe-medium);
 }
 
 .offcanvas-body {
   display: flex;
   flex-direction: column;
-  padding: 0; /* Quitamos padding para que los enlaces ocupen todo */
-  flex-grow: 1; /* Ocupa el espacio disponible */
-  overflow: hidden; /* Evita doble scrollbar */
+  padding: 0; /* Quitamos padding aquí */
+  flex-grow: 1; /* Ocupa el espacio vertical disponible */
+  /* ¡CLAVE! Hacemos que el body permita scroll si es necesario */
+  overflow-y: auto;
 }
 
 /* Lista de enlaces en offcanvas */
 .offcanvas-body .navbar-nav {
-  padding: 0.5rem 0; /* Padding vertical en la lista */
-  flex-grow: 1; /* Permite que la lista crezca */
-  overflow-y: auto; /* AÑADIDO: Permite scroll si hay muchos enlaces */
+  padding: 0.5rem 0; /* Padding vertical */
+  /* Quitamos flex-grow:1 de aquí, el body ya lo controla */
 }
 
 .offcanvas-body .nav-link {
   font-size: 1.2rem !important;
-  color: var(--texto-secundario) !important;
+  /* ¡CORRECCIÓN CONTRASTE! Usa texto principal en modo claro */
+  color: var(--texto-principal) !important;
   text-align: left;
   font-weight: 500;
-  padding: 0.9rem 1.25rem !important; /* Ajuste de padding */
+  padding: 0.9rem 1.25rem !important;
   border-bottom: 1px solid var(--bs-border-color);
   transition: all 0.2s ease;
 }
+/* Mantenemos el último sin borde */
 .offcanvas-body .nav-item:last-of-type .nav-link {
   border-bottom: none;
 }
-
+/* Hover y Activo */
 .offcanvas-body .nav-link:hover,
 .offcanvas-body .nav-link.active {
-  color: var(--cafe-medium) !important; /* Color café al pasar/activo */
-  background-color: var(--bs-tertiary-bg); /* Fondo sutil */
+  color: var(--cafe-medium) !important;
+  background-color: var(--bs-tertiary-bg);
+}
+/* ¡CORRECCIÓN CONTRASTE MODO OSCURO! */
+[data-bs-theme="dark"] .offcanvas-body .nav-link {
+   color: var(--texto-principal) !important; /* Asegura texto claro en oscuro */
+}
+[data-bs-theme="dark"] .offcanvas-body .nav-link:hover,
+[data-bs-theme="dark"] .offcanvas-body .nav-link.active {
+   color: var(--cafe-medium) !important;
+   background-color: var(--bs-tertiary-bg);
 }
 
-/* Footer del offcanvas (botones tema/login) */
+
+/* Footer del offcanvas (botones tema/login - CORREGIDO) */
 .offcanvas-footer {
   border-top: 1px solid var(--bs-border-color);
   padding: 1rem 1.25rem;
-  background-color: var(--bs-body-bg); /* Fondo base */
-  margin-top: auto; /* Se pega abajo */
-  flex-shrink: 0; /* Evita que el footer se encoja */
+  background-color: var(--bs-body-bg);
+  /* Quitamos mt-auto, el body con overflow-y lo posiciona */
+  flex-shrink: 0; /* Evita que se encoja */
 }
 /* Estilos para UserControls dentro del footer (flexbox) */
 .offcanvas-footer .d-flex {
@@ -197,84 +213,104 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
 }
 .offcanvas-footer .btn {
   margin-left: 1rem; /* Espacio entre botones */
+  /* ¡CORRECCIÓN CONTRASTE! Asegura visibilidad en modo claro */
+  color: var(--texto-secundario);
+  border-color: var(--cafe-light);
+}
+.offcanvas-footer .btn-danger { /* Específico para logout */
+    color: #dc3545;
+    border-color: #dc3545;
+}
+.offcanvas-footer .btn:hover {
+    background-color: var(--bs-tertiary-bg);
+}
+[data-bs-theme="dark"] .offcanvas-footer .btn {
+   color: var(--texto-secundario); /* Mantiene color en oscuro */
+   border-color: var(--bs-border-color);
+}
+[data-bs-theme="dark"] .offcanvas-footer .btn-danger {
+   color: #f88; /* Rojo claro en oscuro */
+   border-color: #f88;
 }
 
 /* ========================================================== */
 /* === ESTILOS PARA LA SECCIÓN HERO INICIAL CORREGIDA === */
 /* ========================================================== */
 .hero-section {
-  position: relative; /* Necesario para posicionar el logo del erizo */
+  position: relative;
   /* --- ¡IMPORTANTE! Reemplaza con la ruta correcta a tu imagen de fondo --- */
-  /* Puedes ponerla en /public o importarla en tu componente Home */
-  background-image: url('/parallax-erizos.jpg'); /* EJEMPLO - ¡CAMBIA ESTO! */
-  background-size: cover;      /* La imagen cubre el área sin distorsión */
-  background-position: center center; /* Centra la imagen mejor */
-  background-repeat: no-repeat; /* Evita que la imagen se repita */
+  background-image: url('/parallax-erizos.jpg'); /* ¡CAMBIA ESTO! */
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
 
-  /* === ¡CLAVE! Ajusta la altura de tu sección Hero === */
-  height: 450px; /* <<--- AJUSTA ESTA ALTURA (ej. 400px, 500px, 60vh) */
+  /* === ¡CLAVE! Ajusta la altura deseada (hasta la línea roja) === */
+  height: 55vh; /* <<--- Usa VH para altura relativa a pantalla, AJUSTA ESTE VALOR (ej: 50vh, 60vh) */
+                /* O usa px si prefieres altura fija: height: 400px; */
 
-  display: flex; /* Para centrar contenido */
+  width: 100%;
+  overflow: hidden;
+  display: flex; /* Añadido para centrar el contenedor del logo si es relative */
   justify-content: center;
   align-items: center;
-  overflow: hidden; /* Asegura que nada se desborde */
-
-  color: white; /* O un color que contraste bien */
-  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6); /* Sombra más sutil */
-  text-align: center;
 }
 
-/* Capa oscura opcional sobre el fondo para mejorar contraste del texto/logo */
+/* Capa oscura opcional */
 .hero-section::before {
   content: "";
   position: absolute;
-  inset: 0; /* Cubre todo el div */
-  background-color: rgba(0, 0, 0, 0.3); /* Capa oscura semi-transparente */
-  z-index: 1; /* Detrás del contenido pero sobre el fondo */
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.2); /* Capa oscura más sutil */
+  z-index: 1;
 }
 
-
-/* Contenedor del logo del erizo DENTRO de la hero-section */
+/* Contenedor del logo del erizo (POSICIONADO RELATIVO para centrar con flex) */
 .hero-hedgehog-logo-container {
-  position: relative; /* Cambiado a relativo para que flex lo centre */
-  z-index: 2; /* Encima de la capa oscura ::before */
-  width: 200px; /* <<--- AJUSTA ESTE TAMAÑO (Ancho del círculo) */
-  height: 200px; /* <<--- AJUSTA ESTE TAMAÑO (Alto del círculo) */
+  position: relative; /* ¡CAMBIO! Relativo para que flex lo centre */
+  z-index: 2;
+  width: 180px;      /* <<--- AJUSTA ESTE TAMAÑO */
+  height: 180px;     /* <<--- AJUSTA ESTE TAMAÑO */
   border-radius: 50%;
-  background-color: var(--crema); /* Fondo crema */
+  background-color: var(--crema);
   display: flex;
   justify-content: center;
   align-items: center;
   overflow: hidden;
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+  /* Quitamos posicionamiento absoluto */
 }
 
-/* Imagen del erizo DENTRO del contenedor */
+/* Imagen del erizo */
 .hero-hedgehog-logo-container img {
-  max-width: 75%; /* <<--- AJUSTA ESTE % (Qué tan grande es el erizo dentro del círculo) */
-  max-height: 75%;/* <<--- AJUSTA ESTE % */
-  object-fit: contain; /* Escala sin distorsión */
+  max-width: 70%;  /* <<--- AJUSTA ESTE % */
+  max-height: 70%; /* <<--- AJUSTA ESTE % */
+  object-fit: contain;
   width: auto;
   height: auto;
 }
 
-/* Estilos para el texto descriptivo si lo pones DENTRO de hero-section */
-/* Si el texto va FUERA (debajo) del hero, estos estilos no aplican */
-.hero-text-content {
-  position: relative; /* O absoluto si lo quieres superponer */
-  z-index: 2; /* Encima de la capa oscura */
-  margin-top: 1.5rem; /* Espacio si el logo está arriba */
-  padding: 0 1rem; /* Padding horizontal para texto */
+/* ========================================================== */
+/* === ESTILOS PARA LA SECCIÓN DE TEXTO DEBAJO DEL HERO === */
+/* ========================================================== */
+.intro-text-section {
+  text-align: center;
+  padding: 3rem 1rem;
+  background-color: var(--bs-body-bg);
 }
-.hero-title {
-  font-size: 2.8rem; /* Ajusta tamaño */
-  margin-bottom: 0.8rem;
+
+.intro-text-section h1 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--texto-principal);
+  margin-bottom: 0.75rem;
 }
-.hero-subtitle {
-  font-size: 1.1rem; /* Ajusta tamaño */
-  max-width: 550px;
-  margin-left: auto;
-  margin-right: auto;
+
+.intro-text-section p {
+  font-size: 1.1rem;
+  color: var(--texto-secundario);
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.6;
 }
 
 
@@ -284,10 +320,10 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
 .card {
   background-color: var(--bs-card-bg);
   border: 1px solid var(--bs-border-color);
-  border-radius: 12px; /* Bordes más redondeados */
+  border-radius: 12px;
   overflow: hidden;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.05); /* Sombra inicial sutil */
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
 
 .card:hover {
@@ -296,7 +332,7 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
 }
 
 .card.en-oferta {
-  border: 2px solid var(--cafe-medium); /* Borde café para ofertas */
+  border: 2px solid var(--cafe-medium);
 }
 
 /* --- Etiqueta de Descuento --- */
@@ -304,9 +340,9 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
   position: absolute;
   top: 10px;
   right: 10px;
-  background-color: var(--cafe-medium); /* Fondo café */
+  background-color: var(--cafe-medium);
   color: white;
-  width: 50px; /* Círculo un poco más pequeño */
+  width: 50px;
   height: 50px;
   border-radius: 50%;
   display: flex;
@@ -323,20 +359,20 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
 /* ======================= */
 .precio-original {
   text-decoration: line-through;
-  color: #9E9E9E; /* Gris estándar */
+  color: #9E9E9E;
   font-weight: 500;
   margin-right: 0.3rem;
 }
 [data-bs-theme="dark"] .precio-original {
-  color: #757575; /* Gris más oscuro para tema oscuro */
+  color: #757575;
 }
 
 .precio-descuento {
-  color: #2e7d32; /* Verde estándar para precios con descuento */
+  color: #2e7d32;
   font-weight: 700;
 }
 [data-bs-theme="dark"] .precio-descuento {
-  color: #66bb6a !important; /* Verde más claro para tema oscuro */
+  color: #66bb6a !important;
 }
 
 
@@ -344,21 +380,20 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
 /* === FOOTER === */
 /* ======================= */
 footer {
-  background: var(--cafe-light); /* Fondo café claro */
-  color: var(--texto-secundario); /* Texto secundario */
+  background: var(--cafe-light);
+  color: var(--texto-secundario);
   text-align: center;
   padding: 1.5rem 1rem;
   font-weight: 500;
   border-top: 1px solid var(--bs-border-color);
-  margin-top: 3rem; /* Espacio arriba del footer */
+  margin-top: 3rem;
 }
 
 [data-bs-theme="dark"] footer {
-  background: #212121; /* Fondo oscuro del footer */
+  background: #212121;
   color: var(--texto-secundario);
   border-top-color: var(--bs-border-color);
 }
-/* Enlaces en footer */
 footer a {
   color: var(--texto-principal);
   text-decoration: none;
@@ -399,7 +434,7 @@ footer a:hover {
   position: absolute;
   top: 0;
   right: 0;
-  background-color: #dc3545; /* Rojo para el contador */
+  background-color: #dc3545;
   color: white;
   font-size: 0.75rem;
   font-weight: bold;
@@ -420,10 +455,10 @@ footer a:hover {
 .nav-tabs .nav-link {
   font-family: 'Lato', sans-serif;
   font-weight: 700;
-  font-size: 1.1rem; /* Un poco más pequeño */
+  font-size: 1.1rem;
   color: var(--texto-secundario);
   text-decoration: none;
-  margin: 0 0.8rem; /* Menos margen */
+  margin: 0 0.8rem;
   padding-bottom: 8px;
   border: none;
   border-bottom: 3px solid transparent;
@@ -467,47 +502,45 @@ footer a:hover {
 }
 
 .recompensas-caja-vacia {
-  /* --- ¡CAMBIO! Alineación a la izquierda --- */
-  text-align: left; /* Alinea el texto a la izquierda */
+  text-align: left;
   padding: 2rem 1.5rem;
   border: 1px solid var(--bs-border-color);
   border-radius: 15px;
   max-width: 450px;
   background-color: var(--bs-card-bg);
   box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-  /* --- ¡CAMBIO! Usamos flex para alinear icono y texto --- */
-  display: flex; /* Activa flexbox */
-  align-items: center; /* Centra verticalmente icono y texto */
-  gap: 1.5rem; /* Espacio entre icono y texto */
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
 }
 
 /* --- ESTILOS PARA EL ICONO (MÁS ESPECÍFICO) --- */
 .recompensas-caja-vacia img.recompensas-icono {
-  width: 70px;         /* <<<--- TAMAÑO AJUSTADO (más pequeño para alinear a la izquierda) */
+  width: 70px; /* Tamaño ajustado */
   max-width: 100%;
   height: auto;
   opacity: 0.7;
   object-fit: contain;
-  margin-bottom: 0; /* Quitamos margen inferior ya que flex lo maneja */
-  flex-shrink: 0; /* Evita que el icono se encoja */
+  margin-bottom: 0;
+  flex-shrink: 0;
 }
 
-/* Contenedor para el texto (h3 y p) - No necesita estilos */
+/* Contenedor para el texto - Sin estilos necesarios */
 
 .recompensas-caja-vacia h3 {
   font-family: 'Playfair Display', serif;
-  font-size: 1.5rem; /* Ajustamos tamaño */
+  font-size: 1.5rem;
   font-weight: 700;
   color: var(--texto-principal);
-  margin-bottom: 0.25rem; /* Menos espacio abajo */
+  margin-bottom: 0.25rem;
   margin-top: 0;
 }
 
 .recompensas-caja-vacia p {
-  font-size: 0.9rem; /* Ajustamos tamaño */
+  font-size: 0.9rem;
   color: var(--texto-secundario);
   line-height: 1.4;
-  margin-bottom: 0; /* Quitamos margen inferior */
+  margin-bottom: 0;
 }
 
 
@@ -515,25 +548,25 @@ footer a:hover {
 /* === ESTILOS LOGIN (Adaptados) === */
 /* ===================================== */
 .login-box {
-  max-width: 450px; /* Un poco más estrecho */
-  margin: 3rem auto; /* Menos margen superior */
+  max-width: 450px;
+  margin: 3rem auto;
   padding: 2rem;
   background-color: var(--bs-card-bg);
   border: 1px solid var(--bs-border-color);
-  border-radius: 12px; /* Coincide con cards */
+  border-radius: 12px;
   box-shadow: 0 5px 15px rgba(0,0,0,0.08);
 }
 .login-box button {
   display: block;
   width: 100%;
-  max-width: 280px; /* Botones más estrechos */
+  max-width: 280px;
   margin: 1.25rem auto 0 auto;
   text-align: center;
 }
 /* Responsivo para Login */
 @media (max-width: 576px) {
   .login-box {
-    width: 90%; /* Un poco más ancho en móvil */
+    width: 90%;
     padding: 1.5rem;
     margin: 2rem auto;
   }
@@ -568,7 +601,7 @@ footer a:hover {
 /* Detalles del pedido */
 .detalle-pedido-productos {
   background-color: var(--bs-tertiary-bg);
-  padding: 1rem; /* Menos padding */
+  padding: 1rem;
   margin: 0.5rem 0;
   border-radius: 8px;
   border: 1px solid var(--bs-border-color);
@@ -577,13 +610,13 @@ footer a:hover {
   margin-bottom: 0.75rem;
   padding-bottom: 0.5rem;
   border-bottom: 1px solid var(--bs-border-color);
-  font-size: 1.1rem; /* Título más pequeño */
+  font-size: 1.1rem;
 }
 .detalle-pedido-item {
   display: flex;
   justify-content: space-between;
-  padding: 0.4rem 0; /* Menos padding */
-  font-size: 0.9rem; /* Texto más pequeño */
+  padding: 0.4rem 0;
+  font-size: 0.9rem;
 }
 
 /* Ajuste general botones primarios */
