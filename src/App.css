@@ -123,7 +123,7 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
 /* Asegúrate de añadir la clase 'navbar-dark' a tu <nav> en Navbar.jsx para el icono blanco */
 
 
-/* --- OFFCANVAS (Menú Lateral Móvil - CORREGIDO v2) --- */
+/* --- OFFCANVAS (Menú Lateral Móvil - CORREGIDO v3 - Contraste Luz) --- */
 .offcanvas {
   background-color: var(--bs-card-bg) !important; /* Fondo adaptable */
   color: var(--bs-body-color);
@@ -151,19 +151,20 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
 .offcanvas-body {
   display: flex;
   flex-direction: column;
-  padding: 0;
+  padding: 0; /* Quitamos padding del body */
   flex-grow: 1; /* Ocupa el espacio */
   overflow-y: auto; /* Permite scroll interno si es necesario */
 }
 
 /* Lista de enlaces en offcanvas */
 .offcanvas-body .navbar-nav {
-  padding: 0.5rem 0;
+  padding: 0.5rem 0; /* Padding vertical */
 }
 
 .offcanvas-body .nav-link {
   font-size: 1.2rem !important;
-  color: var(--texto-principal) !important;
+  /* ¡CORRECCIÓN CONTRASTE LUZ! Usamos texto secundario que es más oscuro */
+  color: var(--texto-secundario) !important;
   text-align: left;
   font-weight: 500;
   padding: 0.9rem 1.25rem !important;
@@ -173,14 +174,15 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
 .offcanvas-body .nav-item:last-of-type .nav-link {
   border-bottom: none;
 }
-/* Hover y Activo */
+/* Hover y Activo (Modo LUZ) */
 .offcanvas-body .nav-link:hover,
 .offcanvas-body .nav-link.active {
-  color: var(--cafe-medium) !important;
-  background-color: var(--bs-tertiary-bg);
+  color: var(--cafe-medium) !important; /* Color café al pasar/activo */
+  background-color: var(--bs-tertiary-bg); /* Fondo sutil */
 }
-/* Contraste Modo Oscuro */
+/* Contraste Modo OSCURO */
 [data-bs-theme="dark"] .offcanvas-body .nav-link {
+   /* En oscuro sí usamos texto principal (claro) */
    color: var(--texto-principal) !important;
 }
 [data-bs-theme="dark"] .offcanvas-body .nav-link:hover,
@@ -189,7 +191,8 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
    background-color: var(--bs-tertiary-bg);
 }
 
-/* Footer del offcanvas (botones tema/login - CORREGIDO) */
+
+/* Footer del offcanvas (botones tema/login - CORREGIDO v3 - Contraste Luz) */
 .offcanvas-footer {
   border-top: 1px solid var(--bs-border-color);
   padding: 1rem 1.25rem;
@@ -203,8 +206,9 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
 }
 .offcanvas-footer .btn {
   margin-left: 1rem;
-  color: var(--texto-secundario);
-  border-color: var(--cafe-light);
+  /* ¡CORRECCIÓN CONTRASTE LUZ! */
+  color: var(--texto-secundario); /* Texto más oscuro */
+  border-color: var(--cafe-light); /* Borde claro */
 }
 .offcanvas-footer .btn-danger {
     color: #dc3545;
@@ -212,7 +216,7 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
 }
 .offcanvas-footer .btn:hover {
     background-color: var(--bs-tertiary-bg);
-    color: var(--texto-principal);
+    color: var(--texto-principal); /* Oscurece texto en hover */
 }
 /* Contraste Oscuro */
 [data-bs-theme="dark"] .offcanvas-footer .btn {
@@ -230,7 +234,7 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
 
 
 /* ========================================================== */
-/* === ¡NUEVO v6! ESTILOS PARA HERO - SIN FONDO, LOGO GRANDE === */
+/* === ¡NUEVO v7! ESTILOS PARA HERO - SIN FONDO, LOGO GRANDE === */
 /* ========================================================== */
 .hero-section {
   position: relative; /* ¡MUY IMPORTANTE! Padre para elementos absolutos */
@@ -270,43 +274,51 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
   box-shadow: none;              /* SIN SOMBRA EN EL CONTENEDOR */
 
   /* === ¡CAMBIO CLAVE! Aumentamos tamaño del contenedor para dar espacio al logo === */
-  width: 280px;      /* <<--- AJUSTA ESTE TAMAÑO (Más grande) */
-  height: 280px;     /* <<--- AJUSTA ESTE TAMAÑO (Igual al ancho) */
-  /* El contenedor sigue siendo cuadrado/circular conceptualmente para posicionar */
+  width: 230px;      /* <<--- AJUSTA ESTE TAMAÑO (Más grande) */
+  height: 230px;     /* <<--- AJUSTA ESTE TAMAÑO (Igual al ancho) */
+  border-radius: 50%; /* Mantenemos forma circular para el hover */
+
+  /* === ¡CAMBIO! Borde inicial delgado y transparente para el hover === */
+  border: 4px solid transparent;
 
   display: flex;
   justify-content: center;
   align-items: center;
   overflow: visible; /* Permitimos que la imagen se vea aunque el contenedor sea conceptual */
+
+  /* --- Transición para el Hover --- */
+  transition: border-color 0.3s ease; /* Transición suave SÓLO para el borde */
 }
 
 /* Imagen del erizo DENTRO del contenedor */
 .hero-hedgehog-logo-container img {
   /* === ¡CAMBIO CLAVE! Hacemos la imagen más grande === */
-  max-width: 100%; /* Permitimos que ocupe todo el contenedor */
-  max-height: 100%;/* Permitimos que ocupe todo el contenedor */
+  max-width: 90%; /* <<--- AJUSTA ESTE % (Más grande, casi tocando el borde conceptual) */
+  max-height: 90%;/* <<--- AJUSTA ESTE % */
   object-fit: contain;
   width: auto;
   height: auto;
-  /* Añadimos una sombra sutil directamente a la imagen si es PNG/SVG transparente */
-  /* filter: drop-shadow(0 5px 15px rgba(0, 0, 0, 0.3)); */ /* Descomenta si tu logo tiene fondo transparente */
+  /* filter: drop-shadow(0 3px 10px rgba(0, 0, 0, 0.2)); */ /* Sombra opcional */
 }
 
-/* Quitamos el hover del contenedor ya que no tiene borde/fondo visible */
-
+/* --- Efecto Hover (Borde Café) --- */
+.hero-hedgehog-logo-container:hover {
+  border-color: var(--cafe-medium); /* Cambia color del borde al pasar el cursor */
+  /* Quitamos el cambio de sombra en hover para mantenerlo simple */
+}
 
 /* Contenedor del TEXTO (POSICIONADO ABSOLUTO EN LA PARTE INFERIOR) */
 .hero-text-content {
   position: absolute;
   /* === ¡CLAVE! Ajusta 'bottom' para que NO tape el logo === */
-  bottom: 10%;        /* <<--- AJUSTA ESTE % (Más abajo, ej: 8%, 12%) */
+  bottom: 10%;        /* <<--- AJUSTA ESTE % */
   left: 0;
   right: 0;
   z-index: 3; /* Asegura que esté sobre el logo si hay superposición accidental */
   padding: 1rem 1.5rem;
   text-align: center;
   color: white;
-  text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.9); /* Sombra MÁS fuerte para legibilidad */
+  text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.9); /* Sombra MÁS fuerte */
 }
 
 .hero-title {
@@ -329,7 +341,7 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
   background-color: var(--primary-color);
   border-color: var(--primary-color);
   box-shadow: 0 4px 15px rgba(0,0,0, 0.2);
-  padding: 0.7rem 1.5rem; /* Botón un poco más grande */
+  padding: 0.7rem 1.5rem;
   font-size: 0.9rem;
 }
 .hero-text-content .btn-primary:hover {
@@ -349,6 +361,7 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
 /* ======================= */
 /* === TARJETAS === */
 /* ======================= */
+/* ... (El resto de los estilos: Tarjetas, Precios, Footer, Botón Flotante, Tabs, Recompensas, Login, Otros, Pantalla Carga ... se mantienen igual que en la respuesta anterior) ... */
 .card {
   background-color: var(--bs-card-bg);
   border: 1px solid var(--bs-border-color);
