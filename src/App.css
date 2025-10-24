@@ -8,7 +8,7 @@
   --cafe-dark: #4a2c2a;
   --cafe-medium: #8d6e63; /* Color primario */
   --cafe-light: #d7ccc8; /* Borde y secundario claro */
-  --crema: #fdfaf6;      /* Fondo principal */
+  --crema: #fdfaf6; /* Fondo principal */
   --texto-principal: #372423;
   --texto-secundario: #5d4037;
   --card-bg: #ffffff; /* Fondo tarjetas claro */
@@ -27,7 +27,7 @@
   --cafe-dark: #3a2422; /* Un poco más oscuro que el medio */
   --cafe-medium: #5d4037; /* Color primario oscuro */
   --cafe-light: #4e342e; /* Borde oscuro */
-  --crema: #1e1e1e;      /* Fondo principal oscuro */
+  --crema: #1e1e1e; /* Fondo principal oscuro */
   --texto-principal: #e0e0e0;
   --texto-secundario: #bdbdbd;
   --card-bg: #2a2a2a; /* Fondo tarjetas oscuro */
@@ -234,7 +234,7 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
 
 
 /* ========================================================== */
-/* === ¡NUEVO v8! HERO - LOGO GRANDE Y HOVER DE BORDE FINO === */
+/* === ¡SECCIÓN HERO MODIFICADA! (Fondo, Hover, Tamaño, Bordes) === */
 /* ========================================================== */
 .hero-section {
   position: relative; /* ¡MUY IMPORTANTE! Padre para elementos absolutos */
@@ -242,12 +242,16 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
   /* === ¡CLAVE! Define la altura deseada (hasta la línea roja) === */
   height: 60vh; /* <<--- AJUSTA ESTE VALOR (ej: 55vh, 65vh, 450px) */
 
-  /* --- ¡IMPORTANTE! Reemplaza con la ruta correcta a tu imagen de fondo --- */
-  background-image: url('/parallax-erizos.jpg'); /* ¡CAMBIA ESTO! */
-  background-size: cover;      /* Cubre sin distorsión */
+  /* --- ¡MODIFICACIÓN 1! Esta es tu nueva imagen de fondo --- */
+  background-image: url('/fondo.jpg'); 
+  background-size: cover; /* Cubre sin distorsión */
   background-position: center center; /* Centra */
   background-repeat: no-repeat;
+  
   overflow: hidden; /* Evita desbordes */
+
+  /* --- ¡MODIFICACIÓN 4! Esquinas redondeadas como dibujaste --- */
+  border-radius: 30px; /* <<--- AJUSTA ESTE VALOR (ej. 25px, 40px) */
 }
 
 /* Capa oscura opcional sobre el fondo */
@@ -255,69 +259,80 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
   content: "";
   position: absolute;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.35); /* Capa oscura - AJUSTA OPACIDAD */
+  /* Ajusta la opacidad si con el nuevo fondo se ve muy oscuro/claro */
+  background-color: rgba(0, 0, 0, 0.35); 
   z-index: 1;
+  
+  /* --- ¡MODIFICACIÓN 4! (Hereda el borde) --- */
+  border-radius: 30px; /* Asegura que la capa oscura también se redondee */
 }
 
 /* Contenedor del logo del erizo (POSICIONADO ABSOLUTO) */
 .hero-hedgehog-logo-container {
   position: absolute;
   /* === ¡CLAVE! Ajusta 'top' para centrarlo DEBAJO de la navbar === */
-  top: 50%;           /* <<--- AJUSTA ESTE % (Ligeramente arriba del centro) */
+  top: 50%; /* <<--- AJUSTA ESTE % (Ligeramente arriba del centro) */
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 2;
 
-  /* === ¡CAMBIO CLAVE! Quitamos fondo y borde === */
+  /* --- ¡MODIFICACIÓN 2! (Hover de borde) --- */
   background-color: transparent; /* SIN FONDO */
-  border: none;                  /* SIN BORDE */
-  box-shadow: none;              /* SIN SOMBRA EN EL CONTENEDOR */
-
-  /* === ¡CAMBIO CLAVE! Aumentamos tamaño del contenedor para dar espacio al logo === */
-  width: 230px;      /* <<--- AJUSTA ESTE TAMAÑO (Más grande) */
-  height: 230px;     /* <<--- AJUSTA ESTE TAMAÑO (Igual al ancho) */
-  border-radius: 50%; /* Mantenemos forma circular para el hover */
-
-  /* === ¡CAMBIO! Borde inicial delgado y transparente para el hover === */
-  border: 4px solid transparent;
+  border-radius: 50%; /* Mantenemos forma circular */
+  
+  /* Borde inicial transparente */
+  border: 4px solid transparent; /* <<--- AJUSTA GROSOR (ej. 3px, 5px) */
+  
+  /* Transición SÓLO para el borde */
+  transition: border-color 0.3s ease; 
+  
+  /* --- ¡MODIFICACIÓN 3! (Icono más grande) --- */
+  width: 250px; /* <<--- AJUSTADO (Era 230px) */
+  height: 250px; /* <<--- AJUSTADO (Era 230px) */
 
   display: flex;
   justify-content: center;
   align-items: center;
-  overflow: visible; /* Permitimos que la imagen se vea aunque el contenedor sea conceptual */
+  overflow: visible; /* Permitimos que la imagen se vea */
   cursor: pointer; /* Indica que es interactivo */
-
-  /* --- Transición para el Hover --- */
-  transition: border-color 0.3s ease; /* Transición suave SÓLO para el borde */
+  box-shadow: none; /* Quitamos sombra del contenedor si la tuviera */
 }
 
 /* Imagen del erizo DENTRO del contenedor */
 .hero-hedgehog-logo-container img {
-  /* === ¡CAMBIO CLAVE! Hacemos la imagen más grande === */
-  max-width: 90%; /* <<--- AJUSTA ESTE % (Más grande, casi tocando el borde conceptual) */
-  max-height: 90%;/* <<--- AJUSTA ESTE % */
+  /* --- ¡MODIFICACIÓN 3! (Icono más grande) --- */
+  max-width: 100%; /* <<--- AJUSTADO (Era 90%) */
+  max-height: 100%;/* <<--- AJUSTADO (Era 90%) */
   object-fit: contain;
   width: auto;
   height: auto;
-  border-radius: 50%; /* Para que el borde del hover sea circular alrededor del erizo */
+  border-radius: 50%; 
 
-  /* === AQUI ESTÁ EL BORDE DELGADO INICIAL Y EL EFECTO HOVER === */
-  border: 4px solid rgba(255, 255, 255, 0.15); /* Borde blanco muy sutil al inicio - AJUSTA OPACIDAD */
-  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2); /* Sombra sutil para darle profundidad */
-  transition: border-color 0.3s ease, box-shadow 0.3s ease; /* Transición suave */
+  /* --- ¡MODIFICACIÓN 2! (Hover de borde) --- */
+  /* Quitamos el borde de la imagen, el borde ahora está en el CONTENEDOR */
+  border: none; 
+  
+  /* Mantenemos la sombra para profundidad */
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2); 
+  transition: box-shadow 0.3s ease; /* Solo transicionamos la sombra */
 }
 
-/* --- Efecto Hover (Borde Café en la IMAGEN) --- */
-.hero-hedgehog-logo-container:hover img {
+/* --- ¡MODIFICACIÓN 2! Efecto Hover (Borde Café en el CONTENEDOR) --- */
+.hero-hedgehog-logo-container:hover {
   border-color: var(--cafe-medium); /* Borde café al pasar el cursor */
+}
+
+/* Opcional: intensificar la sombra de la imagen al hacer hover en el contenedor */
+.hero-hedgehog-logo-container:hover img {
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3); /* Sombra un poco más intensa */
 }
+
 
 /* Contenedor del TEXTO (POSICIONADO ABSOLUTO EN LA PARTE INFERIOR) */
 .hero-text-content {
   position: absolute;
   /* === ¡CLAVE! Ajusta 'bottom' para que NO tape el logo === */
-  bottom: 10%;        /* <<--- AJUSTA ESTE % (ej: 8%, 12%) */
+  bottom: 10%; /* <<--- AJUSTA ESTE % (ej: 8%, 12%) */
   left: 0;
   right: 0;
   z-index: 3; /* Asegura que esté sobre el logo si hay superposición accidental */
