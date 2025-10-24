@@ -230,74 +230,88 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
 
 
 /* ========================================================== */
-/* === ESTILOS PARA LA SECCIÓN HERO INICIAL CORREGIDA v3 === */
+/* === ¡NUEVO v5! ESTILOS PARA HERO COMO EN LA IMAGEN DESEADA === */
 /* ========================================================== */
 .hero-section {
-  position: relative;
-  /* --- ¡IMPORTANTE! Reemplaza con la ruta correcta a tu imagen de fondo --- */
-  background-image: url('/parallax-erizos.jpg'); /* ¡CAMBIA ESTO! */
-  background-size: cover;
-  background-position: center center;
-  background-repeat: no-repeat;
-
-  /* === ¡CLAVE! Ajusta la altura deseada (hasta la línea roja) === */
-  height: 60vh; /* <<--- AJUSTA ESTE VALOR (ej: 50vh, 70vh, 450px) */
-
+  position: relative; /* ¡MUY IMPORTANTE! Padre para elementos absolutos */
   width: 100%;
-  overflow: hidden;
-  /* Quitamos display: flex para usar posicionamiento absoluto */
+  /* === ¡CLAVE! Define la altura deseada (hasta la línea roja) === */
+  /* Usa VH para altura relativa o PX para fija. AJUSTA ESTE VALOR */
+  height: 60vh; /* <<--- PRUEBA CON 60% de la altura de pantalla. AJUSTA (ej: 55vh, 65vh, 450px) */
+
+  /* --- ¡IMPORTANTE! Reemplaza con la ruta correcta a tu imagen de fondo --- */
+  background-image: url('/parallax-erizos.jpg'); /* ¡CAMBIA ESTO! (ej: /public/mi-fondo.jpg o importa la imagen) */
+  background-size: cover;      /* Cubre sin distorsión */
+  background-position: center center; /* Centra */
+  background-repeat: no-repeat;
+  overflow: hidden; /* Evita desbordes */
+  /* Quitamos display:flex, ya que posicionaremos con 'absolute' */
 }
 
-/* Capa oscura opcional */
+/* Capa oscura opcional sobre el fondo */
 .hero-section::before {
   content: "";
   position: absolute;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.3); /* Capa oscura - AJUSTA OPACIDAD */
+  background-color: rgba(0, 0, 0, 0.35); /* Capa oscura - AJUSTA OPACIDAD (0.35 = 35%) */
   z-index: 1;
 }
 
 /* Contenedor del logo del erizo (POSICIONADO ABSOLUTO) */
 .hero-hedgehog-logo-container {
-  position: absolute;
+  position: absolute; /* Posicionado relativo a .hero-section */
   /* === ¡CLAVE! Ajusta 'top' para centrarlo DEBAJO de la navbar === */
-  top: 50%; /* <<--- AJUSTA ESTE % (ej. 45%, 55%) */
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 2;
+  /* 50% lo centra verticalmente DENTRO del hero. Ajusta si es necesario */
+  top: 48%;           /* <<--- Puedes probar valores como 45%, 55% si 50% no es exacto */
+  left: 50%;          /* Centrado horizontalmente */
+  transform: translate(-50%, -50%); /* Ajuste final para centrado perfecto */
+  z-index: 2;         /* Encima de la capa oscura ::before */
 
-  width: 170px;      /* <<--- AJUSTA ESTE TAMAÑO */
-  height: 170px;     /* <<--- AJUSTA ESTE TAMAÑO (Igual al ancho) */
+  width: 210px;      /* <<--- TAMAÑO MÁS GRANDE */
+  height: 210px;     /* <<--- TAMAÑO MÁS GRANDE */
   border-radius: 50%;
-  background-color: var(--crema);
+  /* === ¡CAMBIO! Fondo semi-transparente para integrar === */
+  background-color: rgba(253, 250, 246, 0.9); /* Crema semi-transparente (ajusta opacidad 0.9) */
+  /* background-color: transparent; */ /* Opción 2: Completamente transparente */
+
   display: flex;
   justify-content: center;
   align-items: center;
   overflow: hidden;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25); /* Sombra un poco más intensa */
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); /* Sombra más pronunciada */
+
+  /* --- Efecto Hover --- */
+  border: 5px solid transparent; /* Borde inicial transparente */
+  transition: border-color 0.3s ease, box-shadow 0.3s ease; /* Transición suave */
 }
 
-/* Imagen del erizo */
+/* Imagen del erizo DENTRO del contenedor */
 .hero-hedgehog-logo-container img {
-  max-width: 70%;  /* <<--- AJUSTA ESTE % */
-  max-height: 70%; /* <<--- AJUSTA ESTE % */
-  object-fit: contain;
+  max-width: 75%;  /* <<--- AJUSTA ESTE % (Quizás necesites 80% o más) */
+  max-height: 75%; /* <<--- AJUSTA ESTE % */
+  object-fit: contain; /* Escala sin distorsión */
   width: auto;
   height: auto;
 }
 
+/* --- Efecto Hover --- */
+.hero-hedgehog-logo-container:hover {
+  border-color: var(--cafe-medium); /* Cambia color del borde al pasar el cursor */
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.3); /* Sombra un poco más intensa en hover */
+}
+
 /* Contenedor del TEXTO (POSICIONADO ABSOLUTO EN LA PARTE INFERIOR) */
 .hero-text-content {
-  position: absolute;
-  /* === ¡CLAVE! Ajusta 'bottom' para la posición del texto === */
-  bottom: 10%;        /* <<--- AJUSTA ESTE % (ej: 5%, 15%) */
-  left: 0;
+  position: absolute; /* Posicionado relativo a .hero-section */
+  /* === ¡CLAVE! Ajusta 'bottom' para que NO tape el logo === */
+  bottom: 10%;        /* <<--- AJUSTA ESTE % (Más abajo, ej: 8%, 12%) */
+  left: 0;           /* Ocupa todo el ancho */
   right: 0;
-  z-index: 2;
-  padding: 1rem 1.5rem;
-  text-align: center;
-  color: white;
-  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.8); /* Sombra más fuerte */
+  z-index: 3;        /* Asegura que esté sobre el logo si hay superposición accidental */
+  padding: 1rem 1.5rem; /* Espaciado interno */
+  text-align: center; /* Centra el texto */
+  color: white;       /* Color del texto */
+  text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.9); /* Sombra MÁS fuerte para legibilidad */
 }
 
 .hero-title {
@@ -308,19 +322,20 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
 
 .hero-subtitle {
   font-size: 1.05rem; /* <<--- AJUSTA TAMAÑO */
-  max-width: 550px;
-  margin: 0 auto;
-  line-height: 1.6;
+  max-width: 550px; /* Limita ancho */
+  margin: 0 auto;   /* Centra */
+  line-height: 1.5;
   opacity: 0.95; /* Casi opaco */
 }
 
 /* Botón "Haz tu Pedido" */
 .hero-text-content .btn-primary {
   margin-top: 1.5rem;
-  /* Sobrescribimos estilos si es necesario */
   background-color: var(--primary-color);
   border-color: var(--primary-color);
   box-shadow: 0 4px 15px rgba(0,0,0, 0.2);
+  padding: 0.7rem 1.5rem; /* Botón un poco más grande */
+  font-size: 0.9rem;
 }
 .hero-text-content .btn-primary:hover {
    background-color: var(--cafe-dark);
@@ -339,9 +354,42 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
 /* ======================= */
 /* === TARJETAS === */
 /* ======================= */
-/* ... (El resto de los estilos: Tarjetas, Precios, Footer, Botón Flotante, Tabs, Recompensas, Login, Otros, Pantalla Carga ... se mantienen igual que en la respuesta anterior) ... */
-/* Asegúrate de copiar TODO desde la sección === TARJETAS === hasta el final del archivo de la respuesta anterior */
+.card {
+  background-color: var(--bs-card-bg);
+  border: 1px solid var(--bs-border-color);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
 
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.1);
+}
+
+.card.en-oferta {
+  border: 2px solid var(--cafe-medium);
+}
+
+/* --- Etiqueta de Descuento --- */
+.discount-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: var(--cafe-medium);
+  color: white;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8em;
+  font-weight: 700;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  z-index: 2;
+}
 
 /* ======================= */
 /* === PRECIOS === */

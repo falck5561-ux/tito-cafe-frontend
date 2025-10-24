@@ -26,6 +26,7 @@ function HomePage() {
   const handleAddToCartAndNavigate = (product) => {
     agregarProductoAPedido(product);
     handleCloseDetails();
+    // Considera usar navigate('/hacer-un-pedido') si importas useNavigate
     window.location.href = '/hacer-un-pedido';
   };
 
@@ -35,6 +36,7 @@ function HomePage() {
       <section className="hero-section">
         <div className="hero-hedgehog-logo-container">
           <motion.img
+            // --- ¡VERIFICA ESTA RUTA! ¿Es '/icon.png', '/logo-inicio.png' o '/tito-icon.png'? ---
             src="/icon.png"
             alt="Tito Café Logo"
             initial={{ scale: 0.8, opacity: 0 }}
@@ -51,7 +53,7 @@ function HomePage() {
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.3 }}
           >
-            TITO CAFETERÍA
+            TITO CAFETERÍA {/* O "El Sabor de la Tradición..." si prefieres */}
           </motion.h1>
           <motion.p
             className="hero-subtitle"
@@ -59,7 +61,7 @@ function HomePage() {
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.5 }}
           >
-            El sabor de la tradición en cada taza ☕  
+            El sabor de la tradición en cada taza ☕
             Descubre nuestros cafés de especialidad y postres artesanales.
           </motion.p>
 
