@@ -551,3 +551,61 @@ footer a:hover {
 
 /* --- ELIMINAR REGLA VACÍA --- */
 /* (Se eliminó la regla vacía .offcanvas-logout-btn {}) */
+
+/* =============================================== */
+/* === CORRECCIÓN PANTALLA DE CARGA INICIAL === */
+/* =============================================== */
+
+/* Estilos para el contenedor principal de la pantalla de carga (si usas uno) */
+/* Reemplaza '.loading-screen' con el ID o clase real que uses en tu index.html */
+.loading-screen {
+  position: fixed; /* Ocupa toda la pantalla */
+  inset: 0;
+  background-color: var(--crema); /* Fondo base claro */
+  display: flex;
+  flex-direction: column; /* Alinea logo y texto verticalmente */
+  justify-content: center;
+  align-items: center;
+  z-index: 9999; /* Asegura que esté por encima de todo */
+  transition: opacity 0.5s ease-out; /* Para desvanecer al cargar */
+}
+
+/* Si el body tiene tema oscuro inicialmente (menos común) */
+body[data-bs-theme="dark"] .loading-screen {
+   background-color: #1e1e1e; /* Fondo base oscuro */
+}
+
+/* Contenedor de la imagen central */
+.loading-logo-container {
+  width: 90%; /* Ancho relativo al contenedor */
+  max-width: 400px; /* Ancho máximo para el contenedor del logo */
+  background-color: var(--card-bg); /* Fondo blanco/gris claro */
+  padding: 2rem; /* Espacio alrededor */
+  border-radius: 15px; /* Bordes redondeados */
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1); /* Sombra */
+  display: flex; /* Centra la imagen adentro */
+  justify-content: center;
+  align-items: center;
+}
+[data-bs-theme="dark"] .loading-logo-container {
+   background-color: #2a2a2a; /* Fondo tarjeta oscuro */
+}
+
+
+/* Estilos para la imagen del logo */
+.loading-logo-container img {
+  max-width: 100%; /* La imagen no será más ancha que su contenedor */
+  max-height: 70vh; /* Limita la altura máxima de la imagen */
+  height: auto;     /* Mantiene la proporción */
+  object-fit: contain; /* ¡CLAVE! Escala la imagen para que quepa sin distorsión */
+}
+
+/* Opcional: Si quieres añadir texto debajo */
+.loading-screen p {
+  margin-top: 1.5rem;
+  font-size: 1.1rem;
+  color: var(--texto-secundario);
+}
+[data-bs-theme="dark"] .loading-screen p {
+   color: var(--texto-secundario);
+}
