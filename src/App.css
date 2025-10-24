@@ -1,38 +1,56 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Lato:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Lato:wght@400;700&display=swap');
 
 /* =================================== */
 /* === PALETA DE COLORES Y TEMAS === */
 /* =================================== */
 :root {
-  /* --- TEMA CLARO --- */
+  /* --- TEMA CLARO (TITO CAFE) --- */
   --cafe-dark: #4a2c2a;
-  --cafe-medium: #8d6e63;
-  --cafe-light: #d7ccc8;
-  --crema: #fdfaf6;
+  --cafe-medium: #8d6e63; /* Color primario */
+  --cafe-light: #d7ccc8; /* Borde y secundario claro */
+  --crema: #fdfaf6;      /* Fondo principal */
   --texto-principal: #372423;
   --texto-secundario: #5d4037;
-  
+  --card-bg: #ffffff; /* Fondo tarjetas claro */
+
   --bs-body-bg: var(--crema);
   --bs-body-color: var(--texto-principal);
   --bs-border-color: var(--cafe-light);
-  --bs-card-bg: #ffffff;
-  --bs-tertiary-bg: #f5f5f5;
+  --bs-card-bg: var(--card-bg);
+  --bs-tertiary-bg: #f5f5f5; /* Fondo sutil para hover, etc. */
+  --primary-color: var(--cafe-medium); /* Variable genérica para primario */
+  --primary-color-light: var(--cafe-light); /* Variable genérica para claro */
 }
 
 [data-bs-theme="dark"] {
-  /* --- TEMA OSCURO --- */
-  --cafe-dark: #1a1a1a;
-  --cafe-medium: #3c3c3c;
-  --cafe-light: #585858;
-  --crema: #212121;
-  --texto-principal: #f5f5f5;
+  /* --- TEMA OSCURO (TITO CAFE) --- */
+  --cafe-dark: #3a2422; /* Un poco más oscuro que el medio */
+  --cafe-medium: #5d4037; /* Color primario oscuro */
+  --cafe-light: #4e342e; /* Borde oscuro */
+  --crema: #1e1e1e;      /* Fondo principal oscuro */
+  --texto-principal: #e0e0e0;
   --texto-secundario: #bdbdbd;
+  --card-bg: #2a2a2a; /* Fondo tarjetas oscuro */
 
-  --bs-body-bg: #121212;
+  --bs-body-bg: var(--crema);
   --bs-body-color: var(--texto-principal);
-  --bs-border-color: #424242;
-  --bs-card-bg: #1e1e1e;
-  --bs-tertiary-bg: #2a2a2a;
+  --bs-border-color: var(--cafe-light);
+  --bs-card-bg: var(--card-bg);
+  --bs-tertiary-bg: #333333; /* Fondo sutil oscuro */
+  --primary-color: var(--cafe-medium);
+  --primary-color-light: #4e342e; /* Tono oscuro para fondo icono recompensas */
+
+  /* Arregla .text-muted (precio original y "carrito vacío") */
+  --bs-secondary-color: var(--texto-secundario);
+
+  /* Variables de Bootstrap para tablas */
+  --bs-table-color: var(--texto-principal);
+  --bs-table-bg: transparent;
+  --bs-table-border-color: var(--cafe-light);
+  --bs-table-striped-color: var(--texto-principal);
+  --bs-table-striped-bg: rgba(255, 255, 255, 0.05);
+  --bs-table-hover-color: var(--texto-principal);
+  --bs-table-hover-bg: rgba(255, 255, 255, 0.075);
 }
 
 /* ============================ */
@@ -43,216 +61,265 @@ body {
   background-color: var(--bs-body-bg);
   color: var(--bs-body-color);
   transition: background-color 0.3s ease, color 0.3s ease;
-  padding-top: 80px; /* Ajusta este valor si la barra es más gruesa */
+  padding-top: 80px; /* Ajustado para la nueva navbar */
 }
-h1, h2, h3, h4, h5, .navbar-brand, .display-4 {
+
+h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title {
   font-family: 'Playfair Display', serif;
+  letter-spacing: 0.5px;
 }
+
 .section-padding {
-  padding-top: 4rem;
-  padding-bottom: 4rem;
+  padding: 4rem 1.5rem;
+  /* animation: fadeUp 0.8s ease;  Puedes descomentar si quieres la animación */
 }
 
-/* ========================================= */
-/* === NAVBAR Y OFFCANVAS (VERSIÓN FINAL) === */
-/* ========================================= */
-
-/* --- 1. ESTILOS BASE Y DE ESCRITORIO (PANTALLAS > 992px) --- */
-.navbar {
-  background: rgba(26, 26, 26, 0.85);
+/* =============================== */
+/* === NAVBAR ELEGANTE (Adaptada) === */
+/* =============================== */
+.navbar.navbar-light-theme {
+  background-color: rgba(30, 30, 30, 0.9); /* Fondo oscuro semi-transparente */
   backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  transition: background-color 0.3s ease;
-  padding-top: 1rem; /* Aumenta el padding para hacerla más gruesa */
-  padding-bottom: 1rem; /* Aumenta el padding para hacerla más gruesa */
-}
-.navbar-brand span {
-  font-family: 'Playfair Display', serif;
-  color: #fff;
-}
-.nav-link {
-    color: #c0c0c0 !important;
-    font-weight: 500;
-    margin: 0 0.5rem;
-    position: relative;
-    transition: color 0.3s;
-}
-.nav-link:hover, .nav-link.active {
-    color: white !important;
-}
-.nav-link.active::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 2px;
-    background-color: var(--cafe-medium);
-}
-.navbar-toggler {
-    border-color: rgba(255, 255, 255, 0.1);
-}
-.navbar-toggler-icon {
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(255, 255, 255, 0.75)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1); /* Borde sutil blanco */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  padding: 0.75rem 1rem; /* Ajustamos padding */
 }
 
-/* --- 2. ESTILOS PARA MÓVIL (PANTALLAS < 992px) --- */
-@media (max-width: 991.98px) {
-  /* Hacemos la barra superior sólida en móvil */
-  .navbar {
-    background-color: #181818;
-    backdrop-filter: none;
-    padding-top: 0.75rem; /* Ajuste para móvil, puede ser más delgado */
-    padding-bottom: 0.75rem; /* Ajuste para móvil */
-  }
+.navbar-brand img { /* Estilo para el logo imagen */
+  max-height: 40px; /* Asegura que no sea demasiado alto */
 }
 
-/* --- 3. ESTILOS PARA EL MENÚ LATERAL (OFFCANVAS) --- */
+.navbar.navbar-light-theme .nav-link {
+  color: #D0D0D0 !important; /* Texto gris claro para enlaces */
+  font-weight: 500;
+  margin: 0 0.6rem;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.navbar.navbar-light-theme .nav-link::after {
+  content: '';
+  position: absolute;
+  width: 0%;
+  height: 2px;
+  bottom: -4px;
+  left: 0;
+  background: var(--cafe-medium); /* Subrayado con color café */
+  transition: width 0.3s;
+}
+
+.navbar.navbar-light-theme .nav-link:hover::after {
+  width: 100%;
+}
+
+.navbar.navbar-light-theme .nav-link:hover,
+.navbar.navbar-light-theme .nav-link.active {
+  color: #FFFFFF !important; /* Texto blanco al pasar/activo */
+}
+
+/* Botón toggler móvil */
+.navbar-toggler { /* Usa el icono hamburguesa por defecto */
+   border-color: rgba(255, 255, 255, 0.2);
+}
+.navbar-toggler-icon { /* Ícono hamburguesa blanco */
+   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.8%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+
+/* --- OFFCANVAS (Menú Lateral Móvil) --- */
 .offcanvas {
-  background-color: #181818 !important;
-  border-left: 1px solid #333;
+  background-color: var(--bs-card-bg) !important; /* Fondo adaptable */
+  color: var(--bs-body-color);
+  border-left: 1px solid var(--bs-border-color);
+  width: 100%;
+  max-width: 300px; /* Un poco más estrecho */
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
+
 .offcanvas-header {
-  border-bottom: 1px solid #333;
-  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--bs-border-color);
+  padding: 1.25rem;
 }
+
 .offcanvas-title {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.5rem;
-  color: #fff;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--cafe-medium); /* Color café */
 }
+
 .offcanvas-body {
-  padding: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 0; /* Quitamos padding para que los enlaces ocupen todo */
+  flex-grow: 1; /* Ocupa el espacio disponible */
 }
+
+/* Lista de enlaces en offcanvas */
 .offcanvas-body .navbar-nav {
-  padding-top: 1rem;
+  padding-top: 0.5rem;
+  flex-grow: 1; /* Permite que la lista crezca */
+  overflow-y: auto; /* AÑADIDO: Permite scroll si hay muchos enlaces */
 }
+
 .offcanvas-body .nav-link {
   font-size: 1.2rem !important;
-  color: #dcdcdc !important;
-  padding: 1rem 1.5rem !important;
-  margin: 0 !important;
+  color: var(--texto-secundario) !important;
   text-align: left;
-  border-bottom: 1px solid #282828;
+  font-weight: 500;
+  padding: 0.9rem 1.25rem !important; /* Ajuste de padding */
+  border-bottom: 1px solid var(--bs-border-color);
+  transition: all 0.2s ease;
 }
 .offcanvas-body .nav-item:last-of-type .nav-link {
   border-bottom: none;
 }
-.offcanvas-body .nav-link:hover {
-  color: #fff !important;
-  background-color: rgba(255, 255, 255, 0.05);
-}
+
+.offcanvas-body .nav-link:hover,
 .offcanvas-body .nav-link.active {
-   color: white !important;
-   font-weight: bold;
+  color: var(--cafe-medium) !important; /* Color café al pasar/activo */
+  background-color: var(--bs-tertiary-bg); /* Fondo sutil */
 }
-.offcanvas-body .nav-link.active::after {
-  display: none;
-}
+
+/* Footer del offcanvas (botones tema/login) */
 .offcanvas-footer {
-  padding: 1rem 1.5rem;
-  display: flex;
+  border-top: 1px solid var(--bs-border-color);
+  padding: 1rem 1.25rem;
+  background-color: var(--bs-body-bg); /* Fondo base */
+  margin-top: auto; /* Se pega abajo */
+}
+/* Estilos para UserControls dentro del footer (flexbox) */
+.offcanvas-footer .d-flex {
   justify-content: space-between;
   align-items: center;
-  border-top: 1px solid #333;
-  background-color: rgba(0, 0, 0, 0.2);
+  width: 100%;
+}
+.offcanvas-footer .btn {
+  margin-left: 1rem; /* Espacio entre botones */
+}
+/* Botón específico para cerrar sesión en offcanvas */
+.offcanvas-logout-btn {
+  /* Puedes darle estilos específicos si quieres, o usar btn-danger como abajo */
 }
 
-/* ===================== */
-/* === PESTAÑAS (TABS) === */
-/* ===================== */
-.nav-tabs {
-  border-bottom-color: var(--bs-border-color);
-}
-.nav-tabs .nav-link {
-  color: var(--texto-secundario) !important;
-  font-weight: 500;
-  border-color: transparent;
-  border-bottom: 3px solid transparent;
-}
-.nav-tabs .nav-link.active {
-  color: var(--texto-principal) !important;
-  font-weight: bold;
-  border-color: var(--bs-border-color) var(--bs-border-color) var(--bs-body-bg);
-  border-bottom-color: var(--cafe-medium);
-}
+
+/* ============================ */
+/* === SECCIÓN HERO (Opcional) === */
+/* ============================ */
+/* Si tienes una sección Hero similar a Miss Donitas, puedes adaptar los estilos aquí */
+
 
 /* ======================= */
-/* === TARJETAS (CARDS) === */
+/* === TARJETAS === */
 /* ======================= */
 .card {
   background-color: var(--bs-card-bg);
   border: 1px solid var(--bs-border-color);
-  border-radius: 15px;
+  border-radius: 12px; /* Bordes más redondeados */
   overflow: hidden;
-  transition: all 0.2s ease-in-out;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05); /* Sombra inicial sutil */
 }
+
 .card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.1);
 }
-/* --- ESTILO PARA TARJETAS EN OFERTA (CORREGIDO) --- */
+
 .card.en-oferta {
-  border: 2px solid #dc3545; /* Borde rojo */
+  border: 2px solid var(--cafe-medium); /* Borde café para ofertas */
 }
+
+/* --- Etiqueta de Descuento --- */
 .discount-badge {
   position: absolute;
   top: 10px;
   right: 10px;
-  z-index: 10;
-  background-color: #dc3545;
+  background-color: var(--cafe-medium); /* Fondo café */
   color: white;
-  padding: 0.35em 0.65em;
-  font-size: .8em;
+  width: 50px; /* Círculo un poco más pequeño */
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8em;
   font-weight: 700;
-  border-radius: 50rem;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  z-index: 2;
 }
 
-/* ================= */
-/* === TABLAS === */
-/* ================= */
-.table {
-  --bs-table-bg: var(--bs-card-bg);
-  --bs-table-color: var(--bs-body-color);
-  --bs-table-border-color: var(--bs-border-color);
-  --bs-table-hover-bg: var(--bs-tertiary-bg);
-  --bs-table-striped-bg: var(--bs-tertiary-bg);
-  --bs-table-hover-color: var(--texto-principal) !important;
+/* ======================= */
+/* === PRECIOS === */
+/* ======================= */
+/* (Los estilos de Miss Donitas para precios original/descuento son buenos, los mantenemos) */
+.precio-original {
+  text-decoration: line-through;
+  color: #9E9E9E; /* Gris estándar */
+  font-weight: 500;
+  margin-right: 0.3rem;
+}
+[data-bs-theme="dark"] .precio-original {
+  color: #757575; /* Gris más oscuro para tema oscuro */
 }
 
-.table thead th {
-  background-color: var(--cafe-dark);
-  border-color: var(--cafe-medium);
+.precio-descuento {
+  color: #2e7d32; /* Verde estándar para precios con descuento */
+  font-weight: 700;
+}
+[data-bs-theme="dark"] .precio-descuento {
+  color: #66bb6a !important; /* Verde más claro para tema oscuro */
 }
 
-[data-bs-theme="light"] .table thead th {
-  color: var(--crema);
+
+/* ======================= */
+/* === FOOTER === */
+/* ======================= */
+footer {
+  background: var(--cafe-light); /* Fondo café claro */
+  color: var(--texto-secundario); /* Texto secundario */
+  text-align: center;
+  padding: 1.5rem 1rem;
+  font-weight: 500;
+  border-top: 1px solid var(--bs-border-color);
+  margin-top: 3rem; /* Espacio arriba del footer */
 }
 
-[data-bs-theme="dark"] .table thead th {
+[data-bs-theme="dark"] footer {
+  background: #212121; /* Fondo oscuro del footer */
+  color: var(--texto-secundario);
+  border-top-color: var(--bs-border-color);
+}
+/* Enlaces en footer */
+footer a {
   color: var(--texto-principal);
+  text-decoration: none;
+}
+footer a:hover {
+  color: var(--cafe-medium);
+  text-decoration: underline;
 }
 
-/* ========================================= */
-/* === BOTÓN DE CARRITO FLOTANTE === */
-/* ========================================= */
+/* ======================= */
+/* === BOTÓN FLOTANTE === */
+/* ======================= */
 .boton-carrito-flotante {
+  /* (Los estilos de Miss Donitas son buenos, los mantenemos usando variables de Tito) */
   position: fixed;
   z-index: 1000;
   bottom: 20px;
   right: 20px;
-  
-  background-color: var(--cafe-medium); 
+  background-color: var(--cafe-medium);
   color: white;
   width: 60px;
   height: 60px;
   border-radius: 50%;
   border: none;
-  
   display: flex;
   align-items: center;
   justify-content: center;
-  
   font-size: 1.5rem;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   cursor: pointer;
@@ -263,90 +330,219 @@ h1, h2, h3, h4, h5, .navbar-brand, .display-4 {
   transform: scale(1.1);
   background-color: var(--cafe-dark);
 }
-
 .badge-carrito {
   position: absolute;
   top: 0;
   right: 0;
-  
-  background-color: #dc3545;
+  background-color: #dc3545; /* Rojo para el contador */
   color: white;
-  
   font-size: 0.75rem;
   font-weight: bold;
   padding: 0.25em 0.5em;
   border-radius: 50%;
-  
   transform: translate(25%, -25%);
 }
 
-/* ======================= */
-/* === OTROS ESTILOS === */
-/* ======================= */
-.btn-primary {
-  background-color: var(--cafe-medium);
-  border-color: var(--cafe-medium);
+/* ===================================== */
+/* === SUB-NAVEGACIÓN PÁGINA (Tabs) === */
+/* ===================================== */
+/* (Los estilos de Miss Donitas son buenos, adaptamos colores) */
+.nav-tabs {
+  border-bottom: 1px solid var(--bs-border-color);
 }
-.btn-primary:hover {
-  background-color: var(--cafe-dark);
-  border-color: var(--cafe-dark);
+.nav-tabs .nav-item {
+  margin-bottom: -1px;
 }
-
-.hero-logo {
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  object-fit: cover;
-  background-color: #fff;
-  padding: 10px;
-  border: 4px solid var(--cafe-light);
-  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-}
-
-.pac-container {
-  z-index: 9999 !important;
-}
-
-.no-recompensas-box {
-  background-color: #f8f9fa;
+.nav-tabs .nav-link {
+  font-family: 'Lato', sans-serif;
+  font-weight: 700;
+  font-size: 1.1rem; /* Un poco más pequeño */
   color: var(--texto-secundario);
-  border: 2px dashed var(--cafe-light);
+  text-decoration: none;
+  margin: 0 0.8rem; /* Menos margen */
+  padding-bottom: 8px;
+  border: none;
+  border-bottom: 3px solid transparent;
+  transition: all 0.3s ease;
+}
+.nav-tabs .nav-link:hover,
+.nav-tabs .nav-link:focus {
+  color: var(--cafe-medium);
+  border-color: transparent;
+  isolation: isolate;
+}
+.nav-tabs .nav-link.active {
+  color: var(--texto-principal);
+  border-bottom-color: var(--cafe-medium);
+  background-color: transparent;
+  border-color: transparent;
+  border-bottom: 3px solid var(--cafe-medium);
+}
+/* Fix para Dark Mode (asegura colores correctos) */
+[data-bs-theme="dark"] .nav-tabs .nav-link {
+  color: var(--texto-secundario) !important;
+}
+[data-bs-theme="dark"] .nav-tabs .nav-link:hover,
+[data-bs-theme="dark"] .nav-tabs .nav-link:focus {
+  color: var(--cafe-medium) !important;
+}
+[data-bs-theme="dark"] .nav-tabs .nav-link.active {
+  color: var(--texto-principal) !important;
+  border-bottom-color: var(--cafe-medium) !important;
+}
+
+/* =============================================================== */
+/* === ESTILOS "AÚN NO TIENES RECOMPENSAS" (CAJA - ¡CORREGIDO!) === */
+/* =============================================================== */
+.recompensas-container {
+  display: flex;
+  justify-content: center; /* Centrado horizontalmente */
+  align-items: center;
+  min-height: 40vh;
   padding: 2rem;
-  border-radius: 8px;
+}
+
+.recompensas-caja-vacia {
+  text-align: center;
+  padding: 2rem 1.5rem; /* Ajuste padding */
+  border: 1px solid var(--bs-border-color);
+  border-radius: 15px;
+  max-width: 450px; /* Un poco más ancho */
+  background-color: var(--bs-card-bg);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+}
+
+/* --- ESTILOS PARA EL ICONO (AJUSTA EL TAMAÑO SI ES NECESARIO) --- */
+.recompensas-icono {
+  width: 80px;   /* <<<--- AJUSTA ESTE TAMAÑO (ej: 100px, 120px) */
+  height: auto;
+  margin-bottom: 1.25rem; /* Menos margen */
+  opacity: 0.6; /* Un poco más visible */
+  /* Quité el fondo circular, si lo quieres, descomenta abajo */
+  /* border-radius: 50%; */
+  /* padding: 10px; */
+  /* background-color: var(--primary-color-light); */
+}
+
+.recompensas-caja-vacia h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.6rem; /* Un poco más pequeño */
+  font-weight: 700;
+  color: var(--texto-principal);
+  margin-bottom: 0.5rem;
+}
+
+.recompensas-caja-vacia p {
+  font-size: 0.95rem; /* Un poco más pequeño */
+  color: var(--texto-secundario);
+  line-height: 1.5;
+}
+
+/* ===================================== */
+/* === ESTILOS LOGIN (Adaptados) === */
+/* ===================================== */
+.login-box {
+  max-width: 450px; /* Un poco más estrecho */
+  margin: 3rem auto; /* Menos margen superior */
+  padding: 2rem;
+  background-color: var(--bs-card-bg);
+  border: 1px solid var(--bs-border-color);
+  border-radius: 12px; /* Coincide con cards */
+  box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+}
+.login-box button {
+  display: block;
+  width: 100%;
+  max-width: 280px; /* Botones más estrechos */
+  margin: 1.25rem auto 0 auto;
   text-align: center;
 }
-
-.no-recompensas-box h3 {
-  color: var(--texto-principal);
+/* Responsivo para Login */
+@media (max-width: 576px) {
+  .login-box {
+    width: 90%; /* Un poco más ancho en móvil */
+    padding: 1.5rem;
+    margin: 2rem auto;
+  }
+  .login-box h2 { font-size: 1.6rem; text-align: center; }
+  .login-box button { width: 85%; margin: 1rem auto 0 auto; }
 }
 
-[data-bs-theme="dark"] .no-recompensas-box {
-  background-color: var(--bs-tertiary-bg);
-  color: var(--texto-secundario);
-  border: 2px dashed var(--bs-border-color);
+/* ===================================== */
+/* === OTRAS CORRECCIONES Y AJUSTES === */
+/* ===================================== */
+
+/* Botón 'X' (btn-close) en modo oscuro */
+[data-bs-theme="dark"] .btn-close {
+  filter: invert(1) grayscale(100%) brightness(200%);
 }
 
-[data-bs-theme="dark"] .no-recompensas-box h3 {
-  color: var(--texto-principal);
+/* Ajustes a tablas en modo oscuro */
+[data-bs-theme="dark"] .table {
+  color: var(--texto-principal) !important;
+  border-color: var(--bs-border-color) !important;
+}
+[data-bs-theme="dark"] .table th,
+[data-bs-theme="dark"] .table td {
+  color: var(--texto-principal) !important;
+  border-color: var(--bs-border-color) !important;
+}
+[data-bs-theme="dark"] .table-hover > tbody > tr:hover > * {
+  color: var(--texto-principal) !important;
+  background-color: rgba(255, 255, 255, 0.075) !important;
 }
 
+/* Detalles del pedido */
 .detalle-pedido-productos {
   background-color: var(--bs-tertiary-bg);
-  padding: 1.5rem;
+  padding: 1rem; /* Menos padding */
   margin: 0.5rem 0;
   border-radius: 8px;
   border: 1px solid var(--bs-border-color);
 }
-
 .detalle-pedido-productos h5 {
-  margin-bottom: 1rem;
-  padding-bottom: 0.75rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
   border-bottom: 1px solid var(--bs-border-color);
+  font-size: 1.1rem; /* Título más pequeño */
 }
-
 .detalle-pedido-item {
   display: flex;
   justify-content: space-between;
-  padding: 0.5rem 0;
-  font-size: 0.95rem;
+  padding: 0.4rem 0; /* Menos padding */
+  font-size: 0.9rem; /* Texto más pequeño */
+}
+
+/* Ajuste general botones primarios */
+.btn-primary {
+  background-color: var(--cafe-medium);
+  border-color: var(--cafe-medium);
+  color: #fff; /* Asegura texto blanco */
+}
+.btn-primary:hover {
+  background-color: var(--cafe-dark);
+  border-color: var(--cafe-dark);
+  color: #fff;
+}
+/* Forzar color blanco en tema oscuro si es necesario */
+[data-bs-theme="dark"] .btn-primary {
+    color: #fff !important;
+}
+
+/* Ajuste botones Outline (ej. Vaciar Carrito) */
+.btn-outline-danger {
+  color: #dc3545;
+  border-color: #dc3545;
+}
+.btn-outline-danger:hover {
+  background-color: #dc3545;
+  color: #fff;
+}
+[data-bs-theme="dark"] .btn-outline-danger {
+   color: #f88; /* Rojo más claro en oscuro */
+   border-color: #f88;
+}
+[data-bs-theme="dark"] .btn-outline-danger:hover {
+  background-color: #f88;
+  color: #121212; /* Texto oscuro sobre fondo claro */
 }
