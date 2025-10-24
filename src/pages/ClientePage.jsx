@@ -576,40 +576,42 @@ function ClientePage() {
       )}
 
       {!loading && activeTab === 'recompensas' && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          <h2>Mis Recompensas</h2>
-          {misRecompensas?.length === 0 ? (
-            <div className="recompensas-container">
-              <div className="recompensas-caja-vacia">
-                <img
-                  src="/dona-icon.png"
-                  alt="Icono de Donita"
-                  className="recompensas-icono"
-                />
-                <h3>Aún no tienes recompensas</h3>
-                <p>¡Sigue comprando para ganar bebidas gratis y más sorpresas!</p>
+  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+    <h2>Mis Recompensas</h2>
+    {misRecompensas?.length === 0 ? (
+      <div className="recompensas-container">
+        <div className="recompensas-caja-vacia">
+          <img
+            // --- CORRECCIÓN AQUÍ ---
+            src="/tito-icon.png"   // <-- Usa el icono correcto de la carpeta 'public'
+            alt="Icono de Tito Cafe" // <-- Texto alternativo actualizado
+            className="recompensas-icono"
+            // --- FIN DE CORRECCIÓN ---
+          />
+          <h3>Aún no tienes recompensas</h3>
+          <p>¡Sigue comprando para ganar bebidas gratis y más sorpresas!</p>
+        </div>
+      </div>
+    ) : (
+      <div className="row g-4">
+        {misRecompensas?.map(recompensa => (
+          <div key={recompensa.id} className="col-12">
+            <div style={styles.cupon}>
+              <div style={styles.cuponIcon}>🎁</div> {/* Considera usar tito-icon.png aquí también si quieres */}
+              <div style={styles.cuponBody}>
+                <h4 style={styles.cuponTitle}>{recompensa.nombre}</h4>
+                <p style={styles.cuponDescription}>{recompensa.descripcion}</p>
+              </div>
+              <div style={styles.cuponCantidad}>
+                Tienes {recompensa.cantidad}
               </div>
             </div>
-          ) : (
-            <div className="row g-4">
-              {misRecompensas?.map(recompensa => (
-                <div key={recompensa.id} className="col-12">
-                  <div style={styles.cupon}>
-                    <div style={styles.cuponIcon}>🎁</div>
-                    <div style={styles.cuponBody}>
-                      <h4 style={styles.cuponTitle}>{recompensa.nombre}</h4>
-                      <p style={styles.cuponDescription}>{recompensa.descripcion}</p>
-                    </div>
-                    <div style={styles.cuponCantidad}>
-                      Tienes {recompensa.cantidad}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </motion.div>
-      )}
+          </div>
+        ))}
+      </div>
+    )}
+  </motion.div>
+)}
 
       {showPaymentModal && clientSecret && (
         <div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
