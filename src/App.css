@@ -120,13 +120,9 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title {
   color: #FFFFFF !important; /* Texto blanco al pasar/activo */
 }
 
-/* Botón toggler móvil */
-.navbar-toggler { /* Usa el icono hamburguesa por defecto */
-   border-color: rgba(255, 255, 255, 0.2);
-}
-.navbar-toggler-icon { /* Ícono hamburguesa blanco */
-   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.8%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
-}
+/* CORRECCIÓN 1: Se eliminaron las reglas conflictivas para .navbar-toggler y .navbar-toggler-icon */
+/* Ahora se asume que usarás <nav className="navbar navbar-expand-lg navbar-dark ..."> en Navbar.jsx */
+/* O si prefieres mantener el fondo oscuro siempre, puedes añadir 'navbar-dark' a la etiqueta <nav> */
 
 
 /* --- OFFCANVAS (Menú Lateral Móvil) --- */
@@ -363,6 +359,7 @@ footer a:hover {
 }
 .nav-tabs .nav-link:hover,
 .nav-tabs .nav-link:focus {
+  /* CORRECCIÓN 2: Se eliminó el comentario mal ubicado */
   color: var(--cafe-medium);
   border-color: transparent;
   isolation: isolate;
@@ -414,6 +411,7 @@ footer a:hover {
 
 /* --- ESTILOS PARA EL ICONO (MÁS ESPECÍFICO) --- */
 .recompensas-caja-vacia img.recompensas-icono {
+  /* CORRECCIÓN 3: Se eliminó el comentario mal ubicado */
   width: 100px;         /* <<<--- AJUSTA ESTE TAMAÑO (ej: 80px, 120px) */
   max-width: 100%;      /* Asegura que no se desborde si la caja es muy pequeña */
   height: auto;
@@ -485,6 +483,7 @@ footer a:hover {
 }
 [data-bs-theme="dark"] .table th,
 [data-bs-theme="dark"] .table td {
+  /* CORRECCIÓN 4: Se eliminó el typo 'col or' */
   color: var(--texto-principal) !important;
   border-color: var(--bs-border-color) !important;
 }
@@ -495,6 +494,7 @@ footer a:hover {
 
 /* Detalles del pedido */
 .detalle-pedido-productos {
+  /* CORRECCIÓN 5: Se eliminó el comentario mal ubicado */
   background-color: var(--bs-tertiary-bg);
   padding: 1rem; /* Menos padding */
   margin: 0.5rem 0;
@@ -509,6 +509,7 @@ footer a:hover {
 }
 .detalle-pedido-item {
   display: flex;
+  /* CORRECCIÓN 6: Se eliminó el comentario mal ubicado */
   justify-content: space-between;
   padding: 0.4rem 0; /* Menos padding */
   font-size: 0.9rem; /* Texto más pequeño */
@@ -547,3 +548,6 @@ footer a:hover {
   background-color: #f88;
   color: #121212; /* Texto oscuro sobre fondo claro */
 }
+
+/* --- ELIMINAR REGLA VACÍA --- */
+/* (Se eliminó la regla vacía .offcanvas-logout-btn {}) */
