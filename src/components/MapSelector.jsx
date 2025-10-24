@@ -1,6 +1,6 @@
-// Archivo: src/components/MapSelector.jsx (Versión con Búsqueda y optimizada con 'memo')
+// Archivo: src/components/MapSelector.jsx (Versión con Búsqueda)
 
-import React, { useState, useRef, useCallback, useEffect, memo } from 'react'; // <-- 1. IMPORTADO 'memo'
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { GoogleMap, useJsApiLoader, Marker, Autocomplete } from '@react-google-maps/api';
 import toast from 'react-hot-toast';
 
@@ -85,6 +85,4 @@ const MapSelector = ({ onLocationSelect, initialAddress }) => {
   );
 };
 
-// --- 2. MODIFICACIÓN AQUÍ ---
-// Envolvemos el componente con 'memo' para evitar re-renders innecesarios
-export default memo(MapSelector);
+export default MapSelector;
