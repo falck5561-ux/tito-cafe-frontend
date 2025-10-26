@@ -55,7 +55,7 @@ function HomePage() {
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.3 }}
           >
-            TITO CAFETERÍA {/* O "El Sabor de la Tradición..." */}
+            TITO {/* O "El Sabor de la Tradición..." */}
           </motion.h1>
           <motion.p
             className="hero-subtitle"
@@ -63,8 +63,7 @@ function HomePage() {
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.5 }}
           >
-            El sabor de la tradición en cada taza ☕
-            Descubre nuestros cafés de especialidad y postres artesanales.
+            Lo mejor aqui esta 
           </motion.p>
 
           <motion.div

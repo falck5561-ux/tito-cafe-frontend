@@ -1,49 +1,74 @@
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Lato:wght@400;700&display=swap');
 
 /* =================================== */
-/* === PALETA DE COLORES Y TEMAS === */
+/* === MEJORAS GLOBALES === */
 /* =================================== */
-:root {
-  /* --- TEMA CLARO (TITO CAFE) --- */
-  --cafe-dark: #4a2c2a;
-  --cafe-medium: #8d6e63; /* Color primario */
-  --cafe-light: #d7ccc8; /* Borde y secundario claro */
-  --crema: #fdfaf6; /* Fondo principal */
-  --texto-principal: #372423;
-  --texto-secundario: #5d4037;
-  --card-bg: #ffffff; /* Fondo tarjetas claro */
-
-  --bs-body-bg: var(--crema);
-  --bs-body-color: var(--texto-principal);
-  --bs-border-color: var(--cafe-light);
-  --bs-card-bg: var(--card-bg);
-  --bs-tertiary-bg: #f5f5f5; /* Fondo sutil para hover, etc. */
-  --primary-color: var(--cafe-medium); /* Variable genérica para primario */
-  --primary-color-light: var(--cafe-light); /* Variable genérica para claro */
+*, *::before, *::after {
+  box-sizing: border-box; 
 }
 
-[data-bs-theme="dark"] {
-  /* --- TEMA OSCURO (TITO CAFE) --- */
-  --cafe-dark: #3a2422; /* Un poco más oscuro que el medio */
-  --cafe-medium: #5d4037; /* Color primario oscuro */
-  --cafe-light: #4e342e; /* Borde oscuro */
-  --crema: #1e1e1e; /* Fondo principal oscuro */
-  --texto-principal: #e0e0e0;
-  --texto-secundario: #bdbdbd;
-  --card-bg: #2a2a2a; /* Fondo tarjetas oscuro */
+html {
+  scroll-behavior: smooth;
+}
+
+/* =================================== */
+/* === PALETA DE COLORES Y TEMAS === */
+/* =================================== */
+
+:root {
+  /* === TEMA CLARO (GRIS ILUMINADO) === */
+  --cafe-dark: #C0392B;       /* Rojo intenso (Hover botones) */
+  --cafe-medium: #E74C3C;      /* Rojo vibrante (Botones activos) */
+  --cafe-light: #BDC3C7;      /* Gris medio (Detalles, bordes) */
+  --crema: #F5F5F5;          /* Gris muy claro (Fondo principal) */
+  --texto-principal: #2C3E50;  /* Gris oscuro (Texto principal) */
+  --texto-secundario: #BDC3C7; /* Gris medio (Texto secundario/iconos) */
+  --card-bg: #EAEAEA;          /* Gris cálido (Fondo tarjetas/secciones) */
+
+  /* --- COLORES HERO Y HOVER LOGO (se mantienen) --- */
+  --hover-logo-border-color: #dc3545; /* Rojo para borde logo */
+  --hero-blue-dark: #2c3e50; /* Azul oscuro elegante (Hero) */
+  --hero-blue-medium: #34495e; /* Azul medio (Hero) */
 
   --bs-body-bg: var(--crema);
   --bs-body-color: var(--texto-principal);
   --bs-border-color: var(--cafe-light);
   --bs-card-bg: var(--card-bg);
-  --bs-tertiary-bg: #333333; /* Fondo sutil oscuro */
-  --primary-color: var(--cafe-medium);
-  --primary-color-light: #4e342e; /* Tono oscuro para fondo icono recompensas */
+  --bs-tertiary-bg: var(--card-bg); /* Usando el gris cálido para fondos sutiles */
+  --primary-color: var(--cafe-medium); /* Variable genérica para primario (Rojo) */
+  --primary-color-light: var(--cafe-light); /* Variable genérica para claro (Gris medio) */
 
-  /* Arregla .text-muted (precio original y "carrito vacío") */
+  --navbar-height: 70px;
+  --hero-border-radius: 24px; 
+  --card-border-radius: 16px; 
+}
+
+/* =============================================== */
+/* === TEMA OSCURO (AZUL) === */
+/* =============================================== */
+[data-bs-theme="dark"] {
+  /* --- TEMA OSCURO (AZUL) --- */
+  --cafe-dark: #0a58ca;       /* Azul oscuro (Bootstrap Dark Blue) */
+  --cafe-medium: #0d6efd;      /* Azul primario (Bootstrap Blue) */
+  --cafe-light: #2c3e50;      /* Borde azul-gris oscuro */
+  
+  --crema: #1e1e1e;          /* Fondo principal oscuro */
+  --texto-principal: #e0e0e0;
+  --texto-secundario: #bdbdbd;
+  --card-bg: #2a2a2a;          /* Fondo tarjetas oscuro */
+
+  --bs-body-bg: var(--crema);
+  --bs-body-color: var(--texto-principal);
+  --bs-border-color: var(--cafe-light); /* Usa el nuevo borde azul-gris */
+  --bs-card-bg: var(--card-bg);
+  --bs-tertiary-bg: #333333; /* Fondo sutil oscuro */
+  
+  /* Ahora el primario apunta al azul */
+  --primary-color: var(--cafe-medium);
+  --primary-color-light: var(--cafe-light); 
+
   --bs-secondary-color: var(--texto-secundario);
 
-  /* Variables de Bootstrap para tablas */
   --bs-table-color: var(--texto-principal);
   --bs-table-bg: transparent;
   --bs-table-border-color: var(--cafe-light);
@@ -61,8 +86,7 @@ body {
   background-color: var(--bs-body-bg);
   color: var(--bs-body-color);
   transition: background-color 0.3s ease, color 0.3s ease;
-  /* --- ¡REVISA LA ALTURA DE TU NAVBAR CON INSPECCIONAR Y AJUSTA ESTE VALOR! --- */
-  padding-top: 70px; /* Ajusta este valor EXACTAMENTE a la altura de tu .navbar */
+  padding-top: var(--navbar-height); 
 }
 
 h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-title {
@@ -75,25 +99,27 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
 }
 
 /* =============================== */
-/* === NAVBAR ELEGANTE (Adaptada) === */
+/* === NAVBAR ELEGANTE (Refinada) === */
 /* =============================== */
 .navbar.navbar-light-theme {
-  background-color: rgba(30, 30, 30, 0.9); /* Fondo oscuro semi-transparente */
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1); /* Borde sutil blanco */
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background-color: rgba(30, 30, 30, 0.85); 
+  backdrop-filter: blur(12px); 
+  -webkit-backdrop-filter: blur(12px); 
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1); 
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15); 
   transition: all 0.3s ease;
-  padding: 0.75rem 1rem; /* Ajustamos padding */
-  z-index: 1030; /* Asegura que esté por encima de otros elementos */
+  padding: 0.75rem 1rem; 
+  height: var(--navbar-height); 
+  z-index: 1030; 
 }
 
-.navbar-brand img { /* Estilo para el logo imagen */
-  max-height: 40px; /* Asegura que no sea demasiado alto */
-  height: auto; /* Mantiene proporción */
+.navbar-brand img { 
+  max-height: 40px; 
+  height: auto; 
 }
 
 .navbar.navbar-light-theme .nav-link {
-  color: #D0D0D0 !important; /* Texto gris claro para enlaces */
+  color: #D0D0D0 !important; 
   font-weight: 500;
   margin: 0 0.6rem;
   position: relative;
@@ -107,7 +133,8 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
   height: 2px;
   bottom: -4px;
   left: 0;
-  background: var(--cafe-medium); /* Subrayado con color café */
+  /* El subrayado usará el color primario del tema (rojo o azul) */
+  background: var(--primary-color); 
   transition: width 0.3s;
 }
 
@@ -117,54 +144,50 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
 
 .navbar.navbar-light-theme .nav-link:hover,
 .navbar.navbar-light-theme .nav-link.active {
-  color: #FFFFFF !important; /* Texto blanco al pasar/activo */
+  color: #FFFFFF !important; 
 }
 
-/* Asegúrate de añadir la clase 'navbar-dark' a tu <nav> en Navbar.jsx para el icono blanco */
 
-
-/* --- OFFCANVAS (Menú Lateral Móvil - CORREGIDO v3 - Contraste Luz) --- */
+/* =================================== */
+/* === OFFCANVAS (CORRECCIÓN MODO LUZ - V2) === */
+/* =================================== */
 .offcanvas {
-  background-color: var(--bs-card-bg) !important; /* Fondo adaptable */
+  background-color: var(--bs-card-bg) !important; 
   color: var(--bs-body-color);
   border-left: 1px solid var(--bs-border-color);
   width: 100%;
   max-width: 300px;
-  height: 100vh; /* Ocupa toda la altura */
+  height: 100vh; 
   display: flex;
   flex-direction: column;
-  overflow: hidden; /* Evita que el offcanvas tenga su propio scroll */
+  overflow: hidden; 
 }
-
 .offcanvas-header {
   border-bottom: 1px solid var(--bs-border-color);
   padding: 1.25rem;
   flex-shrink: 0;
 }
-
 .offcanvas-title {
   font-size: 1.6rem;
   font-weight: 700;
-  color: var(--cafe-medium);
+  color: var(--primary-color); /* Usará rojo o azul */
 }
-
 .offcanvas-body {
   display: flex;
   flex-direction: column;
   padding: 0;
-  flex-grow: 1; /* Ocupa el espacio */
-  overflow-y: auto; /* Permite scroll interno si es necesario */
+  flex-grow: 1; 
+  overflow-y: auto; 
 }
-
-/* Lista de enlaces en offcanvas */
 .offcanvas-body .navbar-nav {
   padding: 0.5rem 0;
 }
 
+/* --- ¡CORRECCIÓN V2: REGLAS SEPARADAS Y MÁS ESPECÍFICAS! --- */
+
+/* Regla base (común para ambos) */
 .offcanvas-body .nav-link {
   font-size: 1.2rem !important;
-  /* ¡CORRECCIÓN CONTRASTE LUZ! Usamos texto secundario que es más oscuro */
-  color: var(--texto-secundario) !important;
   text-align: left;
   font-weight: 500;
   padding: 0.9rem 1.25rem !important;
@@ -174,30 +197,41 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
 .offcanvas-body .nav-item:last-of-type .nav-link {
   border-bottom: none;
 }
-/* Hover y Activo (Modo LUZ) */
-.offcanvas-body .nav-link:hover,
-.offcanvas-body .nav-link.active {
-  color: var(--cafe-medium) !important; /* Color café al pasar/activo */
-  background-color: var(--bs-tertiary-bg); /* Fondo sutil */
+
+/* Regla para MODO CLARO (por defecto y explícito) */
+:root .offcanvas-body .nav-link,
+[data-bs-theme="light"] .offcanvas-body .nav-link {
+  color: var(--texto-principal) !important; /* Debe ser #2C3E50 (oscuro) */
 }
-/* Contraste Modo OSCURO */
+
+/* Regla para MODO OSCURO */
 [data-bs-theme="dark"] .offcanvas-body .nav-link {
-   /* En oscuro sí usamos texto principal (claro) */
-   color: var(--texto-principal) !important;
+   color: var(--texto-principal) !important; /* Debe ser #e0e0e0 (claro) */
 }
+
+/* Regla para HOVER (Modo Claro) */
+:root .offcanvas-body .nav-link:hover,
+:root .offcanvas-body .nav-link.active,
+[data-bs-theme="light"] .offcanvas-body .nav-link:hover,
+[data-bs-theme="light"] .offcanvas-body .nav-link.active {
+  color: var(--primary-color) !important; /* Rojo */
+  background-color: var(--bs-tertiary-bg); 
+}
+
+/* Regla para HOVER (Modo Oscuro) */
 [data-bs-theme="dark"] .offcanvas-body .nav-link:hover,
 [data-bs-theme="dark"] .offcanvas-body .nav-link.active {
-   color: var(--cafe-medium) !important;
+   color: var(--primary-color) !important; /* Azul */
    background-color: var(--bs-tertiary-bg);
 }
+/* --- FIN DE LA CORRECCIÓN V2 --- */
 
 
-/* Footer del offcanvas (botones tema/login - CORREGIDO v3 - Contraste Luz) */
 .offcanvas-footer {
   border-top: 1px solid var(--bs-border-color);
   padding: 1rem 1.25rem;
   background-color: var(--bs-body-bg);
-  flex-shrink: 0; /* No se encoge */
+  flex-shrink: 0; 
 }
 .offcanvas-footer .d-flex {
   justify-content: space-between;
@@ -206,9 +240,8 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
 }
 .offcanvas-footer .btn {
   margin-left: 1rem;
-  /* ¡CORRECCIÓN CONTRASTE LUZ! */
-  color: var(--texto-secundario); /* Texto más oscuro */
-  border-color: var(--cafe-light); /* Borde claro */
+  color: var(--texto-principal); /* Ajustado para texto gris oscuro */
+  border-color: var(--bs-border-color); 
 }
 .offcanvas-footer .btn-danger {
     color: #dc3545;
@@ -216,9 +249,8 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
 }
 .offcanvas-footer .btn:hover {
     background-color: var(--bs-tertiary-bg);
-    color: var(--texto-principal); /* Oscurece texto en hover */
+    color: var(--primary-color); /* Hover rojo/azul */
 }
-/* Contraste Oscuro */
 [data-bs-theme="dark"] .offcanvas-footer .btn {
    color: var(--texto-secundario);
    border-color: var(--bs-border-color);
@@ -234,176 +266,165 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
 
 
 /* ========================================================== */
-/* === ¡SECCIÓN HERO MODIFICADA! (Fondo, Hover, Tamaño, Bordes) === */
+/* === ¡SECCIÓN HERO RE-ESTRUCTURADA! (Flexbox y Más Estético) === */
 /* ========================================================== */
 .hero-section {
-  position: relative; /* ¡MUY IMPORTANTE! Padre para elementos absolutos */
+  position: relative; 
   width: 100%;
-  /* === ¡CLAVE! Define la altura deseada (hasta la línea roja) === */
-  height: 60vh; /* <<--- AJUSTA ESTE VALOR (ej: 55vh, 65vh, 450px) */
+  height: 60vh; 
 
-  /* --- ¡MODIFICACIÓN 1! Esta es tu nueva imagen de fondo --- */
-  background-image: url('/fondo.jpg'); 
-  background-size: cover; /* Cubre sin distorsión */
-  background-position: center center; /* Centra */
-  background-repeat: no-repeat;
+  /* --- Fondo azul liso --- */
+  background-color: var(--hero-blue-dark); 
+  background-image: none; 
   
-  overflow: hidden; /* Evita desbordes */
+  overflow: hidden; 
+  border-radius: var(--hero-border-radius); 
 
-  /* --- ¡MODIFICACIÓN 4! Esquinas redondeadas como dibujaste --- */
-  border-radius: 30px; /* <<--- AJUSTA ESTE VALOR (ej. 25px, 40px) */
+  display: flex;
+  flex-direction: column; 
+  justify-content: center; 
+  align-items: center; 
+  
+  padding: 2rem; 
+  text-align: center;
+  color: white; 
 }
 
-/* Capa oscura opcional sobre el fondo */
+/* Capa de degradado sutil */
 .hero-section::before {
   content: "";
   position: absolute;
   inset: 0;
-  /* Ajusta la opacidad si con el nuevo fondo se ve muy oscuro/claro */
-  background-color: rgba(0, 0, 0, 0.35); 
+  background: linear-gradient(135deg, var(--hero-blue-dark) 0%, var(--hero-blue-medium) 100%);
   z-index: 1;
-  
-  /* --- ¡MODIFICACIÓN 4! (Hereda el borde) --- */
-  border-radius: 30px; /* Asegura que la capa oscura también se redondee */
+  border-radius: inherit; 
 }
 
-/* Contenedor del logo del erizo (POSICIONADO ABSOLUTO) */
+/* ================================================= */
+/* === ¡AQUÍ ESTÁ LA CORRECCIÓN FINAL! (SIN SOMBRA EXTERIOR) === */
+/* ================================================= */
 .hero-hedgehog-logo-container {
-  position: absolute;
-  
-  /* --- ¡MODIFICACIÓN! Subimos el logo para que no choque --- */
-  top: 45%; /* <<--- AJUSTADO (Era 50%) */
-  
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 2;
+  position: relative; 
+  z-index: 2; 
 
-  /* --- ¡MODIFICACIÓN! Tamaño del CONTENEDOR (para que coincida con la imagen) --- */
-  width: 220px;  /* <<--- AJUSTA ESTE TAMAÑO (Debe ser igual al de la imagen) */
-  height: 220px; /* <<--- AJUSTA ESTE TAMAÑO (Debe ser igual al de la imagen) */
-
-  /* Quitamos borde y transición del contenedor */
+  /* --- 1. IMAGEN MÁS GRANDE --- */
+  width: 230px;
+  height: 230px;
+  
   background-color: transparent; 
   border-radius: 50%;
-  border: none; 
-  transition: none; 
-
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  overflow: visible; 
   cursor: pointer; 
-  box-shadow: none;  
+  
+  /* --- 2. SOMBRA EXTERIOR ELIMINADA --- */
+  /* La línea 'filter: drop-shadow(...)' se ha borrado. */
+  
+  transition: transform 0.3s ease; 
+  border: none; 
 }
 
 /* Imagen del erizo DENTRO del contenedor */
 .hero-hedgehog-logo-container img {
-  /* --- ¡MODIFICACIÓN! Hacemos que la imagen llene el contenedor --- */
-  width: 100%;  /* 100% del contenedor (220px) */
-  height: 100%; /* 100% del contenedor (220px) */
-  
-  /* --- ¡MODIFICACIÓN CLAVE! El borde se incluye en el tamaño total --- */
-  box-sizing: border-box; 
-  
+  width: 100%; 
+  height: 100%; 
   object-fit: contain;
   border-radius: 50%; 
-
-  /* --- Borde inicial de la IMAGEN --- */
-  border: 4px solid rgba(255, 255, 255, 0.15); /* Borde blanco muy sutil al inicio */
-  
-  /* Sombra para darle profundidad */
-  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2); 
-  
-  /* Transición suave para el borde y la sombra de la IMAGEN */
+  border: 4px solid transparent;
+  box-sizing: border-box; 
   transition: border-color 0.3s ease, box-shadow 0.3s ease; 
+  
+  /* Esta es la sombra SUTIL que está pegada a la imagen */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2); 
 }
 
-/* --- Efecto Hover (Borde Café y Sombra en la IMAGEN) --- */
-/* Cuando el cursor pasa por el CONTENEDOR, cambia la IMAGEN DENTRO */
+/* --- Efecto Hover (Borde ROJO en la IMAGEN) --- */
+.hero-hedgehog-logo-container:hover {
+   transform: scale(1.05); 
+}
+
 .hero-hedgehog-logo-container:hover img {
-  border-color: var(--cafe-medium); /* Borde café al pasar el cursor */
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3); /* Sombra un poco más intensa */
+  border-color: var(--hover-logo-border-color); /* Borde ROJO al pasar */
+  box-shadow: 0 3px 10px rgba(var(--hover-logo-border-color), 0.4); 
 }
+/* ================================================= */
+/* === FIN DE LA MODIFICACIÓN === */
+/* ================================================= */
 
 
-/* Contenedor del TEXTO (POSICIONADO ABSOLUTO EN LA PARTE INFERIOR) */
+/* === Contenedor del TEXTO === */
 .hero-text-content {
-  position: absolute;
-  /* === ¡CLAVE! Ajusta 'bottom' para que NO tape el logo === */
-  bottom: 10%; /* <<--- AJUSTA ESTE % (ej: 8%, 12%) */
-  left: 0;
-  right: 0;
-  z-index: 3; /* Asegura que esté sobre el logo si hay superposición accidental */
-  padding: 1rem 1.5rem;
-  text-align: center;
-  color: white;
-  text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.9); /* Sombra MÁS fuerte */
+  position: relative; 
+  z-index: 2; 
+  margin-top: 1.5rem; 
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6); 
 }
 
 .hero-title {
-  font-size: 2.5rem; /* <<--- AJUSTA TAMAÑO */
+  font-size: 3rem; 
   font-weight: 800;
   margin-bottom: 0.5rem;
 }
 
 .hero-subtitle {
-  font-size: 1.05rem; /* <<--- AJUSTA TAMAÑO */
-  max-width: 550px;
+  font-size: 1.15rem; 
+  max-width: 600px;
   margin: 0 auto;
-  line-height: 1.5;
+  line-height: 1.6;
   opacity: 0.95;
 }
 
 /* Botón "Haz tu Pedido" */
+/* Este botón usará el color primario del tema (rojo o azul) */
 .hero-text-content .btn-primary {
   margin-top: 1.5rem;
   background-color: var(--primary-color);
   border-color: var(--primary-color);
-  box-shadow: 0 4px 15px rgba(0,0,0, 0.2);
-  padding: 0.7rem 1.5rem;
-  font-size: 0.9rem;
+  color: #fff !important; /* Asegura texto blanco sobre rojo/azul */
+  box-shadow: 0 4px 15px rgba(0,0,0, 0.3);
+  
+  padding: 0.8rem 1.8rem; 
+  font-size: 1rem; 
+  font-weight: 700;
+  
+  border-radius: 50px; 
+  transition: all 0.3s ease;
 }
 .hero-text-content .btn-primary:hover {
-   background-color: var(--cafe-dark);
-   border-color: var(--cafe-dark);
-}
-[data-bs-theme="dark"] .hero-text-content .btn-primary {
-   background-color: var(--primary-color);
-   border-color: var(--primary-color);
-}
-[data-bs-theme="dark"] .hero-text-content .btn-primary:hover {
-   background-color: var(--cafe-dark);
-   border-color: var(--cafe-dark);
+   background-color: var(--cafe-dark); /* Usará rojo-oscuro o azul-oscuro */
+   border-color: var(--cafe-dark); /* Usará rojo-oscuro o azul-oscuro */
+   transform: translateY(-3px); 
+   box-shadow: 0 6px 20px rgba(0,0,0, 0.35);
 }
 
 
 /* ======================= */
-/* === TARJETAS === */
+/* === TARJETAS (Refinadas) === */
 /* ======================= */
 .card {
   background-color: var(--bs-card-bg);
   border: 1px solid var(--bs-border-color);
-  border-radius: 12px;
+  border-radius: var(--card-border-radius); 
   overflow: hidden;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.06);
 }
 
 .card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.1);
+  transform: translateY(-6px); 
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12); 
 }
 
+/* La tarjeta en oferta usará el primario (rojo o azul) */
 .card.en-oferta {
-  border: 2px solid var(--cafe-medium);
+  border: 2px solid var(--primary-color);
 }
 
 /* --- Etiqueta de Descuento --- */
+/* La etiqueta usará el primario (rojo o azul) */
 .discount-badge {
   position: absolute;
-  top: 10px;
-  right: 10px;
-  background-color: var(--cafe-medium);
+  top: 12px; 
+  right: 12px;
+  background-color: var(--primary-color);
   color: white;
   width: 50px;
   height: 50px;
@@ -440,20 +461,20 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
 
 
 /* ======================= */
-/* === FOOTER === */
+/* === FOOTER (Refinado) === */
 /* ======================= */
 footer {
   background: var(--cafe-light);
-  color: var(--texto-secundario);
+  color: var(--texto-principal); /* Ajustado para texto gris oscuro */
   text-align: center;
-  padding: 1.5rem 1rem;
+  padding: 2.5rem 1.5rem; 
   font-weight: 500;
   border-top: 1px solid var(--bs-border-color);
-  margin-top: 3rem;
+  margin-top: 4rem; 
 }
 
 [data-bs-theme="dark"] footer {
-  background: #212121;
+  background: #1c1c1c; 
   color: var(--texto-secundario);
   border-top-color: var(--bs-border-color);
 }
@@ -462,7 +483,7 @@ footer a {
   text-decoration: none;
 }
 footer a:hover {
-  color: var(--cafe-medium);
+  color: var(--primary-color); /* Usará rojo o azul */
   text-decoration: underline;
 }
 
@@ -474,7 +495,7 @@ footer a:hover {
   z-index: 1000;
   bottom: 20px;
   right: 20px;
-  background-color: var(--cafe-medium);
+  background-color: var(--primary-color); /* Usará rojo o azul */
   color: white;
   width: 60px;
   height: 60px;
@@ -484,14 +505,14 @@ footer a:hover {
   align-items: center;
   justify-content: center;
   font-size: 1.5rem;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25); 
   cursor: pointer;
   transition: transform 0.2s ease, background-color 0.2s ease;
 }
 
 .boton-carrito-flotante:hover {
   transform: scale(1.1);
-  background-color: var(--cafe-dark);
+  background-color: var(--cafe-dark); /* Usará rojo-oscuro o azul-oscuro */
 }
 .badge-carrito {
   position: absolute;
@@ -519,7 +540,7 @@ footer a:hover {
   font-family: 'Lato', sans-serif;
   font-weight: 700;
   font-size: 1.1rem;
-  color: var(--texto-secundario);
+  color: var(--texto-secundario); /* Gris medio */
   text-decoration: none;
   margin: 0 0.8rem;
   padding-bottom: 8px;
@@ -529,16 +550,16 @@ footer a:hover {
 }
 .nav-tabs .nav-link:hover,
 .nav-tabs .nav-link:focus {
-  color: var(--cafe-medium);
+  color: var(--primary-color); /* Usará rojo o azul */
   border-color: transparent;
   isolation: isolate;
 }
 .nav-tabs .nav-link.active {
   color: var(--texto-principal);
-  border-bottom-color: var(--cafe-medium);
+  border-bottom-color: var(--primary-color); /* Usará rojo o azul */
   background-color: transparent;
   border-color: transparent;
-  border-bottom: 3px solid var(--cafe-medium);
+  border-bottom: 3px solid var(--primary-color); /* Usará rojo o azul */
 }
 /* Fix para Dark Mode */
 [data-bs-theme="dark"] .nav-tabs .nav-link {
@@ -546,19 +567,19 @@ footer a:hover {
 }
 [data-bs-theme="dark"] .nav-tabs .nav-link:hover,
 [data-bs-theme="dark"] .nav-tabs .nav-link:focus {
-  color: var(--cafe-medium) !important;
+  color: var(--primary-color) !important; /* Usará azul */
 }
 [data-bs-theme="dark"] .nav-tabs .nav-link.active {
   color: var(--texto-principal) !important;
-  border-bottom-color: var(--cafe-medium) !important;
+  border-bottom-color: var(--primary-color) !important; /* Usará azul */
 }
 
 /* =============================================================== */
-/* === ESTILOS "AÚN NO TIENES RECOMPENSAS" (¡ALINEADO IZQUIERDA!) === */
+/* === ESTILOS "AÚN NO TIENES RECOMPENSAS" === */
 /* =============================================================== */
 .recompensas-container {
   display: flex;
-  justify-content: center; /* Centra la caja horizontalmente */
+  justify-content: center; 
   align-items: center;
   min-height: 40vh;
   padding: 2rem;
@@ -568,7 +589,7 @@ footer a:hover {
   text-align: left;
   padding: 2rem 1.5rem;
   border: 1px solid var(--bs-border-color);
-  border-radius: 15px;
+  border-radius: var(--card-border-radius); 
   max-width: 450px;
   background-color: var(--bs-card-bg);
   box-shadow: 0 5px 15px rgba(0,0,0,0.08);
@@ -576,10 +597,8 @@ footer a:hover {
   align-items: center;
   gap: 1.5rem;
 }
-
-/* --- ESTILOS PARA EL ICONO (MÁS ESPECÍFICO) --- */
 .recompensas-caja-vacia img.recompensas-icono {
-  width: 70px; /* Tamaño ajustado */
+  width: 70px; 
   max-width: 100%;
   height: auto;
   opacity: 0.7;
@@ -587,9 +606,6 @@ footer a:hover {
   margin-bottom: 0;
   flex-shrink: 0;
 }
-
-/* Contenedor para el texto - Sin estilos necesarios */
-
 .recompensas-caja-vacia h3 {
   font-family: 'Playfair Display', serif;
   font-size: 1.5rem;
@@ -598,10 +614,9 @@ footer a:hover {
   margin-bottom: 0.25rem;
   margin-top: 0;
 }
-
 .recompensas-caja-vacia p {
   font-size: 0.9rem;
-  color: var(--texto-secundario);
+  color: var(--texto-principal); /* Ajustado a gris oscuro */
   line-height: 1.4;
   margin-bottom: 0;
 }
@@ -613,11 +628,11 @@ footer a:hover {
 .login-box {
   max-width: 450px;
   margin: 3rem auto;
-  padding: 2rem;
+  padding: 2.5rem; 
   background-color: var(--bs-card-bg);
   border: 1px solid var(--bs-border-color);
-  border-radius: 12px;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+  border-radius: var(--card-border-radius); 
+  box-shadow: 0 5px 20px rgba(0,0,0,0.08); 
 }
 .login-box button {
   display: block;
@@ -626,7 +641,6 @@ footer a:hover {
   margin: 1.25rem auto 0 auto;
   text-align: center;
 }
-/* Responsivo para Login */
 @media (max-width: 576px) {
   .login-box {
     width: 90%;
@@ -656,6 +670,7 @@ footer a:hover {
   color: var(--texto-principal) !important;
   border-color: var(--bs-border-color) !important;
 }
+/* --- ¡CORREGIDO! --- */
 [data-bs-theme="dark"] .table-hover > tbody > tr:hover > * {
   color: var(--texto-principal) !important;
   background-color: rgba(255, 255, 255, 0.075) !important;
@@ -684,13 +699,13 @@ footer a:hover {
 
 /* Ajuste general botones primarios */
 .btn-primary {
-  background-color: var(--cafe-medium);
-  border-color: var(--cafe-medium);
-  color: #fff !important; /* Asegura texto blanco siempre */
+  background-color: var(--primary-color); /* Usará rojo o azul */
+  border-color: var(--primary-color); /* Usará rojo o azul */
+  color: #fff !important; 
 }
 .btn-primary:hover {
-  background-color: var(--cafe-dark);
-  border-color: var(--cafe-dark);
+  background-color: var(--cafe-dark); /* Usará rojo-oscuro o azul-oscuro */
+  border-color: var(--cafe-dark); /* Usará rojo-oscuro o azul-oscuro */
   color: #fff !important;
 }
 
@@ -704,58 +719,67 @@ footer a:hover {
   color: #fff;
 }
 [data-bs-theme="dark"] .btn-outline-danger {
-   color: #f88; /* Rojo más claro en oscuro */
+   color: #f88; 
    border-color: #f88;
 }
 [data-bs-theme="dark"] .btn-outline-danger:hover {
   background-color: #f88;
-  color: #121212; /* Texto oscuro sobre fondo claro */
+  color: #121212; 
 }
 
 /* =============================================== */
-/* === CORRECCIÓN PANTALLA DE CARGA INICIAL === */
+/* === CORRECCIÓN PANTALLA DE CARGA (Refinada) === */
 /* =============================================== */
 .loading-screen {
   position: fixed;
   inset: 0;
-  background-color: var(--crema);
+  background-color: var(--crema); 
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   z-index: 9999;
-  transition: opacity 0.5s ease-out;
+  transition: opacity 0.5s ease-out, visibility 0.5s ease-out;
+  opacity: 1;
+  visibility: visible;
 }
-body[data-bs-theme="dark"] .loading-screen {
-   background-color: #1e1e1e;
+
+.loading-screen.hidden {
+    opacity: 0;
+    visibility: hidden;
 }
+
 .loading-logo-container {
   width: 90%;
-  max-width: 400px; /* Ajusta este ancho máximo si quieres */
-  background-color: var(--card-bg);
-  padding: 2rem;
-  border-radius: 15px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  max-width: 300px; 
   display: flex;
   justify-content: center;
   align-items: center;
 }
-[data-bs-theme="dark"] .loading-logo-container {
-   background-color: #2a2a2a;
-}
 .loading-logo-container img {
   max-width: 100%;
-  max-height: 70vh; /* Limita la altura de la imagen */
   height: auto;
-  object-fit: contain; /* ¡CLAVE! Escala sin distorsión */
+  object-fit: contain;
+  animation: pulse 1.5s infinite ease-in-out;
 }
+
+@keyframes pulse {
+  0% {
+    opacity: 0.8;
+    transform: scale(0.98);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0.8;
+    transform: scale(0.98);
+  }
+}
+
 .loading-screen p {
   margin-top: 1.5rem;
   font-size: 1.1rem;
-  color: var(--texto-secundario);
+  color: var(--texto-principal); /* Ajustado a gris oscuro */
 }
-[data-bs-theme="dark"] .loading-screen p {
-   color: var(--texto-secundario);
-}
-
-/* --- FIN DEL ARCHIVO --- */
