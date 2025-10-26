@@ -26,7 +26,7 @@ html {
   --card-bg: #EAEAEA;          /* Gris cálido (Fondo tarjetas/secciones) */
 
   /* --- COLORES HERO Y HOVER LOGO (MODIFICADO) --- */
-  --hover-logo-border-color: #ff9800; /* MODIFICADO: Naranja vibrante para borde logo, contrasta bien con azul/verde */
+  --hover-logo-border-color: #ff9800; /* MODIFICADO: Naranja vibrante para borde logo */
   --hero-blue-dark: #2c3e50; /* Azul oscuro elegante (Hero) */
   --hero-blue-medium: #34495e; /* Azul medio (Hero) */
 
@@ -339,14 +339,14 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2); 
 }
 
-/* --- Efecto Hover (Borde TURQUESA en la IMAGEN) --- */
+/* --- Efecto Hover (Borde NARANJA en la IMAGEN) --- */
 .hero-hedgehog-logo-container:hover {
    transform: scale(1.05); 
 }
 
 .hero-hedgehog-logo-container:hover img {
   border-color: var(--hover-logo-border-color); /* Borde NARANJA al pasar */
-  box-shadow: 0 3px 10px rgba(255, 152, 0, 0.4); /* Sombra naranja para que coincida */
+  box-shadow: 0 3px 10px rgba(255, 152, 0, 0.4); /* Sombra naranja */
 }
 /* ================================================= */
 /* === FIN DE LA MODIFICACIÓN === */
@@ -786,3 +786,4 @@ footer a:hover {
   font-size: 1.1rem;
   color: var(--texto-principal); /* Ajustado a gris oscuro */
 }
+
