@@ -589,7 +589,7 @@ function ClientePage() {
             // --- FIN DE CORRECCIÓN ---
           />
           <h3>Aún no tienes recompensas</h3>
-          <p>¡Sigue comprando para ganar bebidas gratis y más sorpresas!</p>
+          <p>¡Sigue comprando para ganar una gomita gratis!</p>
         </div>
       </div>
     ) : (

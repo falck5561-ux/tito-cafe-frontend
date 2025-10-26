@@ -63,7 +63,7 @@ function HomePage() {
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.5 }}
           >
-            Lo mejor aqui esta 
+            Tu punto de sabor 
           </motion.p>
 
           <motion.div

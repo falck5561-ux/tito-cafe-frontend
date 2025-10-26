@@ -123,7 +123,7 @@ function Navbar() {
     
       <div className="container">
         <Link className="navbar-brand" to="/">
-          <span>Tito Café</span>
+          <span>Tito Spot</span>
         </Link>
 
         {/* --- MENÚ DE ESCRITORIO --- */}
