@@ -586,7 +586,7 @@ function ClientePage() {
             src="/tito-icon.png"   // <-- Usa el icono correcto de la carpeta 'public'
             alt="Icono de Tito Cafe" // <-- Texto alternativo actualizado
             className="recompensas-icono"
-            // --- FIN DE CORRECCIÓN ---
+            // --- FIN DE LA CORRECCIÓN ---
           />
           <h3>Aún no tienes recompensas</h3>
           <p>¡Sigue comprando para ganar una gomita gratis!</p>
