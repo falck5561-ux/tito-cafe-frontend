@@ -17,16 +17,16 @@ html {
 
 :root {
   /* === TEMA CLARO (GRIS ILUMINADO) === */
-  --cafe-dark: #C0392B;       /* Rojo intenso (Hover botones) */
+  --cafe-dark: #C0392B;        /* Rojo intenso (Hover botones) */
   --cafe-medium: #E74C3C;      /* Rojo vibrante (Botones activos) */
-  --cafe-light: #BDC3C7;      /* Gris medio (Detalles, bordes) */
-  --crema: #F5F5F5;          /* Gris muy claro (Fondo principal) */
+  --cafe-light: #BDC3C7;       /* Gris medio (Detalles, bordes) */
+  --crema: #F5F5F5;            /* Gris muy claro (Fondo principal) */
   --texto-principal: #2C3E50;  /* Gris oscuro (Texto principal) */
   --texto-secundario: #BDC3C7; /* Gris medio (Texto secundario/iconos) */
   --card-bg: #EAEAEA;          /* Gris cálido (Fondo tarjetas/secciones) */
 
-  /* --- COLORES HERO Y HOVER LOGO (se mantienen) --- */
-  --hover-logo-border-color: #dc3545; /* Rojo para borde logo */
+  /* --- COLORES HERO Y HOVER LOGO (MODIFICADO) --- */
+  --hover-logo-border-color: #00BFA5; /* MODIFICADO: Teal para borde logo */
   --hero-blue-dark: #2c3e50; /* Azul oscuro elegante (Hero) */
   --hero-blue-medium: #34495e; /* Azul medio (Hero) */
 
@@ -48,11 +48,11 @@ html {
 /* =============================================== */
 [data-bs-theme="dark"] {
   /* --- TEMA OSCURO (AZUL) --- */
-  --cafe-dark: #0a58ca;       /* Azul oscuro (Bootstrap Dark Blue) */
+  --cafe-dark: #0a58ca;        /* Azul oscuro (Bootstrap Dark Blue) */
   --cafe-medium: #0d6efd;      /* Azul primario (Bootstrap Blue) */
-  --cafe-light: #2c3e50;      /* Borde azul-gris oscuro */
+  --cafe-light: #2c3e50;       /* Borde azul-gris oscuro */
   
-  --crema: #1e1e1e;          /* Fondo principal oscuro */
+  --crema: #1e1e1e;            /* Fondo principal oscuro */
   --texto-principal: #e0e0e0;
   --texto-secundario: #bdbdbd;
   --card-bg: #2a2a2a;          /* Fondo tarjetas oscuro */
@@ -266,16 +266,18 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
 
 
 /* ========================================================== */
-/* === ¡SECCIÓN HERO RE-ESTRUCTURADA! (Flexbox y Más Estético) === */
+/* === ¡SECCIÓN HERO RE-ESTRUCTURADA! (MODIFICADA) === */
 /* ========================================================== */
 .hero-section {
   position: relative; 
   width: 100%;
   height: 60vh; 
 
-  /* --- Fondo azul liso --- */
-  background-color: var(--hero-blue-dark); 
-  background-image: none; 
+  /* --- MODIFICADO: Fondo con imagen --- */
+  background-image: url('fondo.png'); /* <-- AÑADIDO (Asegúrate que la ruta sea correcta) */
+  background-size: cover; /* <-- AÑADIDO */
+  background-position: center; /* <-- AÑADIDO */
+  background-color: var(--hero-blue-dark); /* <-- Mantenido como fallback */
   
   overflow: hidden; 
   border-radius: var(--hero-border-radius); 
@@ -290,12 +292,13 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
   color: white; 
 }
 
-/* Capa de degradado sutil */
+/* Capa de degradado sutil - AHORA es un oscurecimiento para legibilidad */
 .hero-section::before {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, var(--hero-blue-dark) 0%, var(--hero-blue-medium) 100%);
+  /* MODIFICADO: De degradado azul a un velo oscuro para contraste */
+  background: rgba(0, 0, 0, 0.40); 
   z-index: 1;
   border-radius: inherit; 
 }
@@ -336,13 +339,13 @@ h1, h2, h3, h4, h5, .navbar-brand-text, .display-4, .offcanvas-title, .hero-titl
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2); 
 }
 
-/* --- Efecto Hover (Borde ROJO en la IMAGEN) --- */
+/* --- Efecto Hover (Borde TURQUESA en la IMAGEN) --- */
 .hero-hedgehog-logo-container:hover {
    transform: scale(1.05); 
 }
 
 .hero-hedgehog-logo-container:hover img {
-  border-color: var(--hover-logo-border-color); /* Borde ROJO al pasar */
+  border-color: var(--hover-logo-border-color); /* Borde TURQUESA al pasar */
   box-shadow: 0 3px 10px rgba(var(--hover-logo-border-color), 0.4); 
 }
 /* ================================================= */
