@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
-import apiClient from '../services/api';
+// --- CORRECCIÓN DE RUTA ---
+import apiClient from '../services/api'; // Asumiendo que 'services' está en src/services
 
-// --- MODIFICACIÓN: Se importa el modal detallado desde su propio archivo ---
-import DetallesPedidoModal from '../components/DetallesPedidoModal'; // Asegúrate de que la ruta sea correcta
+// --- CORRECCIÓN DE RUTA ---
+import DetallesPedidoModal from '../components/DetallesPedidoModal'; // Asumiendo que 'components' está en src/components
 
 // --- MODIFICACIÓN: Se eliminó el componente de modal simple que estaba aquí ---
 
@@ -37,12 +38,16 @@ function PosPage() {
           const precioFinal = Number(item.precio);
           let precioOriginal = precioFinal;
 
+          // Asignar categoría por defecto si no existe
+          const categoria = item.categoria || 'General'; 
+
           if (item.en_oferta && item.descuento_porcentaje > 0) {
             precioOriginal = precioFinal / (1 - item.descuento_porcentaje / 100);
           }
 
           return {
             ...item,
+            categoria: categoria, // Asegurarse de que la categoría esté presente
             precio: precioFinal,
             precio_original: precioOriginal,
             nombre: item.nombre || item.titulo,
@@ -78,6 +83,7 @@ function PosPage() {
     const precioFinal = item.precio;
 
     setVentaActual(prevVenta => {
+      // Importante: Al agregar, nos aseguramos de incluir 'categoria'
       const productoExistente = prevVenta.find(p => p.id === item.id && !p.esRecompensa);
       if (productoExistente) {
         return prevVenta.map(p =>
@@ -85,7 +91,7 @@ function PosPage() {
         );
       }
       return [...prevVenta, { 
-        ...item, 
+        ...item, // Esto incluye 'id', 'nombre', 'precio', 'categoria', etc.
         cantidad: 1, 
         precioFinal: parseFloat(precioFinal).toFixed(2),
         esRecompensa: false
@@ -142,14 +148,61 @@ function PosPage() {
     } catch (err) { setClienteEncontrado(null); toast.error(err.response?.data?.msg || 'Error al buscar cliente.'); }
   };
 
+  // --- ¡ESTA ES LA FUNCIÓN CORREGIDA! ---
   const handleAplicarRecompensa = (recompensa) => {
-    const productosElegibles = ['Café Americano', 'Frappe Coffee'];
+    
     let itemParaDescontar = null;
     let precioMaximo = -1;
-    ventaActual.forEach(item => { if (productosElegibles.includes(item.nombre) && Number(item.precioFinal) > precioMaximo && !item.esRecompensa) { precioMaximo = Number(item.precioFinal); itemParaDescontar = item; } });
-    if (!itemParaDescontar) { return toast.error('Añade un Café o Frappe al ticket para aplicar la recompensa.'); }
-    setVentaActual(prevVenta => prevVenta.map(item => item.id === itemParaDescontar.id && !item.esRecompensa ? { ...item, precioFinal: "0.00", nombre: `${item.nombre} (Recompensa)`, esRecompensa: true } : item ));
-    setRecompensaAplicadaId(recompensa.id);
+    // Asegurarse de que recompensa.nombre existe antes de llamar a toLowerCase()
+    const nombreRecompensaLower = recompensa.nombre ? recompensa.nombre.toLowerCase() : '';
+
+    // Lógica dinámica: revisa el nombre de la recompensa
+    if (nombreRecompensaLower.includes('gomita')) {
+      
+      // --- LÓGICA NUEVA: Buscar por CATEGORÍA ---
+      const categoriaElegible = 'Gomita'; // Basado en la foto de tu producto "Tito Pikulito"
+      
+      ventaActual.forEach(item => {
+        // Buscamos un item con la categoría "Gomita" y que NO sea ya una recompensa
+        if (item.categoria === categoriaElegible && Number(item.precioFinal) > precioMaximo && !item.esRecompensa) {
+          precioMaximo = Number(item.precioFinal);
+          itemParaDescontar = item;
+        }
+      });
+
+      // Si no hay gomitas elegibles en el ticket, muestra el error nuevo
+      if (!itemParaDescontar) {
+        return toast.error('Añade unas gomitas (Tito Pikulito o Tito Mojadito) al ticket para aplicar la recompensa.');
+      }
+
+    } else { // Asumimos que si no es gomita, es la recompensa vieja de Café/Frappe
+      
+      // --- LÓGICA VIEJA: Buscar por NOMBRE (para recompensas antiguas) ---
+      const productosElegibles = ['Café Americano', 'Frappe Coffee']; 
+      
+      ventaActual.forEach(item => { 
+        // Buscamos un item con nombre elegible y que NO sea ya una recompensa
+        if (productosElegibles.includes(item.nombre) && Number(item.precioFinal) > precioMaximo && !item.esRecompensa) { 
+          precioMaximo = Number(item.precioFinal); 
+          itemParaDescontar = item; 
+        } 
+      });
+
+      // Muestra el error viejo si es una recompensa vieja y no hay producto elegible
+      if (!itemParaDescontar) { 
+        return toast.error('Añade un Café o Frappe al ticket para aplicar la recompensa.'); 
+      }
+    }
+
+    // --- LÓGICA COMÚN: APLICAR EL DESCUENTO ---
+    // Esta parte es la misma, aplica el descuento al item encontrado
+    setVentaActual(prevVenta => prevVenta.map(item => 
+      // Comprobamos el ID y que no sea ya una recompensa para evitar aplicar dos veces
+      item.id === itemParaDescontar.id && !item.esRecompensa 
+        ? { ...item, precioFinal: "0.00", nombre: `${item.nombre} (Recompensa)`, esRecompensa: true } 
+        : item 
+    ));
+    setRecompensaAplicadaId(recompensa.id); // Guardamos el ID de la recompensa usada
     toast.success('¡Recompensa aplicada!');
   };
 
@@ -225,9 +278,15 @@ function PosPage() {
                     {clienteEncontrado.recompensas.length > 0 ? (
                       clienteEncontrado.recompensas.map(rec => (
                         <div key={rec.id}>
-                          <p className="mb-1">{rec.descripcion}</p>
-                          <button className="btn btn-sm btn-success w-100" onClick={() => handleAplicarRecompensa(rec)} disabled={recompensaAplicadaId === rec.id}>
-                            {recompensaAplicadaId === rec.id ? 'Recompensa Aplicada' : `Aplicar ${rec.nombre}`}
+                          {/* Mostramos el nombre de la recompensa que viene del backend */}
+                          <p className="mb-1">{rec.nombre}</p> 
+                          <button 
+                            className="btn btn-sm btn-success w-100" 
+                            onClick={() => handleAplicarRecompensa(rec)} 
+                            // Deshabilitamos si ESTA recompensa ya fue aplicada
+                            disabled={recompensaAplicadaId === rec.id} 
+                          >
+                            {recompensaAplicadaId === rec.id ? 'Recompensa Aplicada' : `Aplicar Recompensa`}
                           </button>
                         </div>
                       ))
@@ -238,15 +297,17 @@ function PosPage() {
                 <ul className="list-group list-group-flush">
                   {ventaActual.length === 0 && <li className="list-group-item text-center text-muted">El ticket está vacío</li>}
                   {ventaActual.map((item) => (
-                    <li key={item.id} className="list-group-item d-flex align-items-center justify-content-between p-1">
-                      <span className="me-auto">{item.nombre}</span>
+                    <li key={`${item.id}-${item.esRecompensa ? 'rec' : 'norm'}`} className="list-group-item d-flex align-items-center justify-content-between p-1"> {/* Key único */}
+                      <span className={`me-auto ${item.esRecompensa ? 'text-success fw-bold' : ''}`}>{item.nombre}</span>
                       <div className="d-flex align-items-center">
-                        <button className="btn btn-outline-secondary btn-sm" onClick={() => decrementarCantidad(item.id)}>-</button>
+                        {/* No permitir modificar cantidad si es recompensa */}
+                        <button className="btn btn-outline-secondary btn-sm" onClick={() => decrementarCantidad(item.id)} disabled={item.esRecompensa}>-</button>
                         <span className="mx-2">{item.cantidad}</span>
-                        <button className="btn btn-outline-secondary btn-sm" onClick={() => incrementarCantidad(item.id)}>+</button>
+                        <button className="btn btn-outline-secondary btn-sm" onClick={() => incrementarCantidad(item.id)} disabled={item.esRecompensa}>+</button>
                       </div>
                       <span className="mx-3" style={{ minWidth: '60px', textAlign: 'right' }}>${(item.cantidad * Number(item.precioFinal)).toFixed(2)}</span>
-                      <button className="btn btn-outline-danger btn-sm" onClick={() => eliminarProducto(item.id)}>&times;</button>
+                       {/* No permitir eliminar si es recompensa */}
+                      <button className="btn btn-outline-danger btn-sm" onClick={() => eliminarProducto(item.id)} disabled={item.esRecompensa}>&times;</button>
                     </li>
                   ))}
                 </ul>
@@ -300,3 +361,4 @@ function PosPage() {
 }
 
 export default PosPage;
+

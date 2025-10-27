@@ -46,7 +46,7 @@ function LoginPage() {
       const loggedInUser = await login(email, password);
       
       if (loggedInUser) {
-        toast.success('¡Bienvenido a Tito Café!');
+        toast.success('¡Bienvenido a Tito Spot!');
 
         switch (loggedInUser.rol) {
           case 'Jefe':
@@ -86,7 +86,7 @@ function LoginPage() {
 
       // 4. Mostramos éxito y forzamos un re-inicio de la app
       // Esto permite que tu AuthContext lea el nuevo token y te loguee
-      toast.success('¡Bienvenido a Tito Café! Redirigiendo...');
+      toast.success('¡Bienvenido a Tito Spot! Redirigiendo...');
       navigate('/');
       window.location.reload();
 
