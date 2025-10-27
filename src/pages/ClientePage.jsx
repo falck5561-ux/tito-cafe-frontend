@@ -56,7 +56,7 @@ const notify = (type, message) => {
 
 
 // ===================================================================
-// ===               INICIO DE LA CORRECCIÓN CLAVE                 ===
+// ===           INICIO DE LA CORRECCIÓN CLAVE                     ===
 // ===================================================================
 //
 // `CarritoContent` se movió FUERA de `ClientePage` y ahora recibe
@@ -129,7 +129,7 @@ const CarritoContent = ({
           <div className="mt-3">
             <label htmlFor="referenciaDesktop" className="form-label">Referencia:</label>
             {/* Este input ahora funciona porque su componente padre (`CarritoContent`)
-              ya no se destruye en cada render.
+               ya no se destruye en cada render.
             */}
             <input type="text" id="referenciaDesktop" className="form-control" value={referencia} onChange={(e) => setReferencia(e.target.value)} />
           </div>
@@ -170,7 +170,7 @@ const CarritoContent = ({
   </>
 );
 // ===================================================================
-// ===                FIN DE LA CORRECCIÓN CLAVE                 ===
+// ===           FIN DE LA CORRECCIÓN CLAVE                        ===
 // ===================================================================
 
 
@@ -414,7 +414,7 @@ function ClientePage() {
           <div className="col-md-4 d-none d-md-block">
             <div className="card shadow-sm position-sticky" style={{ top: '20px' }}>
               {/* Ahora llamamos a CarritoContent como un componente 
-                independiente y le pasamos todas las props.
+                 independiente y le pasamos todas las props.
               */}
               <CarritoContent
                 isModal={false}
@@ -496,8 +496,8 @@ function ClientePage() {
                     <div className="mt-3">
                       <label htmlFor="referenciaModal" className="form-label">Referencia:</label>
                       {/* Este input también está corregido porque su 
-                        componente padre (`modalView === 'address'`) 
-                        no se redefine.
+                         componente padre (`modalView === 'address'`) 
+                         no se redefine.
                       */}
                       <input type="text" id="referenciaModal" className="form-control" value={referencia} onChange={(e) => setReferencia(e.target.value)} />
                     </div>
@@ -575,43 +575,67 @@ function ClientePage() {
         </motion.div>
       )}
 
+      {/* =================================================================
+        ===           AQUÍ ESTÁ LA SECCIÓN A CORREGIR                 ===
+        =================================================================
+      */}
       {!loading && activeTab === 'recompensas' && (
-  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-    <h2>Mis Recompensas</h2>
-    {misRecompensas?.length === 0 ? (
-      <div className="recompensas-container">
-        <div className="recompensas-caja-vacia">
-          <img
-            // --- CORRECCIÓN AQUÍ ---
-            src="/tito-icon.png"   // <-- Usa el icono correcto de la carpeta 'public'
-            alt="Icono de Tito Cafe" // <-- Texto alternativo actualizado
-            className="recompensas-icono"
-            // --- FIN DE LA CORRECCIÓN ---
-          />
-          <h3>Aún no tienes recompensas</h3>
-          <p>¡Sigue comprando para ganar una gomita gratis!</p>
-        </div>
-      </div>
-    ) : (
-      <div className="row g-4">
-        {misRecompensas?.map(recompensa => (
-          <div key={recompensa.id} className="col-12">
-            <div style={styles.cupon}>
-              <div style={styles.cuponIcon}>🎁</div> {/* Considera usar tito-icon.png aquí también si quieres */}
-              <div style={styles.cuponBody}>
-                <h4 style={styles.cuponTitle}>{recompensa.nombre}</h4>
-                <p style={styles.cuponDescription}>{recompensa.descripcion}</p>
-              </div>
-              <div style={styles.cuponCantidad}>
-                Tienes {recompensa.cantidad}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+          <h2>Mis Recompensas</h2>
+          {/* Si no hay recompensas */}
+          {(!misRecompensas || misRecompensas.length === 0) ? (
+            <div className="recompensas-container">
+              <div className="recompensas-caja-vacia">
+                <img
+                  src="/tito-icon.png" 
+                  alt="Icono de Tito Cafe"
+                  className="recompensas-icono"
+                />
+                <h3>Aún no tienes recompensas</h3>
+                {/* --- CORRECCIÓN #1: Actualizar texto estático --- */}
+                <p>¡Sigue comprando! Ganas una recompensa por cada 20 compras.</p>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
-    )}
-  </motion.div>
-)}
+          ) : (
+            // Si SÍ hay recompensas
+            <div className="row g-4">
+              {misRecompensas.map(recompensa => (
+                <div key={recompensa.id} className="col-12">
+                  <div style={styles.cupon}>
+                    <div style={styles.cuponIcon}>🎁</div>
+                    <div style={styles.cuponBody}>
+
+                      {/* --- CORRECCIÓN #2: Usar el texto dinámico --- */}
+                      {/* Borramos el <h3> estático que decía "Café o Frappe Gratis"
+                        y nos aseguramos de que 'recompensa.nombre' se muestre,
+                        ya que este SÍ viene de la base de datos con el texto nuevo.
+                      */}
+                      <h4 style={styles.cuponTitle}>{recompensa.nombre}</h4>
+                      
+                      {/* Tu 'recompensa.nombre' ahora es: 
+                        "¡Felicidades! Unas gomitas gratis (Tito Pikulito o Tito Mojadito) por tus 20 compras."
+                        Así que ya no necesitas la descripción estática.
+                      */}
+                      {/* <p style={styles.cuponDescription}>{recompensa.descripcion}</p> */}
+
+                    </div>
+                    {/* Esto probablemente no lo necesitas si el backend no manda 'cantidad' */}
+                    {/* <div style={styles.cuponCantidad}>
+                      Tienes {recompensa.cantidad}
+                    </div> 
+                    */}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </motion.div>
+      )}
+      {/* =================================================================
+        ===           FIN DE LA SECCIÓN CORREGIDA                     ===
+        =================================================================
+      */}
+
 
       {showPaymentModal && clientSecret && (
         <div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
@@ -639,3 +663,4 @@ function ClientePage() {
 }
 
 export default ClientePage;
+
