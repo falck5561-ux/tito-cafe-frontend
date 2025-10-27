@@ -1,3 +1,5 @@
+// Archivo: ComboModal.jsx (Código Completo y Corregido)
+
 import React, { useState, useEffect } from 'react';
 
 function ComboModal({ show, handleClose, handleSave, comboActual }) {
@@ -18,16 +20,16 @@ function ComboModal({ show, handleClose, handleSave, comboActual }) {
         // Si estamos editando, llenamos el formulario con los datos existentes
         setFormData({
           id: comboActual.id,
-          titulo: comboActual.titulo || '',
+
+          // --- ¡ESTA ES LA LÍNEA CORREGIDA! ---
+          // Leemos 'nombre' del combo, pero lo guardamos en el estado 'titulo'
+          titulo: comboActual.nombre || '', 
+          
           descripcion: comboActual.descripcion || '',
           precio: comboActual.precio || '',
           imagenes: (comboActual.imagenes && comboActual.imagenes.length > 0) ? comboActual.imagenes : [''],
           descuento_porcentaje: comboActual.descuento_porcentaje || 0,
-          // --- ¡CORRECCIÓN APLICADA AQUÍ! ---
-          // Hacemos el componente más robusto.
-          // Lee 'oferta_activa', pero si no existe, usa 'en_oferta' como respaldo.
           oferta_activa: comboActual.oferta_activa !== undefined ? comboActual.oferta_activa : (comboActual.en_oferta || false),
-          // Hacemos lo mismo para la visibilidad del combo.
           activa: comboActual.activa !== undefined ? comboActual.activa : (comboActual.esta_activo !== undefined ? comboActual.esta_activo : true),
         });
       } else {
@@ -75,8 +77,13 @@ function ComboModal({ show, handleClose, handleSave, comboActual }) {
     e.preventDefault();
     const cleanedData = {
       ...formData,
+      // Renombramos 'titulo' a 'nombre' antes de enviar al backend
+      nombre: formData.titulo, 
       imagenes: formData.imagenes.filter(url => url && url.trim() !== ''),
     };
+    // Quitamos 'titulo' ya que el backend espera 'nombre'
+    delete cleanedData.titulo; 
+    
     handleSave(cleanedData);
   };
 
@@ -148,4 +155,3 @@ function ComboModal({ show, handleClose, handleSave, comboActual }) {
 }
 
 export default ComboModal;
-
