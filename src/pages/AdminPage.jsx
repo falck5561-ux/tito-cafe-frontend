@@ -9,7 +9,10 @@ import { getProducts, createProduct, updateProduct, deleteProduct } from '../ser
 import apiClient from '../services/api';
 import { useTheme } from '../context/ThemeContext';
 
-// --- NUEVO COMPONENTE: Modal de Confirmación Estético y Reutilizable ---
+// --- ¡IMPORTAMOS EL NUEVO MODAL! ---
+import OpcionesModal from '../components/OpcionesModal'; 
+
+// --- MODAL DE CONFIRMACIÓN (Limpiado de NBSP) ---
 const ConfirmationModal = ({ show, onClose, onConfirm, title, message, theme }) => {
   if (!show) return null;
 
@@ -68,6 +71,10 @@ function AdminPage() {
   const [confirmAction, setConfirmAction] = useState(null);
   const [confirmTitle, setConfirmTitle] = useState('');
   const [confirmMessage, setConfirmMessage] = useState('');
+
+  // --- ¡NUEVOS ESTADOS PARA EL MODAL DE OPCIONES! ---
+  const [showOpcionesModal, setShowOpcionesModal] = useState(false);
+  const [productoParaOpciones, setProductoParaOpciones] = useState(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -156,16 +163,38 @@ function AdminPage() {
     setShowConfirmModal(true);
   };
 
+  // --- ¡NUEVOS MANEJADORES PARA EL MODAL DE OPCIONES! ---
+  const handleOpenOpcionesModal = (producto) => {
+    setProductoParaOpciones(producto);
+    setShowOpcionesModal(true);
+  };
+
+  const handleCloseOpcionesModal = () => {
+    setShowOpcionesModal(false);
+    setProductoParaOpciones(null);
+  };
+  // --- FIN DE NUEVOS MANEJADORES ---
+
   const handleOpenComboModal = (combo = null) => { setComboActual(combo); setShowComboModal(true); };
   const handleCloseComboModal = () => { setShowComboModal(false); setComboActual(null); };
+  
+  // MANEJADOR DE GUARDAR COMBO (CORREGIDO)
   const handleSaveCombo = async (combo) => {
     const action = combo.id ? 'actualizado' : 'creado';
     try {
-      if (combo.id) { await apiClient.put(`/combos/${combo.id}`, combo); } else { await apiClient.post('/combos', combo); }
+      if (combo.id) { 
+        await apiClient.put(`/combos/${combo.id}`, combo); 
+      } else { 
+        await apiClient.post('/combos', combo); 
+      }
       toast.success(`Combo ${action} con éxito.`);
       fetchData();
       handleCloseComboModal();
-    } catch (err) { toast.error(`No se pudo guardar el combo.`); }
+    } catch (err) { 
+      // Muestra el mensaje de error 400 del backend
+      const errorMsg = err.response?.data?.msg || 'No se pudo guardar el combo.';
+      toast.error(errorMsg);
+    }
   };
 
   // ================== CAMBIO AQUÍ (2 de 2) ==================
@@ -249,7 +278,8 @@ function AdminPage() {
           <div className="table-responsive">
             <table className="table table-hover align-middle">
               <thead className="table-dark">
-                <tr><th>ID</th><th>Nombre</th><th>Precio</th><th>Oferta</th><th>Stock</th><th>Categoría</th><th>Acciones</th></tr>
+                {/* --- ¡NUEVA COLUMNA DE ACCIONES AMPLIADA! --- */}
+                <tr><th>ID</th><th>Nombre</th><th>Precio</th><th>Oferta</th><th>Stock</th><th>Categoría</th><th style={{width: '25%'}}>Acciones</th></tr>
               </thead>
               <tbody>
                 {productos.map((p) => (
@@ -257,6 +287,10 @@ function AdminPage() {
                     <td>{p.id}</td><td>{p.nombre}</td><td>${Number(p.precio).toFixed(2)}</td><td>{p.en_oferta ? `${p.descuento_porcentaje}%` : 'No'}</td>
                     <td>{p.stock}</td><td>{p.categoria}</td>
                     <td>
+                      {/* --- ¡AQUÍ ESTÁ EL NUEVO BOTÓN "OPCIONES"! --- */}
+                      <button className="btn btn-sm btn-outline-info me-2" onClick={() => handleOpenOpcionesModal(p)}>
+                        Opciones
+                      </button>
                       <button className="btn btn-sm btn-outline-warning me-2" onClick={() => handleOpenProductModal(p)}>Editar</button>
                       {/* ✅ MEJORA: Pasamos el objeto 'p' completo para usar su nombre en el mensaje */}
                       <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteProducto(p)}>Eliminar</button>
@@ -383,6 +417,17 @@ function AdminPage() {
           </div>
         </div>
       )}
+
+      {/* --- ¡AQUÍ RENDERIZAMOS EL NUEVO MODAL DE OPCIONES! --- */}
+      {showOpcionesModal && (
+        <OpcionesModal
+          show={showOpcionesModal}
+          handleClose={handleCloseOpcionesModal}
+          producto={productoParaOpciones}
+          theme={theme}
+        />
+      )}
+
     </div>
   );
 }
