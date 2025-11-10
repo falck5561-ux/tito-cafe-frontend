@@ -26,7 +26,7 @@ function ComboModal({ show, handleClose, handleSave, comboActual }) {
           
           descripcion: comboActual.descripcion || '',
           precio: comboActual.precio || '',
-          imagenes: (comboActual.imagenes && comboActual.imagenes.length > 0) ? comboActual.imagenes : [''],
+          imagenes: (comboActual.imagenes && comboActual.imagenes.length > 0) ? comboActual.imagenes : (comboActual.imagen_url ? [comboActual.imagen_url] : ['']), // Fallback por si acaso
           descuento_porcentaje: comboActual.descuento_porcentaje || 0,
           oferta_activa: comboActual.oferta_activa !== undefined ? comboActual.oferta_activa : (comboActual.en_oferta || false),
           activa: comboActual.activa !== undefined ? comboActual.activa : (comboActual.esta_activo !== undefined ? comboActual.esta_activo : true),
@@ -84,11 +84,11 @@ function ComboModal({ show, handleClose, handleSave, comboActual }) {
       imagenes: formData.imagenes.filter(url => url && url.trim() !== ''),
     };
 
-    // NO borramos 'titulo' ni lo renombramos a 'nombre'.
-    // El backend (combosController) espera recibir 'titulo' y 'precio'.
-    // delete cleanedData.titulo;  <-- ESTO ESTABA MAL Y SE ELIMINÓ
+    // NO borramos 'titulo'. El backend (combosController) 
+    // lo espera en req.body.titulo para la validación.
+    // delete cleanedData.titulo;  <-- ESTA LÍNEA SE ELIMINÓ
     
-    // Enviamos 'cleanedData' que ahora SÍ contiene 'titulo'
+    // Enviamos 'cleanedData' que ahora SÍ contiene 'titulo' y 'precio'
     handleSave(cleanedData);
   };
   // ==========================================
