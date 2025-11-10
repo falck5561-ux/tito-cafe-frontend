@@ -11,7 +11,7 @@ function ComboModal({ show, handleClose, handleSave, comboActual }) {
     imagenes: [''],
     descuento_porcentaje: 0,
     oferta_activa: false,  // Para activar/desactivar el descuento
-    activa: true,          // Para la visibilidad del combo
+    activa: true,         // Para la visibilidad del combo
   });
 
   useEffect(() => {
@@ -21,8 +21,7 @@ function ComboModal({ show, handleClose, handleSave, comboActual }) {
         setFormData({
           id: comboActual.id,
 
-          // --- ¡ESTA ES LA LÍNEA CORREGIDA! ---
-          // Leemos 'nombre' del combo, pero lo guardamos en el estado 'titulo'
+          // Leemos 'nombre' del combo (de la DB), pero lo guardamos en el estado 'titulo' (del form)
           titulo: comboActual.nombre || '', 
           
           descripcion: comboActual.descripcion || '',
@@ -73,19 +72,26 @@ function ComboModal({ show, handleClose, handleSave, comboActual }) {
     setFormData({ ...formData, imagenes: newImages });
   };
 
+  // ==========================================
+  // ¡AQUÍ ESTÁ LA CORRECCIÓN DEL ERROR 400!
+  // ==========================================
   const onSave = (e) => {
     e.preventDefault();
+    
+    // Limpiamos las URLs de imagen vacías
     const cleanedData = {
       ...formData,
-      // Renombramos 'titulo' a 'nombre' antes de enviar al backend
-      nombre: formData.titulo, 
       imagenes: formData.imagenes.filter(url => url && url.trim() !== ''),
     };
-    // Quitamos 'titulo' ya que el backend espera 'nombre'
-    delete cleanedData.titulo; 
+
+    // NO borramos 'titulo' ni lo renombramos a 'nombre'.
+    // El backend (combosController) espera recibir 'titulo' y 'precio'.
+    // delete cleanedData.titulo;  <-- ESTO ESTABA MAL Y SE ELIMINÓ
     
+    // Enviamos 'cleanedData' que ahora SÍ contiene 'titulo'
     handleSave(cleanedData);
   };
+  // ==========================================
 
   return (
     <div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
@@ -123,23 +129,23 @@ function ComboModal({ show, handleClose, handleSave, comboActual }) {
 
               {/* --- SECCIÓN CORREGIDA CON DOS INTERRUPTORES --- */}
               <div className="p-3 border rounded">
-                  <h6 className="mb-3">Configuración de Oferta y Visibilidad</h6>
-                  <div className="mb-3">
-                    <label htmlFor="descuento_porcentaje" className="form-label">Porcentaje de Descuento (%)</label>
-                    <input type="number" className="form-control" id="descuento_porcentaje" name="descuento_porcentaje" value={formData.descuento_porcentaje} onChange={handleChange} />
-                  </div>
-                  
-                  {/* Interruptor para el DESCUENTO */}
-                  <div className="form-check form-switch mb-2">
-                    <input className="form-check-input" type="checkbox" role="switch" id="oferta_activa" name="oferta_activa" checked={formData.oferta_activa} onChange={handleChange} />
-                    <label className="form-check-label" htmlFor="oferta_activa">Activar Descuento</label>
-                  </div>
+                <h6 className="mb-3">Configuración de Oferta y Visibilidad</h6>
+                <div className="mb-3">
+                  <label htmlFor="descuento_porcentaje" className="form-label">Porcentaje de Descuento (%)</label>
+                  <input type="number" className="form-control" id="descuento_porcentaje" name="descuento_porcentaje" value={formData.descuento_porcentaje} onChange={handleChange} />
+                </div>
+                
+                {/* Interruptor para el DESCUENTO */}
+                <div className="form-check form-switch mb-2">
+                  <input className="form-check-input" type="checkbox" role="switch" id="oferta_activa" name="oferta_activa" checked={formData.oferta_activa} onChange={handleChange} />
+                  <label className="form-check-label" htmlFor="oferta_activa">Activar Descuento</label>
+                </div>
 
-                  {/* Interruptor para la VISIBILIDAD */}
-                  <div className="form-check form-switch">
-                    <input className="form-check-input" type="checkbox" role="switch" id="activa" name="activa" checked={formData.activa} onChange={handleChange} />
-                    <label className="form-check-label" htmlFor="activa">Combo Visible para Clientes</label>
-                  </div>
+                {/* Interruptor para la VISIBILIDAD */}
+                <div className="form-check form-switch">
+                  <input className="form-check-input" type="checkbox" role="switch" id="activa" name="activa" checked={formData.activa} onChange={handleChange} />
+                  <label className="form-check-label" htmlFor="activa">Combo Visible para Clientes</label>
+                </div>
               </div>
 
             </div>
