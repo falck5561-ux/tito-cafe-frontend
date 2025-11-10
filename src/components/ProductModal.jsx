@@ -170,6 +170,20 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
     }
   }, [productoActual, show]);
 
+  // Este Effect previene el scroll del <body> cuando el modal está abierto
+  // Es una corrección secundaria pero muy recomendable
+  useEffect(() => {
+    if (show) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'auto';
+    }
+    // Limpieza
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, [show]);
+
   if (!show) return null;
 
   // --- Manejadores del Formulario Principal ---
@@ -252,7 +266,15 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
     <div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
       <div className="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div className="modal-content">
-          <form onSubmit={onSave}>
+          {/* ✅ CORRECCIÓN "BUG DEL SCROLL": 
+            Añadimos 'd-flex flex-column h-100' al formulario.
+            Esto es necesario porque el <form> se sitúa entre .modal-content (que es flex)
+            y .modal-body (que necesita ser un 'flex-item' para poder scrollear).
+            Con estas clases, el formulario ocupa el 100% de la altura del modal 
+            y mantiene la estructura de flex-column, permitiendo que .modal-body
+            ocupe el espacio restante y muestre un scroll cuando sea necesario.
+          */}
+          <form onSubmit={onSave} className="d-flex flex-column h-100">
             <div className="modal-header">
               <h5 className="modal-title">{formData.id ? 'Editar Producto' : 'Añadir Nuevo Producto'}</h5>
               <button type="button" className="btn-close" onClick={handleClose}></button>
