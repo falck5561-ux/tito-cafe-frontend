@@ -29,6 +29,7 @@ function GrupoOpcionesCard({ grupo, productoId, onOptionAdded, onOptionDeleted, 
   };
 
   const handleDeleteOption = async (opcionId) => {
+    // Usamos un modal de confirmación simple del navegador
     if (!window.confirm('¿Seguro que quieres eliminar esta opción?')) return;
     try {
       await apiClient.delete(`/productos/opciones/${opcionId}`);
@@ -41,6 +42,7 @@ function GrupoOpcionesCard({ grupo, productoId, onOptionAdded, onOptionDeleted, 
   };
 
   const handleDeleteGroup = async () => {
+    // Usamos un modal de confirmación simple del navegador
     if (!window.confirm(`¿Seguro que quieres eliminar el grupo "${grupo.nombre}" y todas sus opciones?`)) return;
     try {
       await apiClient.delete(`/productos/grupos/${grupo.id}`);
@@ -67,7 +69,7 @@ function GrupoOpcionesCard({ grupo, productoId, onOptionAdded, onOptionDeleted, 
             {grupo.opciones.map(op => (
               <li key={op.id} className={`${listGroupClass} d-flex justify-content-between align-items-center`}>
                 <span>{op.nombre} (+${Number(op.precio_adicional).toFixed(2)})</span>
-                <button type-="button" className="btn btn-sm btn-link text-danger" onClick={() => handleDeleteOption(op.id)}>
+                <button type="button" className="btn btn-sm btn-link text-danger" onClick={() => handleDeleteOption(op.id)}>
                   &times;
                 </button>
               </li>
@@ -111,28 +113,42 @@ function GrupoOpcionesCard({ grupo, productoId, onOptionAdded, onOptionDeleted, 
 
 // --- Modal Principal de Producto ---
 function ProductModal({ show, handleClose, handleSave, productoActual }) {
-  const [formData, setFormData] = useState({});
+  
+  // ✅ CORRECCIÓN "PANTALLA NEGRA":
+  // El estado inicial debe tener la misma estructura que el formulario
+  // para evitar que 'formData.imagenes.map' falle en el primer render.
+  const [formData, setFormData] = useState({
+    nombre: '',
+    descripcion: '',
+    precio: '',
+    stock: 0,
+    categoria: 'General',
+    imagenes: [''], // <--- ESTA LÍNEA ARREGLA LA PANTALLA NEGRA
+    descuento_porcentaje: 0,
+    en_oferta: false,
+  });
+
   const [grupos, setGrupos] = useState([]);
   const [loadingGrupos, setLoadingGrupos] = useState(false);
 
-  // --- ¡TU IDEA! El "switch" para mostrar/ocultar la gestión de toppings ---
+  // El "switch" para mostrar/ocultar la gestión de toppings
   const [gestionarOpciones, setGestionarOpciones] = useState(false);
 
   // Estado para el formulario de CREAR UN NUEVO GRUPO
   const [nombreGrupo, setNombreGrupo] = useState('');
-  const [tipoSeleccion, setTipoSeleccion] = useState('unico');
+  const [tipoSeleccion, setTipoSeleccion] = useState('unico'); // 'unico' (radio) o 'multiple' (checkbox)
 
   // Carga los datos del producto cuando se abre el modal
   useEffect(() => {
     if (show) {
       if (productoActual) {
-        setFormData(productoActual);
-        // Si el producto ya tiene opciones, mostramos la UI de gestión
+        // productoActual ya viene con 'grupos_opciones' desde AdminPage
+        setFormData(productoActual); 
+        
         if (productoActual.grupos_opciones && productoActual.grupos_opciones.length > 0) {
           setGrupos(productoActual.grupos_opciones);
-          setGestionarOpciones(true);
+          setGestionarOpciones(true); // Mostrar la UI de opciones si ya existen
         } else {
-          // Si no tiene, reseteamos
           setGrupos([]);
           setGestionarOpciones(false);
         }
@@ -154,29 +170,6 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
     }
   }, [productoActual, show]);
 
-  // Carga los grupos (solo si es necesario)
-  const cargarGrupos = async () => {
-    if (!productoActual?.id || grupos.length > 0) return; // No cargar si es producto nuevo o ya están cargados
-
-    setLoadingGrupos(true);
-    try {
-      const res = await apiClient.get(`/productos/${productoActual.id}`);
-      setGrupos(res.data.grupos_opciones || []);
-    } catch (err) {
-      toast.error('No se pudieron cargar las opciones.');
-    } finally {
-      setLoadingGrupos(false);
-    }
-  };
-
-  // Efecto para cargar los grupos cuando se activa el switch
-  useEffect(() => {
-    if (gestionarOpciones) {
-      cargarGrupos();
-    }
-  }, [gestionarOpciones]);
-
-
   if (!show) return null;
 
   // --- Manejadores del Formulario Principal ---
@@ -189,17 +182,17 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
   };
 
   const handleImageChange = (index, value) => {
-    const newImages = [...formData.imagenes];
+    const newImages = [...(formData.imagenes || [''])]; // Asegurar que sea un array
     newImages[index] = value;
     setFormData({ ...formData, imagenes: newImages });
   };
 
   const handleAddImageField = () => {
-    setFormData({ ...formData, imagenes: [...formData.imagenes, ''] });
+    setFormData({ ...formData, imagenes: [...(formData.imagenes || ['']), ''] });
   };
 
   const handleRemoveImageField = (index) => {
-    if (formData.imagenes.length <= 1) return;
+    if (!formData.imagenes || formData.imagenes.length <= 1) return;
     const newImages = formData.imagenes.filter((_, i) => i !== index);
     setFormData({ ...formData, imagenes: newImages });
   };
@@ -208,7 +201,7 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
     e.preventDefault();
     const datosParaEnviar = {
       ...formData,
-      imagenes: formData.imagenes.filter(url => url && url.trim() !== ''),
+      imagenes: (formData.imagenes || []).filter(url => url && url.trim() !== ''),
     };
     handleSave(datosParaEnviar);
   };
@@ -295,10 +288,11 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
               {/* --- SECCIÓN DE IMÁGENES --- */}
               <div className="p-3 mb-3 border rounded">
                 <h6 className="mb-3">Imágenes del Producto</h6>
-                {formData.imagenes.map((url, index) => (
+                {/* CORRECCIÓN: Aseguramos que formData.imagenes sea siempre un array */}
+                {(formData.imagenes || ['']).map((url, index) => (
                   <div key={index} className="d-flex align-items-center mb-2">
-                    <input type="text" className="form-control me-2" placeholder="https://ejemplo.com/imagen.jpg" value={url} onChange={(e) => handleImageChange(index, e.target.value)} />
-                    <button type="button" className="btn btn-outline-danger btn-sm" onClick={() => handleRemoveImageField(index)} disabled={formData.imagenes.length <= 1}>&times;</button>
+                    <input type="text" className="form-control me-2" placeholder="https://ejemplo.com/imagen.jpg" value={url || ''} onChange={(e) => handleImageChange(index, e.target.value)} />
+                    <button type="button" className="btn btn-outline-danger btn-sm" onClick={() => handleRemoveImageField(index)} disabled={!formData.imagenes || formData.imagenes.length <= 1}>&times;</button>
                   </div>
                 ))}
                 <button type="button" className="btn btn-outline-primary btn-sm mt-2" onClick={handleAddImageField}>Añadir URL de Imagen</button>
