@@ -9,14 +9,10 @@ import { getProducts, createProduct, updateProduct, deleteProduct } from '../ser
 import apiClient from '../services/api';
 import { useTheme } from '../context/ThemeContext';
 
-// --- ¡IMPORTAMOS EL NUEVO MODAL! ---
-import OpcionesModal from '../components/OpcionesModal'; 
-
-// --- MODAL DE CONFIRMACIÓN (Limpiado de NBSP) ---
+// --- Modal de Confirmación Estético y Reutilizable ---
 const ConfirmationModal = ({ show, onClose, onConfirm, title, message, theme }) => {
   if (!show) return null;
 
-  // Adapta el estilo del modal al tema actual (luz/noche)
   const modalClass = theme === 'dark' ? 'modal-content text-bg-dark' : 'modal-content';
   const closeButtonClass = theme === 'dark' ? 'btn-close btn-close-white' : 'btn-close';
 
@@ -47,9 +43,7 @@ const ConfirmationModal = ({ show, onClose, onConfirm, title, message, theme }) 
 
 
 function AdminPage() {
-  const { theme } = useTheme(); // Obtenemos el tema actual
-
-  // ... (otros estados sin cambios)
+  const { theme } = useTheme();
   const [activeTab, setActiveTab] = useState('pedidosEnLinea');
   const [productos, setProductos] = useState([]);
   const [pedidos, setPedidos] = useState([]);
@@ -66,15 +60,10 @@ function AdminPage() {
   const [showPurgeModal, setShowPurgeModal] = useState(false);
   const [purgeConfirmText, setPurgeConfirmText] = useState('');
 
-  // --- NUEVOS ESTADOS para manejar el contenido dinámico del modal ---
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
   const [confirmTitle, setConfirmTitle] = useState('');
   const [confirmMessage, setConfirmMessage] = useState('');
-
-  // --- ¡NUEVOS ESTADOS PARA EL MODAL DE OPCIONES! ---
-  const [showOpcionesModal, setShowOpcionesModal] = useState(false);
-  const [productoParaOpciones, setProductoParaOpciones] = useState(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -90,13 +79,7 @@ function AdminPage() {
         const res = await apiClient.get('/pedidos');
         setPedidos(res.data);
       } else if (activeTab === 'combos') {
-        
-        // ================== CAMBIO AQUÍ (1 de 2) ==================
-        // Ahora usamos la nueva ruta del backend para traer
-        // TODOS los combos (activos e inactivos) a este panel.
         const res = await apiClient.get('/combos/admin/todos');
-        // ==========================================================
-
         setCombos(res.data);
       }
     } catch (err) {
@@ -111,17 +94,29 @@ function AdminPage() {
     fetchData();
   }, [activeTab]);
   
+  // --- LÓGICA DE MODAL DE PRODUCTO (CORREGIDA) ---
   const handleOpenProductModal = (producto = null) => {
     if (producto) {
-      const productoParaModal = {
-        ...producto,
-        imagenes: producto.imagen_url ? [producto.imagen_url] : []
-      };
-      setProductoActual(productoParaModal);
+      // Si editamos, cargamos el producto COMPLETO (con sus opciones)
+      // para pasárselo al modal.
+      apiClient.get(`/productos/${producto.id}`)
+        .then(res => {
+          const productoCompleto = {
+            ...res.data, // Esto incluye 'grupos_opciones'
+            imagenes: res.data.imagen_url ? [res.data.imagen_url] : ['']
+          };
+          setProductoActual(productoCompleto);
+          setShowProductModal(true);
+        })
+        .catch(err => {
+          console.error("Error al cargar producto completo:", err);
+          toast.error("No se pudo cargar el producto con sus opciones.");
+        });
     } else {
+      // Es un producto nuevo
       setProductoActual(null);
+      setShowProductModal(true); 
     }
-    setShowProductModal(true); 
   };
   
   const handleCloseProductModal = () => { setShowProductModal(false); setProductoActual(null); };
@@ -133,20 +128,29 @@ function AdminPage() {
       imagen_url: (producto.imagenes && producto.imagenes.length > 0) ? producto.imagenes[0] : null,
     };
     delete datosParaEnviar.imagenes; 
+    delete datosParaEnviar.grupos_opciones; // El backend no espera esto en un PUT
 
     try {
+      let res;
       if (datosParaEnviar.id) {
-        await updateProduct(datosParaEnviar.id, datosParaEnviar);
+        res = await updateProduct(datosParaEnviar.id, datosParaEnviar);
       } else {
-        await createProduct(datosParaEnviar);
+        res = await createProduct(datosParaEnviar);
       }
-      toast.success(`Producto ${action} con éxito.`);
-      fetchData();
-      handleCloseProductModal();
+      
+      // Si es un producto NUEVO, lo re-abrimos para añadir opciones
+      if (!producto.id && res) { 
+        toast.success(`Producto ${action} con éxito. Ahora puedes añadirle opciones.`);
+        handleCloseProductModal();
+        handleOpenProductModal(res); // Re-abrir con el producto recién creado
+      } else {
+        toast.success(`Producto ${action} con éxito.`);
+        handleCloseProductModal();
+      }
+      fetchData(); // Recargamos la lista
     } catch (err) { toast.error(`No se pudo guardar el producto.`); }
   };
   
-  // ✅ MEJORA: La función ahora establece un título y mensaje específicos antes de abrir el modal
   const handleDeleteProducto = (producto) => {
     setConfirmTitle('Desactivar Producto');
     setConfirmMessage(`¿Seguro que quieres desactivar "${producto.nombre}"? Ya no aparecerá en el menú de clientes.`);
@@ -158,28 +162,19 @@ function AdminPage() {
       } catch (err) { 
         toast.error(err.response?.data?.msg || 'No se pudo desactivar el producto.');
       }
-      setShowConfirmModal(false); // Cierra el modal después de la acción
+      setShowConfirmModal(false);
     });
     setShowConfirmModal(true);
   };
+  // --- FIN LÓGICA MODAL PRODUCTO ---
 
-  // --- ¡NUEVOS MANEJADORES PARA EL MODAL DE OPCIONES! ---
-  const handleOpenOpcionesModal = (producto) => {
-    setProductoParaOpciones(producto);
-    setShowOpcionesModal(true);
-  };
-
-  const handleCloseOpcionesModal = () => {
-    setShowOpcionesModal(false);
-    setProductoParaOpciones(null);
-  };
-  // --- FIN DE NUEVOS MANEJADORES ---
-
+  // --- LÓGICA MODAL COMBO (CORREGIDA) ---
   const handleOpenComboModal = (combo = null) => { setComboActual(combo); setShowComboModal(true); };
   const handleCloseComboModal = () => { setShowComboModal(false); setComboActual(null); };
   
-  // MANEJADOR DE GUARDAR COMBO (CORREGIDO)
   const handleSaveCombo = async (combo) => {
+    // Esta función recibe el objeto 'combo' del ComboModal
+    // que ya incluye 'titulo' y 'precio' (Error 400 Corregido)
     const action = combo.id ? 'actualizado' : 'creado';
     try {
       if (combo.id) { 
@@ -191,38 +186,31 @@ function AdminPage() {
       fetchData();
       handleCloseComboModal();
     } catch (err) { 
-      // Muestra el mensaje de error 400 del backend
+      // Muestra el mensaje de error 400 del backend si falla la validación
       const errorMsg = err.response?.data?.msg || 'No se pudo guardar el combo.';
-      toast.error(errorMsg);
+      toast.error(errorMsg); 
     }
   };
 
-  // ================== CAMBIO AQUÍ (2 de 2) ==================
-  // Esta es la función que se llama al pulsar "Eliminar" en un combo.
   const handleDeleteCombo = (combo) => {
-    
-    // 1. Cambiamos el Título y Mensaje para que digan "Desactivar"
     setConfirmTitle('Desactivar Combo');
     setConfirmMessage(`¿Seguro que quieres desactivar "${combo.titulo || combo.nombre}"? Ya no será visible para los clientes.`);
     
     setConfirmAction(() => async () => {
       try {
-        
-        // 2. Cambiamos el método de 'delete' a 'patch'
-        // 3. Cambiamos la URL a la nueva ruta '/desactivar'
+        // CORRECCIÓN CORS: Esto ahora funciona porque 'PATCH' está permitido
         await apiClient.patch(`/combos/${combo.id}/desactivar`);
         
         toast.success('Combo desactivado con éxito.');
-        fetchData(); // Recarga la lista
+        fetchData();
       } catch (err) { 
-        // Mostramos el error del backend si existe
         toast.error(err.response?.data?.msg || 'No se pudo desactivar el combo.'); 
       }
       setShowConfirmModal(false);
     });
     setShowConfirmModal(true);
   };
-  // ==========================================================
+  // --- FIN LÓGICA MODAL COMBO ---
   
   const handleUpdateStatus = async (pedidoId, nuevoEstado) => {
     try {
@@ -278,8 +266,7 @@ function AdminPage() {
           <div className="table-responsive">
             <table className="table table-hover align-middle">
               <thead className="table-dark">
-                {/* --- ¡NUEVA COLUMNA DE ACCIONES AMPLIADA! --- */}
-                <tr><th>ID</th><th>Nombre</th><th>Precio</th><th>Oferta</th><th>Stock</th><th>Categoría</th><th style={{width: '25%'}}>Acciones</th></tr>
+                <tr><th>ID</th><th>Nombre</th><th>Precio</th><th>Oferta</th><th>Stock</th><th>Categoría</th><th>Acciones</th></tr>
               </thead>
               <tbody>
                 {productos.map((p) => (
@@ -287,12 +274,8 @@ function AdminPage() {
                     <td>{p.id}</td><td>{p.nombre}</td><td>${Number(p.precio).toFixed(2)}</td><td>{p.en_oferta ? `${p.descuento_porcentaje}%` : 'No'}</td>
                     <td>{p.stock}</td><td>{p.categoria}</td>
                     <td>
-                      {/* --- ¡AQUÍ ESTÁ EL NUEVO BOTÓN "OPCIONES"! --- */}
-                      <button className="btn btn-sm btn-outline-info me-2" onClick={() => handleOpenOpcionesModal(p)}>
-                        Opciones
-                      </button>
-                      <button className="btn btn-sm btn-outline-warning me-2" onClick={() => handleOpenProductModal(p)}>Editar</button>
-                      {/* ✅ MEJORA: Pasamos el objeto 'p' completo para usar su nombre en el mensaje */}
+                      {/* --- BOTÓN DE EDITAR (CORREGIDO) --- */}
+                      <button className="btn btn-sm btn-outline-warning me-2" onClick={() => handleOpenProductModal(p)}>Editar / Opciones</button>
                       <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteProducto(p)}>Eliminar</button>
                     </td>
                   </tr>
@@ -303,10 +286,10 @@ function AdminPage() {
         </div>
       )}
       
-      {/* ... (el resto del código de las otras pestañas no cambia y se omite por brevedad) ... */}
       {!loading && !error && activeTab === 'pedidosEnLinea' && (
         <div>
           <h1 className="mb-4">Gestión de Pedidos en Línea</h1>
+          {/* Aquí iría tu tabla de pedidos... */}
           <div className="table-responsive">
             <table className="table table-hover align-middle">
               <thead className="table-dark">
@@ -339,21 +322,18 @@ function AdminPage() {
             <h1>Gestión de Combos</h1>
             <button className="btn btn-primary" onClick={() => handleOpenComboModal()}>Añadir Nuevo Combo</button>
           </div>
+          {/* Aquí iría tu tabla de combos... */}
           <div className="table-responsive">
             <table className="table table-hover align-middle">
               <thead className="table-dark">
-                {/* Añadimos la columna "Visible" */}
                 <tr><th>ID</th><th>Nombre</th><th>Precio</th><th>Visible</th><th>Acciones</th></tr>
               </thead>
               <tbody>
                 {combos.map((combo) => (
-                  // Si el combo está inactivo, le ponemos una clase para atenuarlo
                   <tr key={combo.id} className={!combo.esta_activo ? 'text-muted opacity-50' : ''}>
                     <td>{combo.id}</td>
-                    {/* Usamos 'nombre' que viene de la DB, 'titulo' es del frontend */}
                     <td>{combo.nombre}</td>
                     <td>${Number(combo.precio).toFixed(2)}</td>
-                    {/* Mostramos el estado de visibilidad */}
                     <td>
                       <span className={`badge ${combo.esta_activo ? 'bg-success' : 'bg-danger'}`}>
                         {combo.esta_activo ? 'Sí' : 'No'}
@@ -361,7 +341,6 @@ function AdminPage() {
                     </td>
                     <td>
                       <button className="btn btn-sm btn-outline-warning me-2" onClick={() => handleOpenComboModal(combo)}>Editar</button>
-                      {/* Solo mostramos "Eliminar" si el combo está activo */}
                       {combo.esta_activo && (
                         <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeleteCombo(combo)}>Eliminar</button>
                       )}
@@ -375,6 +354,7 @@ function AdminPage() {
       )}
       {!loading && !error && activeTab === 'reporteGeneral' && (
         <div>
+          {/* Aquí iría tu reporte... */}
           {reportData.length > 0 ? <SalesReportChart reportData={reportData} /> : <p className="text-center">No hay datos de ventas para mostrar.</p>}
           <div className="mt-5 p-4 border border-danger rounded">
             <h3 className="text-danger">Zona de Peligro</h3>
@@ -385,11 +365,30 @@ function AdminPage() {
       )}
       {activeTab === 'reporteProductos' && <ProductSalesReport />}
 
-      <ProductModal show={showProductModal} handleClose={handleCloseProductModal} handleSave={handleSaveProducto} productoActual={productoActual} />
-      <ComboModal show={showComboModal} handleClose={handleCloseComboModal} handleSave={handleSaveCombo} comboActual={comboActual} />
+      {/* --- RENDERIZADO DE MODALES (CORREGIDO) --- */}
+      
+      {/* Usamos el NUEVO ProductModal. 'show' lo controla */}
+      {showProductModal && (
+        <ProductModal 
+          show={showProductModal} 
+          handleClose={handleCloseProductModal} 
+          handleSave={handleSaveProducto} 
+          productoActual={productoActual} 
+        />
+      )}
+      
+      {/* Usamos el ComboModal corregido. 'show' lo controla */}
+      {showComboModal && (
+        <ComboModal 
+          show={showComboModal} 
+          handleClose={handleCloseComboModal} 
+          handleSave={handleSaveCombo} 
+          comboActual={comboActual} 
+        />
+      )}
+      
       {showDetailsModal && (<DetallesPedidoModal pedido={selectedOrderDetails} onClose={handleCloseDetailsModal} />)}
 
-      {/* ✅ MEJORA: El modal ahora usa los estados dinámicos para el título y el mensaje */}
       <ConfirmationModal
         show={showConfirmModal}
         onClose={() => setShowConfirmModal(false)}
@@ -401,6 +400,7 @@ function AdminPage() {
 
       {showPurgeModal && (
         <div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          {/* ... (el resto de tu modal de purga) ... */}
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header"><h5 className="modal-title text-danger">⚠️ ¡Acción Irreversible!</h5><button type="button" className="btn-close" onClick={() => setShowPurgeModal(false)}></button></div>
@@ -417,17 +417,6 @@ function AdminPage() {
           </div>
         </div>
       )}
-
-      {/* --- ¡AQUÍ RENDERIZAMOS EL NUEVO MODAL DE OPCIONES! --- */}
-      {showOpcionesModal && (
-        <OpcionesModal
-          show={showOpcionesModal}
-          handleClose={handleCloseOpcionesModal}
-          producto={productoParaOpciones}
-          theme={theme}
-        />
-      )}
-
     </div>
   );
 }
