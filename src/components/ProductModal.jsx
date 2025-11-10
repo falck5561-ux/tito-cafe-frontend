@@ -3,14 +3,11 @@ import apiClient from '../services/api';
 import toast from 'react-hot-toast';
 
 // --- Componente Interno para la Tarjeta de Grupo de Opciones ---
-// (Lo mantenemos dentro del mismo archivo para simplicidad)
 function GrupoOpcionesCard({ grupo, productoId, onOptionAdded, onOptionDeleted, onGroupDeleted, theme }) {
   const [nombreOpcion, setNombreOpcion] = useState('');
   const [precioOpcion, setPrecioOpcion] = useState(0);
 
-  // NOTA: Si tu modal principal es oscuro, quizá quieras que 'theme' se pase
-  // como prop desde el modal principal para que estas tarjetas también lo sean.
-  // Por ahora, lo dejaremos en 'light' como estaba.
+  // Tus clases de tema (oscuro/claro)
   const cardClass = theme === 'dark' ? 'card text-bg-dark border-secondary' : 'card';
   const inputClass = theme === 'dark' ? 'form-control form-control-dark bg-dark text-white' : 'form-control';
   const listGroupClass = theme === 'dark' ? 'list-group-item bg-dark text-white border-secondary' : 'list-group-item';
@@ -170,7 +167,6 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
     } else {
       document.body.style.overflow = 'auto';
     }
-    // Limpieza
     return () => {
       document.body.style.overflow = 'auto';
     };
@@ -225,7 +221,7 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
     try {
       const groupData = { nombre: nombreGrupo, tipo_seleccion: tipoSeleccion };
       const res = await apiClient.post(`/productos/${productoActual.id}/grupos`, groupData);
-      res.data.opciones = []; // Aseguramos que el nuevo grupo tenga un array de opciones vacío
+      res.data.opciones = []; 
       setGrupos([...grupos, res.data]);
       setNombreGrupo('');
       setTipoSeleccion('unico');
@@ -253,21 +249,7 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
   };
   // --- Fin Manejadores Grupos y Opciones ---
 
-
-  // Determina el tema del modal (basado en la imagen, parece oscuro)
-  // ASUMIMOS que pasas una prop 'theme' al modal, o que el modal es oscuro
-  // Si no es así, ajusta esto. Para el ejemplo, usaré 'dark'
-  // const modalTheme = 'dark'; 
-  // const modalContentClass = modalTheme === 'dark' ? 'modal-content bg-dark text-white' : 'modal-content';
-  // const inputClass = modalTheme === 'dark' ? 'form-control bg-dark text-white' : 'form-control';
-  // const formSelectClass = modalTheme === 'dark' ? 'form-select bg-dark text-white' : 'form-select';
-  // const formCheckLabelClass = modalTheme === 'dark' ? 'form-check-label text-white' : 'form-check-label';
-  // const borderColorClass = modalTheme === 'dark' ? 'border-secondary' : '';
-  
-  // O MANTENEMOS EL CÓDIGO ORIGINAL (asume inputs claros por defecto de bootstrap)
-  // La imagen que mandaste tiene inputs oscuros, pero el código original no lo especifica.
-  // Voy a mantenerme fiel al código original que me diste,
-  // ¡pero la corrección del scroll funcionará independientemente del tema!
+  // Tus comentarios de tema
   const modalContentClass = "modal-content"; // Ajusta esto si usas tema oscuro
 
   return (
@@ -275,19 +257,25 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
       <div className="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div className={modalContentClass}> {/* <--- 'modal-content' */}
           
-          {/* ✅ CORRECCIÓN "BUG DEL SCROLL": 
-            Añadimos 'd-flex flex-column h-100' al formulario.
-            Esto es necesario porque el <form> se sitúa entre .modal-content (que es flex)
-            y .modal-body (que necesita ser un 'flex-item' para poder scrollear).
+          {/* =====================================================================
+            === 🚨 ¡AQUÍ ESTÁ LA CORRECCIÓN! 🚨 ===
+            =====================================================================
+            Tu modal "Editar Combo" SÍ funciona porque probablemente no tiene
+            este <form> aquí. Pero como "Editar Producto" SÍ lo tiene,
+            necesitamos AÑADIR estas clases de Bootstrap para que el scroll
+            vuelva a funcionar.
           */}
           <form onSubmit={onSave} className="d-flex flex-column h-100">
             
             <div className="modal-header">
               <h5 className="modal-title">{formData.id ? 'Editar Producto' : 'Añadir Nuevo Producto'}</h5>
-              <button type="button" className="btn-close" onClick={handleClose}></button>
+              {/* Tu video muestra el botón 'X' de Bootstrap. Si estás en modo oscuro
+                y no se ve, añade la clase 'btn-close-white'
+              */}
+              <button type="button" className="btn-close btn-close-white" onClick={handleClose}></button>
             </div>
             
-            {/* Este .modal-body SÍ tendrá scroll porque su padre (<form>) 
+            {/* Este .modal-body SÍ tendrá scroll porque su padre (<form>)
               es ahora un contenedor flex que ocupa el 100% de la altura.
             */}
             <div className="modal-body">
@@ -369,14 +357,12 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
                 {gestionarOpciones && formData.id && (
                   <div className="mt-4">
                     {/* Formulario para CREAR NUEVO GRUPO */}
-                    {/* (El código original tenía este form anidado, lo cual es inválido en HTML) */}
-                    {/* (Lo he corregido en el código que te pasé antes, pero si el tuyo lo tiene anidado,
-                       deberías separarlo o usar un simple <div> y manejar el submit en el botón) */}
-                    
-                    {/* ASUMIENDO que el form de 'handleAddGroup' es independiente: */}
-                    <div className="p-3 mb-4 border rounded bg-light"> {/* Cuidado si usas tema oscuro, 'bg-light' se verá mal */}
+                    {/* NOTA: Este <form> anidado es HTML inválido, pero
+                        como está en un componente separado, React lo maneja.
+                        Lo importante es que el <form> PRINCIPAL tenga las clases.
+                    */}
+                    <div className="p-3 mb-4 border rounded bg-light"> 
                       <h5 className="mb-3">Crear Nuevo Grupo</h5>
-                      {/* Este es un <form> separado, NO anidado dentro del <form> principal */}
                       <form onSubmit={handleAddGroup} className="row g-3">
                         <div className="col-md-5">
                           <label className="form-label">Nombre del Grupo</label>
