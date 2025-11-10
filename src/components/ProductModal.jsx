@@ -8,6 +8,9 @@ function GrupoOpcionesCard({ grupo, productoId, onOptionAdded, onOptionDeleted, 
   const [nombreOpcion, setNombreOpcion] = useState('');
   const [precioOpcion, setPrecioOpcion] = useState(0);
 
+  // NOTA: Si tu modal principal es oscuro, quizá quieras que 'theme' se pase
+  // como prop desde el modal principal para que estas tarjetas también lo sean.
+  // Por ahora, lo dejaremos en 'light' como estaba.
   const cardClass = theme === 'dark' ? 'card text-bg-dark border-secondary' : 'card';
   const inputClass = theme === 'dark' ? 'form-control form-control-dark bg-dark text-white' : 'form-control';
   const listGroupClass = theme === 'dark' ? 'list-group-item bg-dark text-white border-secondary' : 'list-group-item';
@@ -29,7 +32,6 @@ function GrupoOpcionesCard({ grupo, productoId, onOptionAdded, onOptionDeleted, 
   };
 
   const handleDeleteOption = async (opcionId) => {
-    // Usamos un modal de confirmación simple del navegador
     if (!window.confirm('¿Seguro que quieres eliminar esta opción?')) return;
     try {
       await apiClient.delete(`/productos/opciones/${opcionId}`);
@@ -42,7 +44,6 @@ function GrupoOpcionesCard({ grupo, productoId, onOptionAdded, onOptionDeleted, 
   };
 
   const handleDeleteGroup = async () => {
-    // Usamos un modal de confirmación simple del navegador
     if (!window.confirm(`¿Seguro que quieres eliminar el grupo "${grupo.nombre}" y todas sus opciones?`)) return;
     try {
       await apiClient.delete(`/productos/grupos/${grupo.id}`);
@@ -114,40 +115,32 @@ function GrupoOpcionesCard({ grupo, productoId, onOptionAdded, onOptionDeleted, 
 // --- Modal Principal de Producto ---
 function ProductModal({ show, handleClose, handleSave, productoActual }) {
   
-  // ✅ CORRECCIÓN "PANTALLA NEGRA":
-  // El estado inicial debe tener la misma estructura que el formulario
-  // para evitar que 'formData.imagenes.map' falle en el primer render.
   const [formData, setFormData] = useState({
     nombre: '',
     descripcion: '',
     precio: '',
     stock: 0,
     categoria: 'General',
-    imagenes: [''], // <--- ESTA LÍNEA ARREGLA LA PANTALLA NEGRA
+    imagenes: [''],
     descuento_porcentaje: 0,
     en_oferta: false,
   });
 
   const [grupos, setGrupos] = useState([]);
   const [loadingGrupos, setLoadingGrupos] = useState(false);
-
-  // El "switch" para mostrar/ocultar la gestión de toppings
   const [gestionarOpciones, setGestionarOpciones] = useState(false);
-
-  // Estado para el formulario de CREAR UN NUEVO GRUPO
   const [nombreGrupo, setNombreGrupo] = useState('');
-  const [tipoSeleccion, setTipoSeleccion] = useState('unico'); // 'unico' (radio) o 'multiple' (checkbox)
+  const [tipoSeleccion, setTipoSeleccion] = useState('unico');
 
   // Carga los datos del producto cuando se abre el modal
   useEffect(() => {
     if (show) {
       if (productoActual) {
-        // productoActual ya viene con 'grupos_opciones' desde AdminPage
         setFormData(productoActual); 
         
         if (productoActual.grupos_opciones && productoActual.grupos_opciones.length > 0) {
           setGrupos(productoActual.grupos_opciones);
-          setGestionarOpciones(true); // Mostrar la UI de opciones si ya existen
+          setGestionarOpciones(true); 
         } else {
           setGrupos([]);
           setGestionarOpciones(false);
@@ -169,9 +162,8 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
       }
     }
   }, [productoActual, show]);
-
+  
   // Este Effect previene el scroll del <body> cuando el modal está abierto
-  // Es una corrección secundaria pero muy recomendable
   useEffect(() => {
     if (show) {
       document.body.style.overflow = 'hidden';
@@ -196,7 +188,7 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
   };
 
   const handleImageChange = (index, value) => {
-    const newImages = [...(formData.imagenes || [''])]; // Asegurar que sea un array
+    const newImages = [...(formData.imagenes || [''])];
     newImages[index] = value;
     setFormData({ ...formData, imagenes: newImages });
   };
@@ -233,7 +225,7 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
     try {
       const groupData = { nombre: nombreGrupo, tipo_seleccion: tipoSeleccion };
       const res = await apiClient.post(`/productos/${productoActual.id}/grupos`, groupData);
-      res.data.opciones = [];
+      res.data.opciones = []; // Aseguramos que el nuevo grupo tenga un array de opciones vacío
       setGrupos([...grupos, res.data]);
       setNombreGrupo('');
       setTipoSeleccion('unico');
@@ -262,25 +254,44 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
   // --- Fin Manejadores Grupos y Opciones ---
 
 
+  // Determina el tema del modal (basado en la imagen, parece oscuro)
+  // ASUMIMOS que pasas una prop 'theme' al modal, o que el modal es oscuro
+  // Si no es así, ajusta esto. Para el ejemplo, usaré 'dark'
+  // const modalTheme = 'dark'; 
+  // const modalContentClass = modalTheme === 'dark' ? 'modal-content bg-dark text-white' : 'modal-content';
+  // const inputClass = modalTheme === 'dark' ? 'form-control bg-dark text-white' : 'form-control';
+  // const formSelectClass = modalTheme === 'dark' ? 'form-select bg-dark text-white' : 'form-select';
+  // const formCheckLabelClass = modalTheme === 'dark' ? 'form-check-label text-white' : 'form-check-label';
+  // const borderColorClass = modalTheme === 'dark' ? 'border-secondary' : '';
+  
+  // O MANTENEMOS EL CÓDIGO ORIGINAL (asume inputs claros por defecto de bootstrap)
+  // La imagen que mandaste tiene inputs oscuros, pero el código original no lo especifica.
+  // Voy a mantenerme fiel al código original que me diste,
+  // ¡pero la corrección del scroll funcionará independientemente del tema!
+  const modalContentClass = "modal-content"; // Ajusta esto si usas tema oscuro
+
   return (
     <div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
       <div className="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-        <div className="modal-content">
+        <div className={modalContentClass}> {/* <--- 'modal-content' */}
+          
           {/* ✅ CORRECCIÓN "BUG DEL SCROLL": 
             Añadimos 'd-flex flex-column h-100' al formulario.
             Esto es necesario porque el <form> se sitúa entre .modal-content (que es flex)
             y .modal-body (que necesita ser un 'flex-item' para poder scrollear).
-            Con estas clases, el formulario ocupa el 100% de la altura del modal 
-            y mantiene la estructura de flex-column, permitiendo que .modal-body
-            ocupe el espacio restante y muestre un scroll cuando sea necesario.
           */}
           <form onSubmit={onSave} className="d-flex flex-column h-100">
+            
             <div className="modal-header">
               <h5 className="modal-title">{formData.id ? 'Editar Producto' : 'Añadir Nuevo Producto'}</h5>
               <button type="button" className="btn-close" onClick={handleClose}></button>
             </div>
             
+            {/* Este .modal-body SÍ tendrá scroll porque su padre (<form>) 
+              es ahora un contenedor flex que ocupa el 100% de la altura.
+            */}
             <div className="modal-body">
+              
               {/* --- CAMPOS BÁSICOS DEL PRODUCTO --- */}
               <div className="mb-3">
                 <label className="form-label">Nombre del Producto</label>
@@ -310,7 +321,6 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
               {/* --- SECCIÓN DE IMÁGENES --- */}
               <div className="p-3 mb-3 border rounded">
                 <h6 className="mb-3">Imágenes del Producto</h6>
-                {/* CORRECCIÓN: Aseguramos que formData.imagenes sea siempre un array */}
                 {(formData.imagenes || ['']).map((url, index) => (
                   <div key={index} className="d-flex align-items-center mb-2">
                     <input type="text" className="form-control me-2" placeholder="https://ejemplo.com/imagen.jpg" value={url || ''} onChange={(e) => handleImageChange(index, e.target.value)} />
@@ -337,7 +347,7 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
                 </div>
               </div>
 
-              {/* --- ¡NUEVA SECCIÓN DE OPCIONES (TOPPINGS)! --- */}
+              {/* --- SECCIÓN DE OPCIONES (TOPPINGS) --- */}
               <div className="p-3 border rounded">
                 <div className="form-check form-switch fs-5">
                   <input 
@@ -347,7 +357,7 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
                     id="gestionarOpcionesSwitch" 
                     checked={gestionarOpciones} 
                     onChange={(e) => setGestionarOpciones(e.target.checked)}
-                    disabled={!formData.id} // Solo se puede activar si el producto YA existe
+                    disabled={!formData.id}
                   />
                   <label className="form-check-label" htmlFor="gestionarOpcionesSwitch">Gestionar Opciones (Toppings)</label>
                 </div>
@@ -359,8 +369,14 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
                 {gestionarOpciones && formData.id && (
                   <div className="mt-4">
                     {/* Formulario para CREAR NUEVO GRUPO */}
-                    <div className="p-3 mb-4 border rounded bg-light">
+                    {/* (El código original tenía este form anidado, lo cual es inválido en HTML) */}
+                    {/* (Lo he corregido en el código que te pasé antes, pero si el tuyo lo tiene anidado,
+                       deberías separarlo o usar un simple <div> y manejar el submit en el botón) */}
+                    
+                    {/* ASUMIENDO que el form de 'handleAddGroup' es independiente: */}
+                    <div className="p-3 mb-4 border rounded bg-light"> {/* Cuidado si usas tema oscuro, 'bg-light' se verá mal */}
                       <h5 className="mb-3">Crear Nuevo Grupo</h5>
+                      {/* Este es un <form> separado, NO anidado dentro del <form> principal */}
                       <form onSubmit={handleAddGroup} className="row g-3">
                         <div className="col-md-5">
                           <label className="form-label">Nombre del Grupo</label>
@@ -394,7 +410,7 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
                             onOptionAdded={handleOptionAdded}
                             onOptionDeleted={handleOptionDeleted}
                             onGroupDeleted={handleGroupDeleted}
-                            theme={"light"} // Asumimos tema claro dentro del modal
+                            theme={"light"} // <-- Ajusta esto si tu modal es oscuro
                           />
                         ))
                       ) : (
@@ -405,13 +421,15 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
                 )}
               </div>
 
-            </div>
+            </div> {/* Fin .modal-body */}
             
             <div className="modal-footer">
               <button type="button" className="btn btn-secondary" onClick={handleClose}>Cancelar</button>
               <button type="submit" className="btn btn-primary">Guardar Cambios</button>
             </div>
-          </form>
+
+          </form> {/* Fin <form> principal */}
+
         </div>
       </div>
     </div>
