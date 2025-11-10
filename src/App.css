@@ -786,3 +786,38 @@ footer a:hover {
   color: var(--texto-principal); /* Ajustado a gris oscuro */
 }
 
+/* ======================================= */
+/* === CORRECCIÓN SCROLL EN MODALES === */
+/* ======================================= */
+.modal-dialog-scrollable {
+  height: calc(100vh - 1rem);
+}
+
+.modal-content {
+  max-height: calc(100vh - 1rem);
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-body {
+  overflow-y: auto !important;
+  flex: 1 1 auto;
+}
+
+/* Corrección para evitar que el body quede bloqueado */
+.modal-open {
+  overflow: hidden;
+  padding-right: 0 !important;
+}
+
+/* Ajuste visual para coherencia con el tema */
+[data-bs-theme="dark"] .modal-content {
+  background-color: var(--card-bg);
+  color: var(--texto-principal);
+  border: 1px solid var(--bs-border-color);
+}
+
+[data-bs-theme="light"] .modal-content {
+  background-color: var(--bs-card-bg);
+  color: var(--texto-principal);
+}
