@@ -78,7 +78,7 @@ export const CartProvider = ({ children }) => {
     setPedidoActual(prev => {
       const productoEncontrado = prev.find(item => (item.cartItemId || item.id) === idUnico);
 
-      // Si la cantidad es 1, se elimina
+      // Si la cantidad es 1, se elimina 8
       if (productoEncontrado?.cantidad === 1) {
         return prev.filter(item => (item.cartItemId || item.id) !== idUnico);
       }
