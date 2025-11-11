@@ -1,10 +1,10 @@
-import React, { useContext, useState, useEffect, useCallback } from 'react'; // 🚨 CORRECCIÓN 1: Importar useCallback
+import React, { useContext, useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import AuthContext from '../context/AuthContext';
 import { getProductById } from '../services/productService'; 
 
+// (Los estilos se quedan igual)
 const modalStyles = {
-  // ... (Todos los estilos se quedan igual)
   backdrop: {
     position: 'fixed',
     top: 0,
@@ -100,12 +100,12 @@ const modalStyles = {
 function ProductDetailModal({ product, onClose, onAddToCart }) {
   const { user } = useContext(AuthContext);
 
-  const [fullProduct, setFullProduct] = useState(product);
+  const [fullProduct, setFullProduct] = useState(product); 
   const [selectedOptions, setSelectedOptions] = useState({});
-  const [totalPrice, setTotalPrice] = useState(0);
+  const [totalPrice, setTotalPrice] = useState(0); 
   const [loadingToppings, setLoadingToppings] = useState(true);
 
-  // --- 1. EFECTO PARA BUSCAR LOS DATOS COMPLETOS DEL PRODUCTO (CON TOPPINGS) ---
+  // --- 1. EFECTO PARA BUSCAR LOS DATOS COMPLETOS DEL PRODUCTO (SIN CAMBIOS) ---
   useEffect(() => {
     if (product?.id) {
       setLoadingToppings(true);
@@ -113,7 +113,7 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
       
       getProductById(product.id)
         .then(data => {
-          setFullProduct(data); // Carga la data completa (incluye 'grupos_opciones')
+          setFullProduct(data); 
         })
         .catch(err => {
           console.error("Error al cargar detalles del producto:", err);
@@ -125,67 +125,18 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
     }
   }, [product]);
 
-  // --- 4. MANEJADOR PARA AÑADIR AL CARRITO (Movido arriba y envuelto en useCallback) ---
-  // 🚨 CORRECCIÓN 3: Envuelto en useCallback para ser estable en el nuevo useEffect
-  const handleAddToCart = useCallback(() => {
-    const opcionesParaCarrito = [];
-    fullProduct.grupos_opciones?.forEach(grupo => {
-      const selection = selectedOptions[grupo.id];
-      if (grupo.tipo_seleccion === 'unico' && selection) {
-        opcionesParaCarrito.push(selection);
-      } 
-      else if (grupo.tipo_seleccion === 'multiple' && selection) {
-        opcionesParaCarrito.push(...Object.values(selection));
-      }
-    });
-
-    const cartProduct = {
-      ...fullProduct,
-      // 'precio' ya es el precio final, 'totalPrice' es precio + opciones
-      precio: Number(fullProduct.precio), 
-      precioFinal: totalPrice, // Envía el precio ya calculado (base + opciones)
-      opcionesSeleccionadas: opcionesParaCarrito, 
-      cartItemId: `${fullProduct.id}-${Date.now()}` 
-    };
-
-    onAddToCart(cartProduct);
-    onClose(); // Cierra el modal después de añadir
-  }, [fullProduct, selectedOptions, totalPrice, onAddToCart, onClose]);
-
-
-  // --- 🚨 CORRECCIÓN 2: NUEVO EFECTO PARA "AUTO-AÑADIR" PRODUCTOS SIN OPCIONES ---
-  useEffect(() => {
-    // No hacer nada si aún estamos cargando
-    if (loadingToppings) {
-      return;
-    }
-
-    // Revisar si el producto que cargamos (fullProduct) tiene opciones
-    // Nos aseguramos que fullProduct no sea nulo y sea el que queríamos cargar
-    const tieneOpciones = fullProduct?.grupos_opciones && fullProduct.grupos_opciones.length > 0;
-    
-    // Si NO estamos cargando Y el producto es el correcto Y NO tiene opciones
-    if (!loadingToppings && fullProduct && fullProduct.id === product.id && !tieneOpciones) {
-      // ¡Este es el caso de 'Tito Pikulito'!
-      // Añadimos al carrito y cerramos automáticamente.
-      handleAddToCart();
-    }
   
-    // Agregamos las dependencias necesarias
-  }, [loadingToppings, fullProduct, product, handleAddToCart]);
-  // --- FIN DE LA CORRECCIÓN 2 ---
+  // --- 🚨 CORRECCIÓN 1: Eliminado el `useEffect` de auto-añadir ---
+  // (El `useEffect` que estaba aquí fue eliminado para quitar el "flash")
+  
 
-
-  // --- 2. EFECTO PARA CALCULAR EL PRECIO TOTAL ---
+  // --- 2. EFECTO PARA CALCULAR EL PRECIO TOTAL (Corregido) ---
   useEffect(() => {
     if (!fullProduct) return;
 
-    // 🚨 CORRECCIÓN 3: Bug de precio.
-    // El precio base ya viene con el descuento aplicado desde la API (como en ClientePage).
-    // No hay que volver a calcularlo.
+    // El precio base ya viene con el descuento aplicado (ej: $30.00)
     const basePrice = Number(fullProduct.precio);
 
-    // Calcula el precio de las opciones
     let optionsPrice = 0;
     
     fullProduct.grupos_opciones?.forEach(grupo => {
@@ -203,7 +154,7 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
 
     setTotalPrice(basePrice + optionsPrice);
 
-  }, [fullProduct, selectedOptions]); // Se recalcula si el producto o las opciones cambian
+  }, [fullProduct, selectedOptions]);
 
   // --- 3. MANEJADORES DE SELECCIÓN (Sin cambios) ---
   const handleRadioChange = (grupo, opcion) => {
@@ -230,10 +181,45 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
     });
   };
 
-  // ... El resto del JSX (return) se queda exactamente igual ...
-  // ... (No es necesario copiarlo todo de nuevo) ...
-  
-  if (!product) return null;
+  // --- 4. MANEJADOR PARA AÑADIR AL CARRITO (Corregido) ---
+  const handleAddToCart = () => {
+    // Prepara el array de opciones seleccionadas para el carrito
+    const opcionesParaCarrito = [];
+    fullProduct.grupos_opciones?.forEach(grupo => {
+      const selection = selectedOptions[grupo.id];
+      if (grupo.tipo_seleccion === 'unico' && selection) {
+        opcionesParaCarrito.push(selection);
+      } 
+      else if (grupo.tipo_seleccion === 'multiple' && selection) {
+        opcionesParaCarrito.push(...Object.values(selection));
+      }
+    });
+
+    const tieneOpciones = opcionesParaCarrito.length > 0;
+
+    // Crea el objeto final para el carrito
+    const cartProduct = {
+      ...fullProduct,
+      
+      // 🚨 CORRECCIÓN 2: El precio enviado al carrito DEBE ser el total (base + opciones)
+      // El carrito usa `item.precio` para sus cálculos.
+      precio: totalPrice, 
+      
+      opcionesSeleccionadas: opcionesParaCarrito,
+      
+      // 🚨 CORRECCIÓN 3: El `cartItemId` es la clave para sumar (stacking)
+      // Si SÍ tiene opciones, dale un ID único para que sea un item nuevo.
+      // Si NO tiene opciones, dale `null` para que `useCart` lo busque por `product.id` y lo sume.
+      cartItemId: tieneOpciones ? `${fullProduct.id}-${Date.now()}` : null 
+    };
+
+    onAddToCart(cartProduct);
+    onClose(); // Cierra el modal después de añadir
+  };
+
+
+  // --- Renderizado (sin cambios) ---
+  if (!product) return null; 
 
   const displayImage = fullProduct.imagen_url
     ? fullProduct.imagen_url
@@ -254,7 +240,6 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
         animate={{ y: 0, opacity: 1 }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* --- HEADER CON IMAGEN Y BOTÓN DE CERRAR --- */}
         <div style={modalStyles.header}>
           <button style={modalStyles.closeButton} onClick={onClose}>&times;</button>
           <img 
@@ -265,7 +250,6 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
           />
         </div>
 
-        {/* --- BODY CON INFO Y OPCIONES (SCROLLABLE) --- */}
         <div style={modalStyles.body}>
           <h2 style={modalStyles.productTitle}>{fullProduct.nombre}</h2>
         
@@ -273,7 +257,6 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
             <p style={modalStyles.productDescription}>{fullProduct.descripcion}</p>
           )}
 
-          {/* --- SECCIÓN DE OPCIONES (TOPPINGS) --- */}
           <div style={modalStyles.optionsContainer}>
             {loadingToppings && (
               <div className="text-center">
@@ -283,77 +266,76 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
               </div>
             )}
 
-            {!loadingToppings && fullProduct.grupos_opciones?.map(grupo => (
-              <div key={grupo.id} style={modalStyles.optionGroup}>
-                <h5 style={modalStyles.optionGroupTitle}>{grupo.nombre}</h5>
-                
-                {/* --- Render Opciones de SELECCIÓN ÚNICA (Radios) --- */}
-                {grupo.tipo_seleccion === 'unico' && (
-                  <>
-                    <div className="form-check">
-                      <input
-                        className="form-check-input"
-                        type="radio"
-                        name={`grupo-${grupo.id}`}
-                        id={`opcion-ninguna-${grupo.id}`}
-                        checked={!selectedOptions[grupo.id]}
-                        onChange={() => handleRadioChange(grupo, null)} 
-                      />
-                      <label className="form-check-label" htmlFor={`opcion-ninguna-${grupo.id}`}>
-                        Sin opción
-                      </label>
-                    </div>
-                    {grupo.opciones.map(opcion => (
-                      <div className="form-check" key={opcion.id}>
+            {!loadingToppings && fullProduct.grupos_opciones?.length > 0 && 
+              fullProduct.grupos_opciones.map(grupo => (
+                <div key={grupo.id} style={modalStyles.optionGroup}>
+                  <h5 style={modalStyles.optionGroupTitle}>{grupo.nombre}</h5>
+                  
+                  {grupo.tipo_seleccion === 'unico' && (
+                    <>
+                      <div className="form-check">
                         <input
                           className="form-check-input"
                           type="radio"
                           name={`grupo-${grupo.id}`}
-                          id={`opcion-${opcion.id}`}
-                          checked={selectedOptions[grupo.id]?.id === opcion.id}
-                          onChange={() => handleRadioChange(grupo, opcion)}
+                          id={`opcion-ninguna-${grupo.id}`}
+                          checked={!selectedOptions[grupo.id]}
+                          onChange={() => handleRadioChange(grupo, null)} 
                         />
-                        <label className="form-check-label d-flex justify-content-between" htmlFor={`opcion-${opcion.id}`}>
-                          <span>{opcion.nombre}</span>
-                          <span className="text-success ms-2">+${parseFloat(opcion.precio_adicional).toFixed(2)}</span>
+                        <label className="form-check-label" htmlFor={`opcion-ninguna-${grupo.id}`}>
+                          Sin opción
                         </label>
                       </div>
-                    ))}
-                  </>
-                )}
-                
-                {/* --- Render Opciones de SELECCIÓN MÚLTIPLE (Checkboxes) --- */}
-                {grupo.tipo_seleccion === 'multiple' && grupo.opciones.map(opcion => (
-                  <div className="form-check" key={opcion.id}>
-                    <input
-                      className="form-check-input"
-                      type="checkbox"
-                      id={`opcion-${opcion.id}`}
-                      checked={!!selectedOptions[grupo.id]?.[opcion.id]}
-                      onChange={(e) => handleCheckboxChange(grupo, opcion, e.target.checked)}
-                    />
-                    <label className="form-check-label d-flex justify-content-between" htmlFor={`opcion-${opcion.id}`}>
-                      <span>{opcion.nombre}</span>
-                      <span className="text-success ms-2">+${parseFloat(opcion.precio_adicional).toFixed(2)}</span>
-                    </label>
-                  </div>
-                ))}
-              </div>
+                      {grupo.opciones.map(opcion => (
+                        <div className="form-check" key={opcion.id}>
+                          <input
+                            className="form-check-input"
+                            type="radio"
+                            name={`grupo-${grupo.id}`}
+                            id={`opcion-${opcion.id}`}
+                            checked={selectedOptions[grupo.id]?.id === opcion.id}
+                            onChange={() => handleRadioChange(grupo, opcion)}
+                          />
+                          <label className="form-check-label d-flex justify-content-between" htmlFor={`opcion-${opcion.id}`}>
+                            <span>{opcion.nombre}</span>
+                            <span className="text-success ms-2">+${parseFloat(opcion.precio_adicional).toFixed(2)}</span>
+                          </label>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                  
+                  {grupo.tipo_seleccion === 'multiple' && grupo.opciones.map(opcion => (
+                    <div className="form-check" key={opcion.id}>
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        id={`opcion-${opcion.id}`}
+                        checked={!!selectedOptions[grupo.id]?.[opcion.id]}
+                        onChange={(e) => handleCheckboxChange(grupo, opcion, e.target.checked)}
+                      />
+                      <label className="form-check-label d-flex justify-content-between" htmlFor={`opcion-${opcion.id}`}>
+                        <span>{opcion.nombre}</span>
+                        <span className="text-success ms-2">+${parseFloat(opcion.precio_adicional).toFixed(2)}</span>
+                      </label>
+                    </div>
+                  ))}
+                </div>
             ))}
-          </div>
 
+            {/* Mensaje si no hay opciones */}
+            {!loadingToppings && (!fullProduct.grupos_opciones || fullProduct.grupos_opciones.length === 0) && (
+                <p className="text-muted text-center">Este producto no tiene opciones adicionales.</p>
+            )}
+          </div>
         </div>
 
-        {/* --- FOOTER CON PRECIO Y BOTÓN --- */}
         <div style={modalStyles.footer}>
           <div className="d-flex justify-content-between align-items-center">
             <div>
               <span className="fs-3 fw-bold">${totalPrice.toFixed(2)}</span>
               
-              {/* Esto también estaba mal, `precio` es el precio con descuento.
-                Debería usarse `precio_original` si es que la API lo manda.
-                Asumiré que `fullProduct.precio_original` existe.
-              */}
+              {/* 🚨 CORRECCIÓN 4: Usar `precio_original` (que viene de la API) en lugar de `precio` */}
               {fullProduct.en_oferta && Number(fullProduct.precio_original) > Number(fullProduct.precio) && (
                 <span className="text-muted text-decoration-line-through ms-2">${Number(fullProduct.precio_original).toFixed(2)}</span>
               )}
@@ -361,7 +343,8 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
 
             {(!user || user.rol === 'Cliente') && (
               <button className="btn btn-primary" onClick={handleAddToCart}>
-                Hacer Pedido
+                {/* 🚨 CORRECCIÓN 5: Texto del botón (opcional pero bueno) */}
+                {fullProduct.grupos_opciones?.length > 0 ? 'Hacer Pedido' : 'Agregar al Carrito'}
               </button>
             )}
           </div>
