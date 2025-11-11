@@ -7,6 +7,7 @@ import CheckoutForm from '../components/CheckoutForm';
 import MapSelector from '../components/MapSelector';
 import apiClient from '../services/api';
 import { useCart } from '../context/CartContext';
+// 1. ASEGÚRATE DE QUE ESTE IMPORT ESTÉ PRESENTE
 import ProductDetailModal from '../components/ProductDetailModal';
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
@@ -56,8 +57,7 @@ const notify = (type, message) => {
 };
 
 
-// (CarritoContent se queda exactamente igual que en la respuesta anterior)
-// ... (Omitido por brevedad, no tiene cambios) ...
+// (CarritoContent se queda exactamente igual)
 const CarritoContent = ({
   isModal,
   pedidoActual,
@@ -206,11 +206,12 @@ function ClientePage() {
   const [referencia, setReferencia] = useState('');
   const [showCartModal, setShowCartModal] = useState(false);
   const [modalView, setModalView] = useState('cart');
+  
+  // 2. ASEGÚRATE DE QUE ESTE ESTADO ESTÉ PRESENTE
   const [productoSeleccionadoParaModal, setProductoSeleccionadoParaModal] = useState(null);
 
   const totalFinal = subtotal + costoEnvio;
 
-  // (useEffect fetchInitialData se queda igual)
   useEffect(() => {
     const fetchInitialData = async () => {
       if (activeTab !== 'crear') return;
@@ -252,7 +253,6 @@ function ClientePage() {
     fetchInitialData();
   }, [activeTab]);
 
-  // (useEffect fetchTabData se queda igual)
   useEffect(() => {
     const fetchTabData = async () => {
       if (activeTab === 'crear') return;
@@ -276,7 +276,6 @@ function ClientePage() {
     fetchTabData();
   }, [activeTab]);
 
-  // (useEffect tipoOrden se queda igual)
   useEffect(() => {
     if (tipoOrden !== 'domicilio') {
       setCostoEnvio(0);
@@ -284,7 +283,6 @@ function ClientePage() {
     }
   }, [tipoOrden]);
 
-  // (limpiarPedidoCompleto se queda igual)
   const limpiarPedidoCompleto = () => {
     limpiarPedido();
     setCostoEnvio(0);
@@ -294,8 +292,6 @@ function ClientePage() {
     setShowCartModal(false);
   };
 
-
-  // 🚨 CAMBIO: 1. Corregimos el error de sintaxis en el 'catch'
   const handleLocationSelect = async (location) => {
     setDireccion(location);
     setCalculandoEnvio(true);
@@ -304,7 +300,7 @@ function ClientePage() {
       const res = await apiClient.post('/pedidos/calcular-envio', { lat: location.lat, lng: location.lng });
       setCostoEnvio(res.data.deliveryCost);
       notify('success', `Costo de envío: $${res.data.deliveryCost.toFixed(2)}`);
-    } catch (err) { // <-- Aquí estaba el error, ya está corregido.
+    } catch (err) {
       notify('error', err.response?.data?.msg || 'No se pudo calcular el costo de envío.');
       setDireccion(null);
     } finally {
@@ -312,8 +308,6 @@ function ClientePage() {
     }
   };
 
-
-  // (usarDireccionGuardada se queda igual)
   const usarDireccionGuardada = () => {
     if (direccionGuardada) {
       handleLocationSelect(direccionGuardada);
@@ -324,7 +318,6 @@ function ClientePage() {
     }
   };
 
-  // (handleProcederAlPago se queda igual)
   const handleProcederAlPago = async () => {
     if (totalFinal <= 0) return;
     if (tipoOrden === 'domicilio' && !direccion) { return notify('error', 'Por favor, selecciona o escribe tu ubicación.'); }
@@ -366,7 +359,6 @@ function ClientePage() {
     }
   };
 
-  // (handleContinue se queda igual)
   const handleContinue = () => {
     if (tipoOrden !== 'domicilio') {
       handleProcederAlPago();
@@ -375,7 +367,6 @@ function ClientePage() {
     }
   };
 
-  // (handleSuccessfulPayment se queda igual)
   const handleSuccessfulPayment = async () => {
     if (guardarDireccion && direccion) {
       try {
@@ -395,23 +386,21 @@ function ClientePage() {
   };
 
   
-  // 🚨 CAMBIO: 2. Corregimos la doble notificación
+  // 3. ESTA ES LA FUNCIÓN LÓGICA CLAVE
   const handleProductClick = (item) => {
-    // Descomenta esta línea para ver el objeto en la consola y encontrar el nombre:
-    // console.log("Producto clickeado:", item); 
+    // Si tienes dudas, añade esta línea:
+    // console.log("PRODUCTO CLICKEADO:", item); 
 
-    // 🚨 CAMBIO IMPORTANTE: 
-    // Reemplaza 'grupos_opciones' con el nombre real de tu propiedad.
-    // Viendo tu imagen, podría ser 'grupos_opciones'.
+    // 🚨 ¡REVISA ESTA LÍNEA! 🚨
+    // 'grupos_opciones' debe ser el nombre de la propiedad en tu objeto 'item'
+    // que contiene el array de toppings.
     const tieneOpciones = item.grupos_opciones && item.grupos_opciones.length > 0;
 
     if (tieneOpciones) {
       // Si tiene toppings, ABRE EL MODAL
       setProductoSeleccionadoParaModal(item);
     } else {
-      // Si NO tiene toppings, AGREGA DIRECTO
-      // 🚨 CAMBIO: Quitamos el notify() de aquí.
-      // La función agregarProductoAPedido (del context) ya se encarga de notificar.
+      // Si NO tiene toppings, AGREGA DIRECTO (esto ya funciona bien)
       agregarProductoAPedido(item);
     }
   };
@@ -422,7 +411,8 @@ function ClientePage() {
   const totalItemsEnCarrito = pedidoActual.reduce((sum, item) => sum + item.cantidad, 0);
 
   return (
-    <div>
+    // La etiqueta <div> de apertura debe estar aquí
+    <div> 
       <ul className="nav nav-tabs mb-4">
         <li className="nav-item"><button className={`nav-link ${activeTab === 'crear' ? 'active' : ''}`} onClick={() => setActiveTab('crear')}>Hacer un Pedido</button></li>
         <li className="nav-item"><button className={`nav-link ${activeTab === 'ver' ? 'active' : ''}`} onClick={() => setActiveTab('ver')}>Mis Pedidos</button></li>
@@ -440,7 +430,7 @@ function ClientePage() {
               {menuItems?.map(item => (
                 <div key={item.id} className="col-6 col-md-4 col-lg-3">
                   
-                  {/* El onClick usa la función corregida */}
+                  {/* 4. EL ONCLICK USA LA FUNCIÓN CORRECTA */}
                   <div 
                     className="card h-100 text-center shadow-sm" 
                     onClick={() => handleProductClick(item)} 
@@ -495,8 +485,8 @@ function ClientePage() {
         </motion.div>
       )}
 
-      {/* ... (El resto del archivo: modal del carrito, pestaña 'ver', pestaña 'recompensas', modal de pago) ... */}
-      {/* ... (Todo esto se queda igual que en la respuesta anterior) ... */}
+      {/* ... (El resto del archivo: modal del carrito, pestaña 'ver', pestaña 'recompensas') ... */}
+      {/* ... (Todo esto se queda igual) ... */}
 
       {activeTab === 'crear' && pedidoActual.length > 0 && (
         <button className="boton-carrito-flotante d-md-none" onClick={() => setShowCartModal(true)}>
@@ -655,7 +645,7 @@ function ClientePage() {
       )}
 
 
-      {/* El modal de toppings no cambia */}
+      {/* 5. ASEGÚRATE DE QUE ESTE BLOQUE DE CÓDIGO ESTÉ PRESENTE AL FINAL */}
       {productoSeleccionadoParaModal && (
         <ProductDetailModal
           product={productoSeleccionadoParaModal}
@@ -665,7 +655,7 @@ function ClientePage() {
       )}
 
 
-      {/* El modal de pago no cambia */}
+      {/* Modal de Pago (sin cambios) */}
       {showPaymentModal && clientSecret && (
         <div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
           <motion.div initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="modal-dialog">
@@ -687,7 +677,9 @@ function ClientePage() {
           </motion.div>
         </div>
       )}
-    </div>
+      
+    {/* Esta es la etiqueta </div> de cierre principal */}
+    </div> 
   );
 }
 
