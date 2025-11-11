@@ -2,19 +2,18 @@ import React, { useState, useEffect } from 'react';
 import apiClient from '../services/api';
 import toast from 'react-hot-toast';
 
-// --- Componente Interno para la Tarjeta de Grupo de Opciones ---
-// (Este componente está bien, lo incluimos para que esté completo)
+// --- Componente Interno para la Tarjeta de Grupo de Opciones (CORREGIDO) ---
 function GrupoOpcionesCard({ grupo, onOptionAdded, onOptionDeleted, onGroupDeleted, theme }) {
   const [nombreOpcion, setNombreOpcion] = useState('');
   const [precioOpcion, setPrecioOpcion] = useState(0);
 
-  // Aplicamos tema oscuro a las tarjetas internas
   const cardClass = theme === 'dark' ? 'card text-bg-dark border-secondary' : 'card';
   const inputClass = theme === 'dark' ? 'form-control form-control-dark bg-dark text-white' : 'form-control';
   const listGroupClass = theme === 'dark' ? 'list-group-item bg-dark text-white border-secondary' : 'list-group-item';
 
-  const handleAddOption = async (e) => {
-    e.preventDefault();
+  // 🚨 CAMBIO: Eliminamos el parámetro 'e' (evento) y el 'e.preventDefault()'
+  const handleAddOption = async () => {
+    // e.preventDefault(); // <-- 🚨 CAMBIO: Ya no es necesario
     if (!nombreOpcion.trim()) return toast.error('El nombre de la opción no puede estar vacío.');
     try {
       const optionData = { nombre: nombreOpcion, precio_adicional: parseFloat(precioOpcion) || 0 };
@@ -30,6 +29,7 @@ function GrupoOpcionesCard({ grupo, onOptionAdded, onOptionDeleted, onGroupDelet
   };
 
   const handleDeleteOption = async (opcionId) => {
+    // ... (sin cambios)
     if (!window.confirm('¿Seguro que quieres eliminar esta opción?')) return;
     try {
       await apiClient.delete(`/productos/opciones/${opcionId}`);
@@ -42,6 +42,7 @@ function GrupoOpcionesCard({ grupo, onOptionAdded, onOptionDeleted, onGroupDelet
   };
 
   const handleDeleteGroup = async () => {
+    // ... (sin cambios)
     if (!window.confirm(`¿Seguro que quieres eliminar el grupo "${grupo.nombre}" y todas sus opciones?`)) return;
     try {
       await apiClient.delete(`/productos/grupos/${grupo.id}`);
@@ -56,6 +57,7 @@ function GrupoOpcionesCard({ grupo, onOptionAdded, onOptionDeleted, onGroupDelet
   return (
     <div className={`${cardClass} mb-4`}>
       <div className="card-header d-flex justify-content-between align-items-center">
+        {/* ... (sin cambios) */}
         <span>Grupo: <strong>{grupo.nombre}</strong> (Selección: {grupo.tipo_seleccion})</span>
         <button type="button" className="btn btn-sm btn-outline-danger" onClick={handleDeleteGroup}>
           Eliminar Grupo
@@ -63,6 +65,7 @@ function GrupoOpcionesCard({ grupo, onOptionAdded, onOptionDeleted, onGroupDelet
       </div>
       <div className="card-body">
         <h6 className="card-title">Opciones existentes:</h6>
+        {/* ... (sin cambios en la lista) */}
         {grupo.opciones && grupo.opciones.length > 0 ? (
           <ul className="list-group list-group-flush mb-3">
             {grupo.opciones.map(op => (
@@ -79,7 +82,9 @@ function GrupoOpcionesCard({ grupo, onOptionAdded, onOptionDeleted, onGroupDelet
         )}
         <hr />
         <h6 className="card-title">Añadir nueva opción:</h6>
-        <form onSubmit={handleAddOption} className="row g-2">
+        
+        {/* 🚨 CAMBIO: Cambiamos <form> por <div> */}
+        <div className="row g-2">
           <div className="col-md-6">
             <input
               type="text"
@@ -100,9 +105,10 @@ function GrupoOpcionesCard({ grupo, onOptionAdded, onOptionDeleted, onGroupDelet
             />
           </div>
           <div className="col-md-2 d-flex align-items-end">
-            <button type="submit" className="btn btn-primary btn-sm w-100">Añadir</button>
+            {/* 🚨 CAMBIO: Cambiamos type="submit" por type="button" y añadimos onClick */}
+            <button type="button" onClick={handleAddOption} className="btn btn-primary btn-sm w-100">Añadir</button>
           </div>
-        </form>
+        </div> {/* 🚨 CAMBIO: Cierre del <div> */}
       </div>
     </div>
   );
@@ -110,7 +116,7 @@ function GrupoOpcionesCard({ grupo, onOptionAdded, onOptionDeleted, onGroupDelet
 // --- Fin del Componente Interno ---
 
 
-// --- Modal Principal de Producto (CORREGIDO Y MODIFICADO) ---
+// --- Modal Principal de Producto (CORREGIDO) ---
 function ProductModal({ show, handleClose, handleSave, productoActual }) {
   
   const [formData, setFormData] = useState({
@@ -130,7 +136,7 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
   const [nombreGrupo, setNombreGrupo] = useState('');
   const [tipoSeleccion, setTipoSeleccion] = useState('unico');
 
-  // Carga los datos del producto cuando se abre el modal
+  // ... (useEffect y otros manejadores sin cambios) ...
   useEffect(() => {
     if (show) {
       if (productoActual) {
@@ -144,7 +150,6 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
           setGestionarOpciones(false);
         }
       } else {
-        // Reseteo para producto nuevo
         setFormData({
           nombre: '',
           descripcion: '',
@@ -161,7 +166,6 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
     }
   }, [productoActual, show]);
   
-  // Previene el scroll del <body> cuando el modal está abierto
   useEffect(() => {
     if (show) {
       document.body.style.overflow = 'hidden';
@@ -175,7 +179,6 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
 
   if (!show) return null;
 
-  // --- Manejadores del Formulario Principal ---
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
@@ -208,12 +211,12 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
     };
     handleSave(datosParaEnviar);
   };
-  // --- Fin Manejadores Formulario Principal ---
-
 
   // --- Manejadores para Grupos y Opciones ---
-  const handleAddGroup = async (e) => {
-    e.preventDefault();
+
+  // 🚨 CAMBIO: Eliminamos el parámetro 'e' (evento) y el 'e.preventDefault()'
+  const handleAddGroup = async () => {
+    // e.preventDefault(); // <-- 🚨 CAMBIO: Ya no es necesario
     if (!productoActual?.id) {
       return toast.error('Guarda el producto antes de añadir grupos.');
     }
@@ -234,61 +237,48 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
   };
 
   const handleOptionAdded = (grupoId, nuevaOpcion) => {
+    // ... (sin cambios)
     setGrupos(gruposActuales => gruposActuales.map(g =>
       g.id === grupoId ? { ...g, opciones: [...g.opciones, nuevaOpcion] } : g
     ));
   };
 
   const handleOptionDeleted = (grupoId, opcionId) => {
+    // ... (sin cambios)
     setGrupos(gruposActuales => gruposActuales.map(g =>
       g.id === grupoId ? { ...g, opciones: g.opciones.filter(o => o.id !== opcionId) } : g
     ));
   };
 
   const handleGroupDeleted = (grupoId) => {
+    // ... (sin cambios)
     setGrupos(gruposActuales => gruposActuales.filter(g => g.id !== grupoId));
   };
   // --- Fin Manejadores Grupos y Opciones ---
 
   const theme = 'dark'; 
-  
-  // Aplicamos tema oscuro al modal principal para consistencia
   const modalContentClass = "modal-content bg-dark text-white"; 
 
   return (
     <div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
-      {/* * 💡 NOTA: 
-        * Usamos modal-dialog-scrollable para que el modal en general sea scrolleable 
-        * si la pantalla es muy pequeña, pero nuestro arreglo de flexbox interno
-        * priorizará el scroll solo en el 'modal-body' si es posible.
-        */}
       <div className="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div className={modalContentClass}> 
           
-          {/* =====================================================================
-            * === 🚨 CAMBIO ESTRUCTURAL 1 🚨 ===
-            * El <modal-header> ahora va FUERA del <form>
-            * =====================================================================
-            */}
+          {/* Header del Modal (fuera del form) */}
           <div className="modal-header border-secondary">
             <h5 className="modal-title">{formData.id ? 'Editar Producto' : 'Añadir Nuevo Producto'}</h5>
             <button type="button" className="btn-close btn-close-white" onClick={handleClose}></button>
           </div>
           
-          {/* =====================================================================
-            * === 🚨 CAMBIO ESTRUCTURAL 2 🚨 ===
-            * El <form> ahora solo envuelve el BODY y el FOOTER.
-            * Le damos clases de flexbox para que CREZCA y permita el scroll del body.
-            * 'minHeight: 0' es un truco de flexbox para que funcione correctamente
-            * dentro de otro contenedor flex ('modal-dialog').
-            * =====================================================================
+          {/* * Este es el <form> PRINCIPAL. Solo debe haber UNO.
+            * Envuelve el body y el footer.
             */}
           <form onSubmit={onSave} className="d-flex flex-column flex-grow-1" style={{ minHeight: "0" }}>
             
-            {/* ESTE ES EL CONTENEDOR QUE AHORA SÍ TENDRÁ SCROLL */}
             <div className="modal-body">
               
               {/* --- CAMPOS BÁSICOS DEL PRODUCTO --- */}
+              {/* ... (sin cambios aquí) ... */}
               <div className="mb-3">
                 <label className="form-label">Nombre del Producto</label>
                 <input type="text" className="form-control" name="nombre" value={formData.nombre || ''} onChange={handleChange} required />
@@ -311,10 +301,7 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
                   <input type="text" className="form-control" name="categoria" value={formData.categoria || 'General'} onChange={handleChange} />
                 </div>
               </div>
-              
               <hr />
-
-              {/* --- SECCIÓN DE IMÁGENES --- */}
               <div className="p-3 mb-3 border border-secondary rounded">
                 <h6 className="mb-3">Imágenes del Producto</h6>
                 {(formData.imagenes || ['']).map((url, index) => (
@@ -325,8 +312,6 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
                 ))}
                 <button type="button" className="btn btn-outline-primary btn-sm mt-2" onClick={handleAddImageField}>Añadir URL de Imagen</button>
               </div>
-
-              {/* --- SECCIÓN DE OFERTA --- */}
               <div className="p-3 mb-3 border border-secondary rounded">
                 <h6 className="mb-3">Configuración de Oferta</h6>
                 <div className="row">
@@ -342,16 +327,14 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
                   </div>
                 </div>
               </div>
+              {/* --- FIN CAMPOS BÁSICOS --- */}
 
-              {/* ========================================================
-                * === 🚨 MEJORA ESTÉTICA 🚨 ===
-                * Convertimos esta sección en una tarjeta oscura (card)
-                * para que se vea más estético e integrado.
-                * ========================================================
-                */}
+
+              {/* --- SECCIÓN DE OPCIONES (TOPPINGS) --- */}
               <div className="card text-bg-dark border-secondary">
                 <div className="card-body">
                   <div className="form-check form-switch fs-5">
+                    {/* ... (switch sin cambios) ... */}
                     <input 
                       className="form-check-input" 
                       type="checkbox" 
@@ -367,17 +350,15 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
                     <div className="form-text text-white-50">Guarda el producto primero para poder añadirle opciones.</div>
                   )}
 
-                  {/* ========================================================
-                    * Este es el contenido que ahora SÍ podrás ver y
-                    * hará scroll junto con el resto del modal.
-                    * ========================================================
-                    */}
+                  
                   {gestionarOpciones && formData.id && (
                     <div className="mt-4">
                       {/* Formulario para CREAR NUEVO GRUPO */}
                       <div className="p-3 mb-4 border rounded text-bg-dark border-secondary"> 
                         <h5 className="mb-3">Crear Nuevo Grupo</h5>
-                        <form onSubmit={handleAddGroup} className="row g-3">
+                        
+                        {/* 🚨 CAMBIO: Cambiamos <form> por <div> */}
+                        <div className="row g-3">
                           <div className="col-md-5">
                             <label className="form-label">Nombre del Grupo</label>
                             <input type="text" className="form-control form-control-dark bg-dark text-white" placeholder="Ej: Elige tu Jarabe" value={nombreGrupo} onChange={(e) => setNombreGrupo(e.target.value)} />
@@ -390,9 +371,10 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
                             </select>
                           </div>
                           <div className="col-md-3 d-flex align-items-end">
-                            <button type="submit" className="btn btn-success w-100">Crear Grupo</button>
+                            {/* 🚨 CAMBIO: Cambiamos type="submit" por type="button" y añadimos onClick */}
+                            <button type="button" onClick={handleAddGroup} className="btn btn-success w-100">Crear Grupo</button>
                           </div>
-                        </form>
+                        </div> {/* 🚨 CAMBIO: Cierre del <div> */}
                       </div>
 
                       <hr className="border-secondary" />
@@ -419,12 +401,13 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
                     </div>
                   )}
                 </div>
-              </div> {/* Fin de la nueva .card */}
+              </div> 
 
             </div> {/* Fin .modal-body */}
             
             <div className="modal-footer border-secondary">
               <button type="button" className="btn btn-secondary" onClick={handleClose}>Cancelar</button>
+              {/* Este botón SÍ debe ser type="submit" porque es del <form> principal */}
               <button type="submit" className="btn btn-primary">Guardar Cambios</button>
             </div>
 
