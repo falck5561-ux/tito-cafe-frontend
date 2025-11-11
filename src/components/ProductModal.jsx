@@ -8,6 +8,7 @@ function GrupoOpcionesCard({ grupo, productoId, onOptionAdded, onOptionDeleted, 
   const [precioOpcion, setPrecioOpcion] = useState(0);
 
   // Tus clases de tema (oscuro/claro)
+  // Para que coincida con tu modal, deberías pasar 'dark'
   const cardClass = theme === 'dark' ? 'card text-bg-dark border-secondary' : 'card';
   const inputClass = theme === 'dark' ? 'form-control form-control-dark bg-dark text-white' : 'form-control';
   const listGroupClass = theme === 'dark' ? 'list-group-item bg-dark text-white border-secondary' : 'list-group-item';
@@ -78,6 +79,7 @@ function GrupoOpcionesCard({ grupo, productoId, onOptionAdded, onOptionDeleted, 
         )}
         <hr />
         <h6 className="card-title">Añadir nueva opción:</h6>
+        {/* Este form está DENTRO del componente de la tarjeta, está bien */}
         <form onSubmit={handleAddOption} className="row g-2">
           <div className="col-md-6">
             <input
@@ -160,7 +162,7 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
     }
   }, [productoActual, show]);
   
-  // Este Effect previene el scroll del <body> cuando el modal está abierto
+  // Previene el scroll del <body> cuando el modal está abierto
   useEffect(() => {
     if (show) {
       document.body.style.overflow = 'hidden';
@@ -249,35 +251,33 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
   };
   // --- Fin Manejadores Grupos y Opciones ---
 
-  // Tus comentarios de tema
-  const modalContentClass = "modal-content"; // Ajusta esto si usas tema oscuro
+  // Aplicamos el tema oscuro a las tarjetas de opciones
+  const theme = 'dark'; // <-- ¡Ajusta esto a 'light' si es necesario!
+
+  // Tu CSS se encarga de oscurecer el modal, así que 'modal-content' está bien.
+  const modalContentClass = "modal-content"; 
 
   return (
     <div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
       <div className="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-        <div className={modalContentClass}> {/* <--- 'modal-content' */}
+        <div className={modalContentClass}> 
           
           {/* =====================================================================
-            === 🚨 ¡AQUÍ ESTÁ LA CORRECCIÓN! 🚨 ===
+            === 🚨 ¡ESTA ES LA LÍNEA QUE ARREGLA TODO! 🚨 ===
             =====================================================================
-            Tu modal "Editar Combo" SÍ funciona porque probablemente no tiene
-            este <form> aquí. Pero como "Editar Producto" SÍ lo tiene,
-            necesitamos AÑADIR estas clases de Bootstrap para que el scroll
-            vuelva a funcionar.
+            Añadimos las clases de flexbox de Bootstrap para que el <form>
+            ocupe el 100% de la altura y permita que el .modal-body (hijo)
+            pueda crecer y tener scroll.
           */}
           <form onSubmit={onSave} className="d-flex flex-column h-100">
             
             <div className="modal-header">
               <h5 className="modal-title">{formData.id ? 'Editar Producto' : 'Añadir Nuevo Producto'}</h5>
-              {/* Tu video muestra el botón 'X' de Bootstrap. Si estás en modo oscuro
-                y no se ve, añade la clase 'btn-close-white'
-              */}
+              {/* Añadimos 'btn-close-white' para que la 'X' se vea en fondo oscuro */}
               <button type="button" className="btn-close btn-close-white" onClick={handleClose}></button>
             </div>
             
-            {/* Este .modal-body SÍ tendrá scroll porque su padre (<form>)
-              es ahora un contenedor flex que ocupa el 100% de la altura.
-            */}
+            {/* ESTE ES EL CONTENEDOR QUE AHORA SÍ TENDRÁ SCROLL */}
             <div className="modal-body">
               
               {/* --- CAMPOS BÁSICOS DEL PRODUCTO --- */}
@@ -336,6 +336,7 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
               </div>
 
               {/* --- SECCIÓN DE OPCIONES (TOPPINGS) --- */}
+              {/* Esta es la parte que estás activando */}
               <div className="p-3 border rounded">
                 <div className="form-check form-switch fs-5">
                   <input 
@@ -353,24 +354,24 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
                   <div className="form-text">Guarda el producto primero para poder añadirle opciones.</div>
                 )}
 
-                {/* Esta es la UI que se muestra al activar el switch */}
+                {/* ========================================================
+                  AQUÍ ESTÁ EL CONTENIDO QUE NO PODÍAS VER.
+                  Ahora aparecerá y podrás hacer scroll para verlo.
+                  ========================================================
+                */}
                 {gestionarOpciones && formData.id && (
                   <div className="mt-4">
                     {/* Formulario para CREAR NUEVO GRUPO */}
-                    {/* NOTA: Este <form> anidado es HTML inválido, pero
-                        como está en un componente separado, React lo maneja.
-                        Lo importante es que el <form> PRINCIPAL tenga las clases.
-                    */}
-                    <div className="p-3 mb-4 border rounded bg-light"> 
+                    <div className="p-3 mb-4 border rounded text-bg-dark border-secondary"> {/* <- Aplicando tema oscuro */}
                       <h5 className="mb-3">Crear Nuevo Grupo</h5>
                       <form onSubmit={handleAddGroup} className="row g-3">
                         <div className="col-md-5">
                           <label className="form-label">Nombre del Grupo</label>
-                          <input type="text" className="form-control" placeholder="Ej: Elige tu Jarabe" value={nombreGrupo} onChange={(e) => setNombreGrupo(e.target.value)} />
+                          <input type="text" className="form-control form-control-dark bg-dark text-white" placeholder="Ej: Elige tu Jarabe" value={nombreGrupo} onChange={(e) => setNombreGrupo(e.target.value)} />
                         </div>
                         <div className="col-md-4">
                           <label className="form-label">Tipo de Selección</label>
-                          <select className="form-select" value={tipoSeleccion} onChange={(e) => setTipoSeleccion(e.target.value)}>
+                          <select className="form-select form-select-dark bg-dark text-white" value={tipoSeleccion} onChange={(e) => setTipoSeleccion(e.target.value)}>
                             <option value="unico">Única (Radio Button)</option>
                             <option value="multiple">Múltiple (Checkbox)</option>
                           </select>
@@ -396,7 +397,7 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
                             onOptionAdded={handleOptionAdded}
                             onOptionDeleted={handleOptionDeleted}
                             onGroupDeleted={handleGroupDeleted}
-                            theme={"light"} // <-- Ajusta esto si tu modal es oscuro
+                            theme={theme} // Pasamos el tema 'dark'
                           />
                         ))
                       ) : (
