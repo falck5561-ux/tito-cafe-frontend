@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import toast from 'react-hot-toast';
+import toast from 'react-hot-toast'; // Asegúrate de que toast esté importado
 import { motion } from 'framer-motion';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
@@ -7,7 +7,6 @@ import CheckoutForm from '../components/CheckoutForm';
 import MapSelector from '../components/MapSelector';
 import apiClient from '../services/api';
 import { useCart } from '../context/CartContext';
-// 🚨 CAMBIO: 1. Importamos el modal
 import ProductDetailModal from '../components/ProductDetailModal';
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
@@ -57,14 +56,8 @@ const notify = (type, message) => {
 };
 
 
-// ===================================================================
-// ===               INICIO DE CarritoContent                      ===
-// ===================================================================
-//
-// Este componente ya estaba fuera, lo cual es correcto.
-// Se aplicaron los cambios para mostrar toppings y usar cartItemId.
-//
-// ===================================================================
+// (CarritoContent se queda exactamente igual que en la respuesta anterior)
+// ... (Omitido por brevedad, no tiene cambios) ...
 const CarritoContent = ({
   isModal,
   pedidoActual,
@@ -101,15 +94,12 @@ const CarritoContent = ({
       <ul className="list-group list-group-flush">
         {pedidoActual.length === 0 && <li className="list-group-item text-center text-muted">Tu carrito está vacío</li>}
         
-        {/* 🚨 CAMBIO: Modificaciones en el map del carrito */}
         {pedidoActual.map((item) => (
           <li key={item.cartItemId || item.id} className="list-group-item d-flex align-items-center justify-content-between p-1">
             
-            {/* Contenedor para nombre y toppings */}
             <div className="me-auto" style={{ paddingRight: '10px' }}> 
               <span>{item.nombre}</span>
               
-              {/* 🚨 CAMBIO: Bucle para mostrar los toppings seleccionados */}
               {item.opcionesSeleccionadas && item.opcionesSeleccionadas.length > 0 && (
                 <ul className="list-unstyled small text-muted mb-0" style={{ marginTop: '-3px' }}>
                   {item.opcionesSeleccionadas.map(opcion => (
@@ -119,16 +109,12 @@ const CarritoContent = ({
               )}
             </div>
 
-            {/* Resto de los elementos (botones, precio) */}
             <div className="d-flex align-items-center">
-              {/* 🚨 CAMBIO: Usar cartItemId */}
               <button className="btn btn-outline-secondary btn-sm" onClick={() => decrementarCantidad(item.cartItemId || item.id)}>-</button>
               <span className="mx-2">{item.cantidad}</span>
-              {/* 🚨 CAMBIO: Usar cartItemId */}
               <button className="btn btn-outline-secondary btn-sm" onClick={() => incrementarCantidad(item.cartItemId || item.id)}>+</button>
             </div>
             <span className="mx-3" style={{ minWidth: '60px', textAlign: 'right' }}>${(item.cantidad * Number(item.precio)).toFixed(2)}</span>
-            {/* 🚨 CAMBIO: Usar cartItemId */}
             <button className="btn btn-outline-danger btn-sm" onClick={() => eliminarProducto(item.cartItemId || item.id)}>&times;</button>
           </li>
         ))}
@@ -187,9 +173,6 @@ const CarritoContent = ({
     </div>
   </>
 );
-// ===================================================================
-// ===               FIN DE CarritoContent                         ===
-// ===================================================================
 
 
 function ClientePage() {
@@ -200,7 +183,7 @@ function ClientePage() {
     decrementarCantidad,
     eliminarProducto,
     limpiarPedido,
-    agregarProductoAPedido // <- Esta función la usará el modal
+    agregarProductoAPedido
   } = useCart();
 
   const [activeTab, setActiveTab] = useState('crear');
@@ -223,13 +206,11 @@ function ClientePage() {
   const [referencia, setReferencia] = useState('');
   const [showCartModal, setShowCartModal] = useState(false);
   const [modalView, setModalView] = useState('cart');
-
-  // 🚨 CAMBIO: 2. Añadimos el nuevo estado para el modal
   const [productoSeleccionadoParaModal, setProductoSeleccionadoParaModal] = useState(null);
-
 
   const totalFinal = subtotal + costoEnvio;
 
+  // (useEffect fetchInitialData se queda igual)
   useEffect(() => {
     const fetchInitialData = async () => {
       if (activeTab !== 'crear') return;
@@ -242,7 +223,6 @@ function ClientePage() {
           apiClient.get('/usuarios/mi-direccion')
         ]);
         
-        // Esta función ya estaba correcta según tu descripción
         const estandarizarItem = (item) => {
           const precioFinal = Number(item.precio);
           let precioOriginal = precioFinal;
@@ -250,7 +230,7 @@ function ClientePage() {
             precioOriginal = precioFinal / (1 - item.descuento_porcentaje / 100);
           }
           return {
-            ...item,
+            ...item, // Esto conserva `grupos_opciones` si viene de la API
             precio: precioFinal,
             precio_original: precioOriginal,
             nombre: item.nombre || item.titulo,
@@ -272,6 +252,7 @@ function ClientePage() {
     fetchInitialData();
   }, [activeTab]);
 
+  // (useEffect fetchTabData se queda igual)
   useEffect(() => {
     const fetchTabData = async () => {
       if (activeTab === 'crear') return;
@@ -295,6 +276,7 @@ function ClientePage() {
     fetchTabData();
   }, [activeTab]);
 
+  // (useEffect tipoOrden se queda igual)
   useEffect(() => {
     if (tipoOrden !== 'domicilio') {
       setCostoEnvio(0);
@@ -302,6 +284,7 @@ function ClientePage() {
     }
   }, [tipoOrden]);
 
+  // (limpiarPedidoCompleto se queda igual)
   const limpiarPedidoCompleto = () => {
     limpiarPedido();
     setCostoEnvio(0);
@@ -311,6 +294,7 @@ function ClientePage() {
     setShowCartModal(false);
   };
 
+  // (handleLocationSelect se queda igual)
   const handleLocationSelect = async (location) => {
     setDireccion(location);
     setCalculandoEnvio(true);
@@ -319,7 +303,8 @@ function ClientePage() {
       const res = await apiClient.post('/pedidos/calcular-envio', { lat: location.lat, lng: location.lng });
       setCostoEnvio(res.data.deliveryCost);
       notify('success', `Costo de envío: $${res.data.deliveryCost.toFixed(2)}`);
-    } catch (err) {
+    } catch (err)
+ {
       notify('error', err.response?.data?.msg || 'No se pudo calcular el costo de envío.');
       setDireccion(null);
     } finally {
@@ -327,6 +312,7 @@ function ClientePage() {
     }
   };
 
+  // (usarDireccionGuardada se queda igual)
   const usarDireccionGuardada = () => {
     if (direccionGuardada) {
       handleLocationSelect(direccionGuardada);
@@ -337,6 +323,7 @@ function ClientePage() {
     }
   };
 
+  // (handleProcederAlPago se queda igual que en la respuesta anterior)
   const handleProcederAlPago = async () => {
     if (totalFinal <= 0) return;
     if (tipoOrden === 'domicilio' && !direccion) { return notify('error', 'Por favor, selecciona o escribe tu ubicación.'); }
@@ -344,13 +331,11 @@ function ClientePage() {
     setPaymentLoading(true);
     try {
       
-      // 🚨 CAMBIO: Mapeamos los productos para incluir las opciones
       const productosParaEnviar = pedidoActual.map(item => ({ 
         id: item.id, 
         cantidad: item.cantidad, 
         precio: Number(item.precio), 
         nombre: item.nombre,
-        // Añadimos los nombres de las opciones seleccionadas como un string
         opciones: item.opcionesSeleccionadas 
           ? item.opcionesSeleccionadas.map(op => op.nombre).join(', ') 
           : null
@@ -358,7 +343,7 @@ function ClientePage() {
 
       const pedidoData = {
         total: totalFinal,
-        productos: productosParaEnviar, // <- Esto ya incluye las opciones
+        productos: productosParaEnviar,
         tipo_orden: tipoOrden,
         costo_envio: costoEnvio,
         direccion_entrega: tipoOrden === 'domicilio' ? direccion?.description : null,
@@ -380,6 +365,7 @@ function ClientePage() {
     }
   };
 
+  // (handleContinue se queda igual)
   const handleContinue = () => {
     if (tipoOrden !== 'domicilio') {
       handleProcederAlPago();
@@ -388,6 +374,7 @@ function ClientePage() {
     }
   };
 
+  // (handleSuccessfulPayment se queda igual)
   const handleSuccessfulPayment = async () => {
     if (guardarDireccion && direccion) {
       try {
@@ -406,15 +393,31 @@ function ClientePage() {
     setActiveTab('ver');
   };
 
+  // 🚨 CAMBIO: 1. Añadimos la función que decide qué hacer
+  const handleProductClick = (item) => {
+    // Asumimos que la info de toppings está en `item.grupos_opciones`
+    // Si tu propiedad se llama `opciones`, cámbialo aquí.
+    const tieneOpciones = item.grupos_opciones && item.grupos_opciones.length > 0;
+
+    if (tieneOpciones) {
+      // Si tiene toppings, ABRE EL MODAL
+      setProductoSeleccionadoParaModal(item);
+    } else {
+      // Si NO tiene toppings, AGREGA DIRECTO
+      agregarProductoAPedido(item);
+      notify('success', `${item.nombre} agregado al carrito`);
+    }
+  };
+
+
   const getStatusBadge = (estado) => { switch (estado) { case 'Pendiente': return 'bg-warning text-dark'; case 'En Preparacion': return 'bg-info text-dark'; case 'Listo para Recoger': return 'bg-success text-white'; case 'Completado': return 'bg-secondary text-white'; case 'En Camino': return 'bg-primary text-white'; default: return 'bg-light text-dark'; } };
   const handleToggleDetalle = (pedidoId) => { setOrdenExpandida(ordenExpandida === pedidoId ? null : pedidoId); };
   const totalItemsEnCarrito = pedidoActual.reduce((sum, item) => sum + item.cantidad, 0);
 
-  // --- El componente CarritoContent FUE MOVIDO AFUERA ---
-
   return (
     <div>
       <ul className="nav nav-tabs mb-4">
+        {/* ... (pestañas de navegación) ... */}
         <li className="nav-item"><button className={`nav-link ${activeTab === 'crear' ? 'active' : ''}`} onClick={() => setActiveTab('crear')}>Hacer un Pedido</button></li>
         <li className="nav-item"><button className={`nav-link ${activeTab === 'ver' ? 'active' : ''}`} onClick={() => setActiveTab('ver')}>Mis Pedidos</button></li>
         <li className="nav-item"><button className={`nav-link ${activeTab === 'recompensas' ? 'active' : ''}`} onClick={() => setActiveTab('recompensas')}>Mis Recompensas</button></li>
@@ -431,10 +434,10 @@ function ClientePage() {
               {menuItems?.map(item => (
                 <div key={item.id} className="col-6 col-md-4 col-lg-3">
                   
-                  {/* 🚨 CAMBIO: 3. El onClick ahora abre el modal */}
+                  {/* 🚨 CAMBIO: 2. El onClick ahora usa la nueva función */}
                   <div 
                     className="card h-100 text-center shadow-sm" 
-                    onClick={() => setProductoSeleccionadoParaModal(item)} 
+                    onClick={() => handleProductClick(item)} 
                     style={{ cursor: 'pointer' }}
                   >
                     <div className="card-body d-flex flex-column justify-content-center pt-4">
@@ -456,7 +459,7 @@ function ClientePage() {
 
           <div className="col-md-4 d-none d-md-block">
             <div className="card shadow-sm position-sticky" style={{ top: '20px' }}>
-              {/* Aquí se renderiza CarritoContent (ya modificado) */}
+              {/* CarritoContent no cambia */}
               <CarritoContent
                 isModal={false}
                 pedidoActual={pedidoActual}
@@ -487,6 +490,9 @@ function ClientePage() {
         </motion.div>
       )}
 
+      {/* ... (El resto del archivo: modal del carrito, pestaña 'ver', pestaña 'recompensas', modal de pago) ... */}
+      {/* ... (Todo esto se queda igual que en la respuesta anterior) ... */}
+
       {activeTab === 'crear' && pedidoActual.length > 0 && (
         <button className="boton-carrito-flotante d-md-none" onClick={() => setShowCartModal(true)}>
           🛒 <span className="badge-carrito">{totalItemsEnCarrito}</span>
@@ -502,7 +508,6 @@ function ClientePage() {
                 <button type="button" className="btn-close" onClick={() => { setShowCartModal(false); setModalView('cart'); }}></button>
               </div>
               {modalView === 'cart' ? (
-                // Aquí también se renderiza CarritoContent (ya modificado)
                 <CarritoContent
                   isModal={true}
                   pedidoActual={pedidoActual}
@@ -554,7 +559,6 @@ function ClientePage() {
         </div>
       )}
 
-      {/* ... (El código para 'ver' sigue igual) ... */}
       {!loading && activeTab === 'ver' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <h2>Mis Pedidos</h2>
@@ -590,7 +594,7 @@ function ClientePage() {
                               {p.productos?.map(producto => (
                                 <div key={`${p.id}-${producto.nombre}`} className="detalle-pedido-item">
                                   <span>{producto.cantidad}x {producto.nombre}</span>
-                                  {/* Aquí podrías mostrar producto.opciones si el backend lo devuelve */}
+                                  {producto.opciones && <small className="text-muted d-block" style={{marginTop: '-5px'}}>+ {producto.opciones}</small>}
                                   <span>${(producto.cantidad * Number(producto.precio)).toFixed(2)}</span>
                                 </div>
                               ))}
@@ -613,7 +617,6 @@ function ClientePage() {
         </motion.div>
       )}
 
-      {/* ... (El código para 'recompensas' sigue igual) ... */}
       {!loading && activeTab === 'recompensas' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <h2>Mis Recompensas</h2>
@@ -647,17 +650,17 @@ function ClientePage() {
       )}
 
 
-      {/* 🚨 CAMBIO: 4. Renderizamos el modal de toppings aquí */}
+      {/* El modal de toppings no cambia */}
       {productoSeleccionadoParaModal && (
         <ProductDetailModal
           product={productoSeleccionadoParaModal}
           onClose={() => setProductoSeleccionadoParaModal(null)}
-          // Le pasamos la función de agregar al carrito del context
           onAddToCart={agregarProductoAPedido}
         />
       )}
 
 
+      {/* El modal de pago no cambia */}
       {showPaymentModal && clientSecret && (
         <div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
           <motion.div initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="modal-dialog">
