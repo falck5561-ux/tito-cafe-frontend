@@ -3,7 +3,8 @@ import apiClient from '../services/api';
 import toast from 'react-hot-toast';
 
 // --- Componente Interno para la Tarjeta de Grupo de Opciones ---
-function GrupoOpcionesCard({ grupo, productoId, onOptionAdded, onOptionDeleted, onGroupDeleted, theme }) {
+// (Lo he puesto aquí para que todo esté en un solo archivo)
+function GrupoOpcionesCard({ grupo, onOptionAdded, onOptionDeleted, onGroupDeleted, theme }) {
   const [nombreOpcion, setNombreOpcion] = useState('');
   const [precioOpcion, setPrecioOpcion] = useState(0);
 
@@ -390,10 +391,9 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
                           <GrupoOpcionesCard
                             key={grupo.id}
                             grupo={grupo}
-                            productoId={productoActual.id}
-                            onOptionAdded={handleOptionAdded}
-                            onOptionDeleted={handleOptionDeleted}
-                            onGroupDeleted={handleGroupDeleted}
+                            onOptionAdded={handleOptionAdded} // Pasamos el handler
+                            onOptionDeleted={handleOptionDeleted} // Pasamos el handler
+                            onGroupDeleted={handleGroupDeleted} // Pasamos el handler
                             theme={theme} // Pasamos el tema 'dark'
                           />
                         ))
