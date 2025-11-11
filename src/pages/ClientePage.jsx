@@ -7,6 +7,8 @@ import CheckoutForm from '../components/CheckoutForm';
 import MapSelector from '../components/MapSelector';
 import apiClient from '../services/api';
 import { useCart } from '../context/CartContext';
+// 🚨 CAMBIO: 1. Importamos el modal
+import ProductDetailModal from '../components/ProductDetailModal';
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
@@ -56,12 +58,11 @@ const notify = (type, message) => {
 
 
 // ===================================================================
-// ===           INICIO DE LA CORRECCIÓN CLAVE                     ===
+// ===               INICIO DE CarritoContent                      ===
 // ===================================================================
 //
-// `CarritoContent` se movió FUERA de `ClientePage` y ahora recibe
-// todo lo que necesita como props. Esto evita que se vuelva a 
-// crear en cada render y soluciona el problema del "focus" del input.
+// Este componente ya estaba fuera, lo cual es correcto.
+// Se aplicaron los cambios para mostrar toppings y usar cartItemId.
 //
 // ===================================================================
 const CarritoContent = ({
@@ -99,16 +100,36 @@ const CarritoContent = ({
       )}
       <ul className="list-group list-group-flush">
         {pedidoActual.length === 0 && <li className="list-group-item text-center text-muted">Tu carrito está vacío</li>}
+        
+        {/* 🚨 CAMBIO: Modificaciones en el map del carrito */}
         {pedidoActual.map((item) => (
-          <li key={item.id} className="list-group-item d-flex align-items-center justify-content-between p-1">
-            <span className="me-auto">{item.nombre}</span>
+          <li key={item.cartItemId || item.id} className="list-group-item d-flex align-items-center justify-content-between p-1">
+            
+            {/* Contenedor para nombre y toppings */}
+            <div className="me-auto" style={{ paddingRight: '10px' }}> 
+              <span>{item.nombre}</span>
+              
+              {/* 🚨 CAMBIO: Bucle para mostrar los toppings seleccionados */}
+              {item.opcionesSeleccionadas && item.opcionesSeleccionadas.length > 0 && (
+                <ul className="list-unstyled small text-muted mb-0" style={{ marginTop: '-3px' }}>
+                  {item.opcionesSeleccionadas.map(opcion => (
+                    <li key={opcion.id}>+ {opcion.nombre}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {/* Resto de los elementos (botones, precio) */}
             <div className="d-flex align-items-center">
-              <button className="btn btn-outline-secondary btn-sm" onClick={() => decrementarCantidad(item.id)}>-</button>
+              {/* 🚨 CAMBIO: Usar cartItemId */}
+              <button className="btn btn-outline-secondary btn-sm" onClick={() => decrementarCantidad(item.cartItemId || item.id)}>-</button>
               <span className="mx-2">{item.cantidad}</span>
-              <button className="btn btn-outline-secondary btn-sm" onClick={() => incrementarCantidad(item.id)}>+</button>
+              {/* 🚨 CAMBIO: Usar cartItemId */}
+              <button className="btn btn-outline-secondary btn-sm" onClick={() => incrementarCantidad(item.cartItemId || item.id)}>+</button>
             </div>
             <span className="mx-3" style={{ minWidth: '60px', textAlign: 'right' }}>${(item.cantidad * Number(item.precio)).toFixed(2)}</span>
-            <button className="btn btn-outline-danger btn-sm" onClick={() => eliminarProducto(item.id)}>&times;</button>
+            {/* 🚨 CAMBIO: Usar cartItemId */}
+            <button className="btn btn-outline-danger btn-sm" onClick={() => eliminarProducto(item.cartItemId || item.id)}>&times;</button>
           </li>
         ))}
       </ul>
@@ -128,9 +149,6 @@ const CarritoContent = ({
 
           <div className="mt-3">
             <label htmlFor="referenciaDesktop" className="form-label">Referencia:</label>
-            {/* Este input ahora funciona porque su componente padre (`CarritoContent`)
-               ya no se destruye en cada render.
-            */}
             <input type="text" id="referenciaDesktop" className="form-control" value={referencia} onChange={(e) => setReferencia(e.target.value)} />
           </div>
 
@@ -170,7 +188,7 @@ const CarritoContent = ({
   </>
 );
 // ===================================================================
-// ===           FIN DE LA CORRECCIÓN CLAVE                        ===
+// ===               FIN DE CarritoContent                         ===
 // ===================================================================
 
 
@@ -182,7 +200,7 @@ function ClientePage() {
     decrementarCantidad,
     eliminarProducto,
     limpiarPedido,
-    agregarProductoAPedido
+    agregarProductoAPedido // <- Esta función la usará el modal
   } = useCart();
 
   const [activeTab, setActiveTab] = useState('crear');
@@ -206,6 +224,10 @@ function ClientePage() {
   const [showCartModal, setShowCartModal] = useState(false);
   const [modalView, setModalView] = useState('cart');
 
+  // 🚨 CAMBIO: 2. Añadimos el nuevo estado para el modal
+  const [productoSeleccionadoParaModal, setProductoSeleccionadoParaModal] = useState(null);
+
+
   const totalFinal = subtotal + costoEnvio;
 
   useEffect(() => {
@@ -219,6 +241,8 @@ function ClientePage() {
           apiClient.get('/combos'),
           apiClient.get('/usuarios/mi-direccion')
         ]);
+        
+        // Esta función ya estaba correcta según tu descripción
         const estandarizarItem = (item) => {
           const precioFinal = Number(item.precio);
           let precioOriginal = precioFinal;
@@ -319,10 +343,22 @@ function ClientePage() {
     if (calculandoEnvio) { return notify('error', 'Espera a que termine el cálculo del envío.'); }
     setPaymentLoading(true);
     try {
-      const productosParaEnviar = pedidoActual.map(({ id, cantidad, precio, nombre }) => ({ id, cantidad, precio: Number(precio), nombre }));
+      
+      // 🚨 CAMBIO: Mapeamos los productos para incluir las opciones
+      const productosParaEnviar = pedidoActual.map(item => ({ 
+        id: item.id, 
+        cantidad: item.cantidad, 
+        precio: Number(item.precio), 
+        nombre: item.nombre,
+        // Añadimos los nombres de las opciones seleccionadas como un string
+        opciones: item.opcionesSeleccionadas 
+          ? item.opcionesSeleccionadas.map(op => op.nombre).join(', ') 
+          : null
+      }));
+
       const pedidoData = {
         total: totalFinal,
-        productos: productosParaEnviar,
+        productos: productosParaEnviar, // <- Esto ya incluye las opciones
         tipo_orden: tipoOrden,
         costo_envio: costoEnvio,
         direccion_entrega: tipoOrden === 'domicilio' ? direccion?.description : null,
@@ -330,6 +366,7 @@ function ClientePage() {
         longitude: tipoOrden === 'domicilio' ? direccion?.lng : null,
         referencia: tipoOrden === 'domicilio' ? referencia : null
       };
+      
       setDatosParaCheckout(pedidoData);
       const res = await apiClient.post('/payments/create-payment-intent', { amount: totalFinal });
       setShowCartModal(false);
@@ -393,7 +430,13 @@ function ClientePage() {
             <div className="row g-3">
               {menuItems?.map(item => (
                 <div key={item.id} className="col-6 col-md-4 col-lg-3">
-                  <div className="card h-100 text-center shadow-sm" onClick={() => agregarProductoAPedido(item)} style={{ cursor: 'pointer' }}>
+                  
+                  {/* 🚨 CAMBIO: 3. El onClick ahora abre el modal */}
+                  <div 
+                    className="card h-100 text-center shadow-sm" 
+                    onClick={() => setProductoSeleccionadoParaModal(item)} 
+                    style={{ cursor: 'pointer' }}
+                  >
                     <div className="card-body d-flex flex-column justify-content-center pt-4">
                       <h5 className="card-title">{item.nombre}</h5>
                       {item.en_oferta ? (
@@ -413,9 +456,7 @@ function ClientePage() {
 
           <div className="col-md-4 d-none d-md-block">
             <div className="card shadow-sm position-sticky" style={{ top: '20px' }}>
-              {/* Ahora llamamos a CarritoContent como un componente 
-                 independiente y le pasamos todas las props.
-              */}
+              {/* Aquí se renderiza CarritoContent (ya modificado) */}
               <CarritoContent
                 isModal={false}
                 pedidoActual={pedidoActual}
@@ -461,7 +502,7 @@ function ClientePage() {
                 <button type="button" className="btn-close" onClick={() => { setShowCartModal(false); setModalView('cart'); }}></button>
               </div>
               {modalView === 'cart' ? (
-                // Aquí también le pasamos todas las props
+                // Aquí también se renderiza CarritoContent (ya modificado)
                 <CarritoContent
                   isModal={true}
                   pedidoActual={pedidoActual}
@@ -495,10 +536,6 @@ function ClientePage() {
                     <MapSelector onLocationSelect={handleLocationSelect} initialAddress={direccion} />
                     <div className="mt-3">
                       <label htmlFor="referenciaModal" className="form-label">Referencia:</label>
-                      {/* Este input también está corregido porque su 
-                         componente padre (`modalView === 'address'`) 
-                         no se redefine.
-                      */}
                       <input type="text" id="referenciaModal" className="form-control" value={referencia} onChange={(e) => setReferencia(e.target.value)} />
                     </div>
                     <div className="form-check mt-3">
@@ -517,7 +554,7 @@ function ClientePage() {
         </div>
       )}
 
-      {/* ... (El resto del código para 'ver' y 'recompensas' sigue igual) ... */}
+      {/* ... (El código para 'ver' sigue igual) ... */}
       {!loading && activeTab === 'ver' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <h2>Mis Pedidos</h2>
@@ -553,6 +590,7 @@ function ClientePage() {
                               {p.productos?.map(producto => (
                                 <div key={`${p.id}-${producto.nombre}`} className="detalle-pedido-item">
                                   <span>{producto.cantidad}x {producto.nombre}</span>
+                                  {/* Aquí podrías mostrar producto.opciones si el backend lo devuelve */}
                                   <span>${(producto.cantidad * Number(producto.precio)).toFixed(2)}</span>
                                 </div>
                               ))}
@@ -575,14 +613,10 @@ function ClientePage() {
         </motion.div>
       )}
 
-      {/* =================================================================
-        ===           AQUÍ ESTÁ LA SECCIÓN A CORREGIR                 ===
-        =================================================================
-      */}
+      {/* ... (El código para 'recompensas' sigue igual) ... */}
       {!loading && activeTab === 'recompensas' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <h2>Mis Recompensas</h2>
-          {/* Si no hay recompensas */}
           {(!misRecompensas || misRecompensas.length === 0) ? (
             <div className="recompensas-container">
               <div className="recompensas-caja-vacia">
@@ -592,38 +626,18 @@ function ClientePage() {
                   className="recompensas-icono"
                 />
                 <h3>Aún no tienes recompensas</h3>
-                {/* --- CORRECCIÓN #1: Actualizar texto estático --- */}
                 <p>¡Sigue comprando! Ganas una recompensa por cada 20 compras.</p>
               </div>
             </div>
           ) : (
-            // Si SÍ hay recompensas
             <div className="row g-4">
               {misRecompensas.map(recompensa => (
                 <div key={recompensa.id} className="col-12">
                   <div style={styles.cupon}>
                     <div style={styles.cuponIcon}>🎁</div>
                     <div style={styles.cuponBody}>
-
-                      {/* --- CORRECCIÓN #2: Usar el texto dinámico --- */}
-                      {/* Borramos el <h3> estático que decía "Café o Frappe Gratis"
-                        y nos aseguramos de que 'recompensa.nombre' se muestre,
-                        ya que este SÍ viene de la base de datos con el texto nuevo.
-                      */}
                       <h4 style={styles.cuponTitle}>{recompensa.nombre}</h4>
-                      
-                      {/* Tu 'recompensa.nombre' ahora es: 
-                        "¡Felicidades! Unas gomitas gratis (Tito Pikulito o Tito Mojadito) por tus 20 compras."
-                        Así que ya no necesitas la descripción estática.
-                      */}
-                      {/* <p style={styles.cuponDescription}>{recompensa.descripcion}</p> */}
-
                     </div>
-                    {/* Esto probablemente no lo necesitas si el backend no manda 'cantidad' */}
-                    {/* <div style={styles.cuponCantidad}>
-                      Tienes {recompensa.cantidad}
-                    </div> 
-                    */}
                   </div>
                 </div>
               ))}
@@ -631,10 +645,17 @@ function ClientePage() {
           )}
         </motion.div>
       )}
-      {/* =================================================================
-        ===           FIN DE LA SECCIÓN CORREGIDA                     ===
-        =================================================================
-      */}
+
+
+      {/* 🚨 CAMBIO: 4. Renderizamos el modal de toppings aquí */}
+      {productoSeleccionadoParaModal && (
+        <ProductDetailModal
+          product={productoSeleccionadoParaModal}
+          onClose={() => setProductoSeleccionadoParaModal(null)}
+          // Le pasamos la función de agregar al carrito del context
+          onAddToCart={agregarProductoAPedido}
+        />
+      )}
 
 
       {showPaymentModal && clientSecret && (
@@ -663,4 +684,3 @@ function ClientePage() {
 }
 
 export default ClientePage;
-
