@@ -7,8 +7,7 @@ function GrupoOpcionesCard({ grupo, productoId, onOptionAdded, onOptionDeleted, 
   const [nombreOpcion, setNombreOpcion] = useState('');
   const [precioOpcion, setPrecioOpcion] = useState(0);
 
-  // Tus clases de tema (oscuro/claro)
-  // Para que coincida con tu modal, deberías pasar 'dark'
+  // Aplicamos tema oscuro a las tarjetas internas
   const cardClass = theme === 'dark' ? 'card text-bg-dark border-secondary' : 'card';
   const inputClass = theme === 'dark' ? 'form-control form-control-dark bg-dark text-white' : 'form-control';
   const listGroupClass = theme === 'dark' ? 'list-group-item bg-dark text-white border-secondary' : 'list-group-item';
@@ -79,7 +78,6 @@ function GrupoOpcionesCard({ grupo, productoId, onOptionAdded, onOptionDeleted, 
         )}
         <hr />
         <h6 className="card-title">Añadir nueva opción:</h6>
-        {/* Este form está DENTRO del componente de la tarjeta, está bien */}
         <form onSubmit={handleAddOption} className="row g-2">
           <div className="col-md-6">
             <input
@@ -251,10 +249,9 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
   };
   // --- Fin Manejadores Grupos y Opciones ---
 
-  // Aplicamos el tema oscuro a las tarjetas de opciones
-  const theme = 'dark'; // <-- ¡Ajusta esto a 'light' si es necesario!
+  // Tema oscuro para las tarjetas internas
+  const theme = 'dark'; 
 
-  // Tu CSS se encarga de oscurecer el modal, así que 'modal-content' está bien.
   const modalContentClass = "modal-content"; 
 
   return (
@@ -263,7 +260,7 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
         <div className={modalContentClass}> 
           
           {/* =====================================================================
-            === 🚨 ¡ESTA ES LA LÍNEA QUE ARREGLA TODO! 🚨 ===
+            === 🚨 ¡AQUÍ ESTÁ LA LÍNEA QUE ARREGLA TODO! 🚨 ===
             =====================================================================
             Añadimos las clases de flexbox de Bootstrap para que el <form>
             ocupe el 100% de la altura y permita que el .modal-body (hijo)
@@ -336,7 +333,6 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
               </div>
 
               {/* --- SECCIÓN DE OPCIONES (TOPPINGS) --- */}
-              {/* Esta es la parte que estás activando */}
               <div className="p-3 border rounded">
                 <div className="form-check form-switch fs-5">
                   <input 
@@ -362,7 +358,8 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
                 {gestionarOpciones && formData.id && (
                   <div className="mt-4">
                     {/* Formulario para CREAR NUEVO GRUPO */}
-                    <div className="p-3 mb-4 border rounded text-bg-dark border-secondary"> {/* <- Aplicando tema oscuro */}
+                    {/* Aplicamos estilos oscuros para que coincida */}
+                    <div className="p-3 mb-4 border rounded text-bg-dark border-secondary"> 
                       <h5 className="mb-3">Crear Nuevo Grupo</h5>
                       <form onSubmit={handleAddGroup} className="row g-3">
                         <div className="col-md-5">
@@ -371,7 +368,7 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
                         </div>
                         <div className="col-md-4">
                           <label className="form-label">Tipo de Selección</label>
-                          <select className="form-select form-select-dark bg-dark text-white" value={tipoSeleccion} onChange={(e) => setTipoSeleccion(e.target.value)}>
+                          <select className="form-select form-control-dark bg-dark text-white" value={tipoSeleccion} onChange={(e) => setTipoSeleccion(e.target.value)}>
                             <option value="unico">Única (Radio Button)</option>
                             <option value="multiple">Múltiple (Checkbox)</option>
                           </select>
