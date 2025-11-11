@@ -57,7 +57,6 @@ const notify = (type, message) => {
 
 
 // (CarritoContent se queda exactamente igual)
-// ... (Omitido por brevedad, está correcto) ...
 const CarritoContent = ({
   isModal,
   pedidoActual,
@@ -384,9 +383,24 @@ function ClientePage() {
   };
 
   
-  // Esta función está (aparentemente) correcta.
+  // 
+  // 🚨 INICIO DE LA CORRECCIÓN 🚨
+  // Esta es la función que modificamos
+  //
   const handleProductClick = (item) => {
-    // El video muestra que el modal SÍ se abre, así que esta lógica es CORRECTA.
+    // El video del 'Home' (00:02) muestra que el modal
+    // SIEMPRE se abre y él mismo busca las opciones (muestra un spinner).
+    
+    // Esta página ('Hacer un Pedido') debe hacer lo mismo.
+    // La lógica anterior fallaba porque `item.grupos_opciones` no existe
+    // en la lista de productos que carga esta página (desde '/productos').
+    
+    // Solución: Simplemente abrimos el modal y dejamos que `ProductDetailModal`
+    // haga su trabajo de buscar las opciones del producto.
+    setProductoSeleccionadoParaModal(item);
+
+    /*
+    // --- LÓGICA ANTERIOR INCORRECTA (la comentamos) ---
     // 'grupos_opciones' es el nombre correcto de la propiedad.
     const tieneOpciones = item.grupos_opciones && item.grupos_opciones.length > 0;
 
@@ -395,21 +409,24 @@ function ClientePage() {
     } else {
       agregarProductoAPedido(item);
     }
+    // --- FIN LÓGICA ANTERIOR ---
+    */
   };
+  //
+  // 🚨 FIN DE LA CORRECCIÓN 🚨
+  //
 
 
   const getStatusBadge = (estado) => { switch (estado) { case 'Pendiente': return 'bg-warning text-dark'; case 'En Preparacion': return 'bg-info text-dark'; case 'Listo para Recoger': return 'bg-success text-white'; case 'Completado': return 'bg-secondary text-white'; case 'En Camino': return 'bg-primary text-white'; default: return 'bg-light text-dark'; } };
   const handleToggleDetalle = (pedidoId) => { setOrdenExpandida(ordenExpandida === pedidoId ? null : pedidoId); };
   const totalItemsEnCarrito = pedidoActual.reduce((sum, item) => sum + item.cantidad, 0);
 
-  // 🚨 CAMBIO #1: Estilo para deshabilitar clics cuando el modal está abierto
   const pageStyle = {
     pointerEvents: (productoSeleccionadoParaModal || showPaymentModal || showCartModal) ? 'none' : 'auto'
   };
 
 
   return (
-    // 🚨 CAMBIO #2: Aplicamos el estilo al div principal
     <div style={pageStyle}> 
       <ul className="nav nav-tabs mb-4">
         <li className="nav-item"><button className={`nav-link ${activeTab === 'crear' ? 'active' : ''}`} onClick={() => setActiveTab('crear')}>Hacer un Pedido</button></li>
@@ -482,20 +499,7 @@ function ClientePage() {
         </motion.div>
       )}
 
-      {/* El resto del código (modales, otras pestañas) 
-        YA ESTÁ FUERA del div principal, por lo que NO se verá afectado 
-        por el 'pointer-events: none'.
-        ...PERO ESPERA...
-        El código que te pasé pone TODO dentro del div. 
-        Eso está mal.
-        
-        VAMOS A REVERTIR.
-        El modal de producto, el modal de carrito y el modal de pago
-        deben tener su propio 'pointer-events: auto' para anular
-        el 'none' del padre.
-      */}
-
-      {/* ... (Pestañas 'ver' y 'recompensas', omitidas por brevedad, sin cambios) ... */}
+      {/* ... (Pestañas 'ver' y 'recompensas', sin cambios) ... */}
 
       {!loading && activeTab === 'ver' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
@@ -649,7 +653,7 @@ function ClientePage() {
                     <MapSelector onLocationSelect={handleLocationSelect} initialAddress={direccion} />
                     <div className="mt-3">
                       <label htmlFor="referenciaModal" className="form-label">Referencia:</label>
-                      <input type="text" id="referenciaModal" className="form-control" value={referencia} onChange={(e) => setReferencia(e.g.target.value)} />
+                      <input type="text" id="referenciaModal" className="form-control" value={referencia} onChange={(e) => setReferencia(e.target.value)} />
                     </div>
                     <div className="form-check mt-3">
                       <input className="form-check-input" type="checkbox" id="guardarDireccionModal" checked={guardarDireccion} onChange={(e) => setGuardarDireccion(e.target.checked)} />
