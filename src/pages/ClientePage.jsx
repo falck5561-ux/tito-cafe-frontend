@@ -7,7 +7,6 @@ import CheckoutForm from '../components/CheckoutForm';
 import MapSelector from '../components/MapSelector';
 import apiClient from '../services/api';
 import { useCart } from '../context/CartContext';
-// 1. EL IMPORT DEL MODAL
 import ProductDetailModal from '../components/ProductDetailModal';
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
@@ -58,7 +57,7 @@ const notify = (type, message) => {
 
 
 // (CarritoContent se queda exactamente igual)
-// Contiene las correcciones para mostrar toppings y usar item.cartItemId
+// ... (Omitido por brevedad, está correcto) ...
 const CarritoContent = ({
   isModal,
   pedidoActual,
@@ -207,8 +206,6 @@ function ClientePage() {
   const [referencia, setReferencia] = useState('');
   const [showCartModal, setShowCartModal] = useState(false);
   const [modalView, setModalView] = useState('cart');
-  
-  // 2. EL ESTADO PARA EL MODAL
   const [productoSeleccionadoParaModal, setProductoSeleccionadoParaModal] = useState(null);
 
   const totalFinal = subtotal + costoEnvio;
@@ -225,7 +222,6 @@ function ClientePage() {
           apiClient.get('/usuarios/mi-direccion')
         ]);
         
-        // Esta función estandariza y CONSERVA todas las propiedades (como grupos_opciones)
         const estandarizarItem = (item) => {
           const precioFinal = Number(item.precio);
           let precioOriginal = precioFinal;
@@ -294,7 +290,6 @@ function ClientePage() {
     setShowCartModal(false);
   };
 
-  // Corrección del error 'ts(17008)'
   const handleLocationSelect = async (location) => {
     setDireccion(location);
     setCalculandoEnvio(true);
@@ -303,7 +298,7 @@ function ClientePage() {
       const res = await apiClient.post('/pedidos/calcular-envio', { lat: location.lat, lng: location.lng });
       setCostoEnvio(res.data.deliveryCost);
       notify('success', `Costo de envío: $${res.data.deliveryCost.toFixed(2)}`);
-    } catch (err) { // Error de sintaxis corregido aquí
+    } catch (err) {
       notify('error', err.response?.data?.msg || 'No se pudo calcular el costo de envío.');
       setDireccion(null);
     } finally {
@@ -321,7 +316,6 @@ function ClientePage() {
     }
   };
 
-  // Contiene la corrección para enviar los toppings al backend
   const handleProcederAlPago = async () => {
     if (totalFinal <= 0) return;
     if (tipoOrden === 'domicilio' && !direccion) { return notify('error', 'Por favor, selecciona o escribe tu ubicación.'); }
@@ -334,7 +328,7 @@ function ClientePage() {
         cantidad: item.cantidad, 
         precio: Number(item.precio), 
         nombre: item.nombre,
-        opciones: item.opcionesSeleccionadas // <-- Envío de toppings
+        opciones: item.opcionesSeleccionadas 
           ? item.opcionesSeleccionadas.map(op => op.nombre).join(', ') 
           : null
       }));
@@ -390,23 +384,16 @@ function ClientePage() {
   };
 
   
-  // 3. LA FUNCIÓN LÓGICA CLAVE
+  // Esta función está (aparentemente) correcta.
   const handleProductClick = (item) => {
-    // Añadimos un log para depuración. Si falla, revisa la consola (F12).
-    console.log("Producto Clickeado:", item); 
-
-    // Basado en tu imagen 'image_f672dc.png', la propiedad se llama 'grupos_opciones'.
-    // Si tu API la envía con otro nombre, cámbialo aquí.
+    // El video muestra que el modal SÍ se abre, así que esta lógica es CORRECTA.
+    // 'grupos_opciones' es el nombre correcto de la propiedad.
     const tieneOpciones = item.grupos_opciones && item.grupos_opciones.length > 0;
 
     if (tieneOpciones) {
-      // Si tiene toppings, ABRE EL MODAL
-      console.log("Decisión: Abrir modal de toppings.");
       setProductoSeleccionadoParaModal(item);
     } else {
-      // Si NO tiene toppings, AGREGA DIRECTO
-      console.log("Decisión: Agregar directo al carrito.");
-      agregarProductoAPedido(item); // Esta función ya notifica
+      agregarProductoAPedido(item);
     }
   };
 
@@ -415,8 +402,15 @@ function ClientePage() {
   const handleToggleDetalle = (pedidoId) => { setOrdenExpandida(ordenExpandida === pedidoId ? null : pedidoId); };
   const totalItemsEnCarrito = pedidoActual.reduce((sum, item) => sum + item.cantidad, 0);
 
+  // 🚨 CAMBIO #1: Estilo para deshabilitar clics cuando el modal está abierto
+  const pageStyle = {
+    pointerEvents: (productoSeleccionadoParaModal || showPaymentModal || showCartModal) ? 'none' : 'auto'
+  };
+
+
   return (
-    <div> 
+    // 🚨 CAMBIO #2: Aplicamos el estilo al div principal
+    <div style={pageStyle}> 
       <ul className="nav nav-tabs mb-4">
         <li className="nav-item"><button className={`nav-link ${activeTab === 'crear' ? 'active' : ''}`} onClick={() => setActiveTab('crear')}>Hacer un Pedido</button></li>
         <li className="nav-item"><button className={`nav-link ${activeTab === 'ver' ? 'active' : ''}`} onClick={() => setActiveTab('ver')}>Mis Pedidos</button></li>
@@ -434,7 +428,6 @@ function ClientePage() {
               {menuItems?.map(item => (
                 <div key={item.id} className="col-6 col-md-4 col-lg-3">
                   
-                  {/* 4. EL ONCLICK QUE USA LA FUNCIÓN LÓGICA */}
                   <div 
                     className="card h-100 text-center shadow-sm" 
                     onClick={() => handleProductClick(item)} 
@@ -489,75 +482,21 @@ function ClientePage() {
         </motion.div>
       )}
 
-      {/* ... (Modal del carrito flotante) ... */}
-      {activeTab === 'crear' && pedidoActual.length > 0 && (
-        <button className="boton-carrito-flotante d-md-none" onClick={() => setShowCartModal(true)}>
-          🛒 <span className="badge-carrito">{totalItemsEnCarrito}</span>
-        </button>
-      )}
+      {/* El resto del código (modales, otras pestañas) 
+        YA ESTÁ FUERA del div principal, por lo que NO se verá afectado 
+        por el 'pointer-events: none'.
+        ...PERO ESPERA...
+        El código que te pasé pone TODO dentro del div. 
+        Eso está mal.
+        
+        VAMOS A REVERTIR.
+        El modal de producto, el modal de carrito y el modal de pago
+        deben tener su propio 'pointer-events: auto' para anular
+        el 'none' del padre.
+      */}
 
-      {/* ... (Lógica del modal del carrito) ... */}
-      {showCartModal && (
-        <div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="modal-dialog modal-dialog-scrollable">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">{modalView === 'cart' ? 'Mi Pedido' : 'Dirección de Entrega'}</h5>
-                <button type="button" className="btn-close" onClick={() => { setShowCartModal(false); setModalView('cart'); }}></button>
-              </div>
-              {modalView === 'cart' ? (
-                <CarritoContent
-                  isModal={true}
-                  pedidoActual={pedidoActual}
-                  decrementarCantidad={decrementarCantidad}
-                  incrementarCantidad={incrementarCantidad}
-                  eliminarProducto={eliminarProducto}
-                  tipoOrden={tipoOrden}
-                  setTipoOrden={setTipoOrden}
-                  direccionGuardada={direccionGuardada}
-                  usarDireccionGuardada={usarDireccionGuardada}
-                  handleLocationSelect={handleLocationSelect}
-                  direccion={direccion}
-                  referencia={referencia}
-                  setReferencia={setReferencia}
-                  guardarDireccion={guardarDireccion}
-                  setGuardarDireccion={setGuardarDireccion}
-                  subtotal={subtotal}
-                  costoEnvio={costoEnvio}
-                  calculandoEnvio={calculandoEnvio}
-                  totalFinal={totalFinal}
-                  handleContinue={handleContinue}
-                  handleProcederAlPago={handleProcederAlPago}
-                  paymentLoading={paymentLoading}
-                  limpiarPedidoCompleto={limpiarPedidoCompleto}
-                />
-              ) : (
-                <>
-                  <div className="modal-body">
-                    {direccionGuardada && (<button className="btn btn-outline-info w-100 mb-3" onClick={usarDireccionGuardada}>Usar mi dirección guardada</button>)}
-                    <label className="form-label">Busca tu dirección:</label>
-                    <MapSelector onLocationSelect={handleLocationSelect} initialAddress={direccion} />
-                    <div className="mt-3">
-                      <label htmlFor="referenciaModal" className="form-label">Referencia:</label>
-                      <input type="text" id="referenciaModal" className="form-control" value={referencia} onChange={(e) => setReferencia(e.target.value)} />
-                    </div>
-                    <div className="form-check mt-3">
-                      <input className="form-check-input" type="checkbox" id="guardarDireccionModal" checked={guardarDireccion} onChange={(e) => setGuardarDireccion(e.target.checked)} />
-                      <label className="form-check-label" htmlFor="guardarDireccionModal">Guardar dirección</label>
-                    </div>
-                  </div>
-                  <div className="modal-footer d-flex justify-content-between">
-                    <button className="btn btn-secondary" onClick={() => setModalView('cart')}>Volver</button>
-                    <button className="btn btn-primary" onClick={handleProcederAlPago} disabled={!direccion || paymentLoading || calculandoEnvio}>{paymentLoading ? 'Iniciando...' : 'Confirmar y Pagar'}</button>
-                  </div>
-                </>
-              )}
-            </div>
-          </motion.div>
-        </div>
-      )}
+      {/* ... (Pestañas 'ver' y 'recompensas', omitidas por brevedad, sin cambios) ... */}
 
-      {/* ... (Pestaña 'Mis Pedidos') ... */}
       {!loading && activeTab === 'ver' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <h2>Mis Pedidos</h2>
@@ -593,7 +532,6 @@ function ClientePage() {
                               {p.productos?.map(producto => (
                                 <div key={`${p.id}-${producto.nombre}`} className="detalle-pedido-item">
                                   <span>{producto.cantidad}x {producto.nombre}</span>
-                                  {/* Muestra los toppings en el historial */}
                                   {producto.opciones && <small className="text-muted d-block" style={{marginTop: '-5px'}}>+ {producto.opciones}</small>}
                                   <span>${(producto.cantidad * Number(producto.precio)).toFixed(2)}</span>
                                 </div>
@@ -617,7 +555,6 @@ function ClientePage() {
         </motion.div>
       )}
 
-      {/* ... (Pestaña 'Mis Recompensas') ... */}
       {!loading && activeTab === 'recompensas' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <h2>Mis Recompensas</h2>
@@ -651,19 +588,102 @@ function ClientePage() {
       )}
 
 
-      {/* 5. EL BLOQUE QUE RENDERIZA EL MODAL (DEBE ESTAR AQUÍ) */}
-      {productoSeleccionadoParaModal && (
-        <ProductDetailModal
-          product={productoSeleccionadoParaModal}
-          onClose={() => setProductoSeleccionadoParaModal(null)}
-          onAddToCart={agregarProductoAPedido}
-        />
+      {/* --- SECCIÓN DE MODALES --- */}
+      {/* Estos modales deben estar FUERA del div con 'pointer-events: none',
+          o deben tener su propio 'pointer-events: auto' para anularlo.
+          Vamos a añadirles 'pointer-events: auto' a cada uno. */}
+
+      {activeTab === 'crear' && pedidoActual.length > 0 && (
+        <button 
+          className="boton-carrito-flotante d-md-none" 
+          onClick={() => setShowCartModal(true)}
+          style={{ pointerEvents: 'auto' }} // Permite clic en este botón
+        >
+          🛒 <span className="badge-carrito">{totalItemsEnCarrito}</span>
+        </button>
+      )}
+
+      {showCartModal && (
+        <div 
+          className="modal show" 
+          style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)', pointerEvents: 'auto' }}
+        >
+          <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="modal-dialog modal-dialog-scrollable">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">{modalView === 'cart' ? 'Mi Pedido' : 'Dirección de Entrega'}</h5>
+                <button type="button" className="btn-close" onClick={() => { setShowCartModal(false); setModalView('cart'); }}></button>
+              </div>
+              {modalView === 'cart' ? (
+                <CarritoContent
+                  isModal={true}
+                  pedidoActual={pedidoActual}
+                  // ... (todas las props de CarritoContent) ...
+                  decrementarCantidad={decrementarCantidad}
+                  incrementarCantidad={incrementarCantidad}
+                  eliminarProducto={eliminarProducto}
+                  tipoOrden={tipoOrden}
+                  setTipoOrden={setTipoOrden}
+                  direccionGuardada={direccionGuardada}
+                  usarDireccionGuardada={usarDireccionGuardada}
+                  handleLocationSelect={handleLocationSelect}
+                  direccion={direccion}
+                  referencia={referencia}
+                  setReferencia={setReferencia}
+                  guardarDireccion={guardarDireccion}
+                  setGuardarDireccion={setGuardarDireccion}
+                  subtotal={subtotal}
+                  costoEnvio={costoEnvio}
+                  calculandoEnvio={calculandoEnvio}
+                  totalFinal={totalFinal}
+                  handleContinue={handleContinue}
+                  handleProcederAlPago={handleProcederAlPago}
+                  paymentLoading={paymentLoading}
+                  limpiarPedidoCompleto={limpiarPedidoCompleto}
+                />
+              ) : (
+                <>
+                  <div className="modal-body">
+                    {direccionGuardada && (<button className="btn btn-outline-info w-100 mb-3" onClick={usarDireccionGuardada}>Usar mi dirección guardada</button>)}
+                    <label className="form-label">Busca tu dirección:</label>
+                    <MapSelector onLocationSelect={handleLocationSelect} initialAddress={direccion} />
+                    <div className="mt-3">
+                      <label htmlFor="referenciaModal" className="form-label">Referencia:</label>
+                      <input type="text" id="referenciaModal" className="form-control" value={referencia} onChange={(e) => setReferencia(e.g.target.value)} />
+                    </div>
+                    <div className="form-check mt-3">
+                      <input className="form-check-input" type="checkbox" id="guardarDireccionModal" checked={guardarDireccion} onChange={(e) => setGuardarDireccion(e.target.checked)} />
+                      <label className="form-check-label" htmlFor="guardarDireccionModal">Guardar dirección</label>
+                    </div>
+                  </div>
+                  <div className="modal-footer d-flex justify-content-between">
+                    <button className="btn btn-secondary" onClick={() => setModalView('cart')}>Volver</button>
+                    <button className="btn btn-primary" onClick={handleProcederAlPago} disabled={!direccion || paymentLoading || calculandoEnvio}>{paymentLoading ? 'Iniciando...' : 'Confirmar y Pagar'}</button>
+                  </div>
+                </>
+              )}
+            </div>
+          </motion.div>
+        </div>
       )}
 
 
-      {/* Modal de Pago (sin cambios) */}
+      {productoSeleccionadoParaModal && (
+        <div style={{ pointerEvents: 'auto' }}> {/* Anula el 'none' del padre */}
+          <ProductDetailModal
+            product={productoSeleccionadoParaModal}
+            onClose={() => setProductoSeleccionadoParaModal(null)}
+            onAddToCart={agregarProductoAPedido}
+          />
+        </div>
+      )}
+
+
       {showPaymentModal && clientSecret && (
-        <div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+        <div 
+          className="modal show" 
+          style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)', pointerEvents: 'auto' }}
+        >
           <motion.div initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="modal-dialog">
             <div className="modal-content">
               <div className="modal-header">
