@@ -385,32 +385,24 @@ function ClientePage() {
   
   // 
   // 🚨 INICIO DE LA CORRECCIÓN 🚨
-  // Esta es la función que modificamos
   //
   const handleProductClick = (item) => {
-    // El video del 'Home' (00:02) muestra que el modal
-    // SIEMPRE se abre y él mismo busca las opciones (muestra un spinner).
-    
-    // Esta página ('Hacer un Pedido') debe hacer lo mismo.
-    // La lógica anterior fallaba porque `item.grupos_opciones` no existe
-    // en la lista de productos que carga esta página (desde '/productos').
-    
-    // Solución: Simplemente abrimos el modal y dejamos que `ProductDetailModal`
-    // haga su trabajo de buscar las opciones del producto.
-    setProductoSeleccionadoParaModal(item);
-
-    /*
-    // --- LÓGICA ANTERIOR INCORRECTA (la comentamos) ---
-    // 'grupos_opciones' es el nombre correcto de la propiedad.
+    // Lógica corregida según el video y la solicitud:
+    // Verificamos si el 'item' (de la lista /productos) ya trae la info
+    // de 'grupos_opciones'.
     const tieneOpciones = item.grupos_opciones && item.grupos_opciones.length > 0;
 
     if (tieneOpciones) {
+      // Si tiene opciones, MOSTRAMOS el modal para elegir.
+      // (Ej: Tito Mojadito)
       setProductoSeleccionadoParaModal(item);
     } else {
+      // Si NO tiene opciones, lo agregamos directo al carrito.
+      // (Ej: Tito Pikulito)
       agregarProductoAPedido(item);
+      // Notificamos al usuario que se agregó.
+      notify('success', `${item.nombre} agregado al carrito.`);
     }
-    // --- FIN LÓGICA ANTERIOR ---
-    */
   };
   //
   // 🚨 FIN DE LA CORRECCIÓN 🚨
@@ -499,7 +491,7 @@ function ClientePage() {
         </motion.div>
       )}
 
-      {/* ... (Pestañas 'ver' y 'recompensas', sin cambios) ... */}
+      {/* ... (Pestañas 'ver' y 'recompensas') ... */}
 
       {!loading && activeTab === 'ver' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
@@ -593,9 +585,6 @@ function ClientePage() {
 
 
       {/* --- SECCIÓN DE MODALES --- */}
-      {/* Estos modales deben estar FUERA del div con 'pointer-events: none',
-          o deben tener su propio 'pointer-events: auto' para anularlo.
-          Vamos a añadirles 'pointer-events: auto' a cada uno. */}
 
       {activeTab === 'crear' && pedidoActual.length > 0 && (
         <button 
@@ -622,7 +611,6 @@ function ClientePage() {
                 <CarritoContent
                   isModal={true}
                   pedidoActual={pedidoActual}
-                  // ... (todas las props de CarritoContent) ...
                   decrementarCantidad={decrementarCantidad}
                   incrementarCantidad={incrementarCantidad}
                   eliminarProducto={eliminarProducto}
