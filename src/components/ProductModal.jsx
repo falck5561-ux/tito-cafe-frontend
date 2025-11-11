@@ -3,7 +3,7 @@ import apiClient from '../services/api';
 import toast from 'react-hot-toast';
 
 // --- Componente Interno para la Tarjeta de Grupo de Opciones ---
-// (Lo he puesto aquí para que todo esté en un solo archivo)
+// (Este componente está bien, lo incluimos para que esté completo)
 function GrupoOpcionesCard({ grupo, onOptionAdded, onOptionDeleted, onGroupDeleted, theme }) {
   const [nombreOpcion, setNombreOpcion] = useState('');
   const [precioOpcion, setPrecioOpcion] = useState(0);
@@ -110,7 +110,7 @@ function GrupoOpcionesCard({ grupo, onOptionAdded, onOptionDeleted, onGroupDelet
 // --- Fin del Componente Interno ---
 
 
-// --- Modal Principal de Producto ---
+// --- Modal Principal de Producto (CORREGIDO Y MODIFICADO) ---
 function ProductModal({ show, handleClose, handleSave, productoActual }) {
   
   const [formData, setFormData] = useState({
@@ -250,30 +250,40 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
   };
   // --- Fin Manejadores Grupos y Opciones ---
 
-  // Tema oscuro para las tarjetas internas
   const theme = 'dark'; 
-
-  const modalContentClass = "modal-content"; 
+  
+  // Aplicamos tema oscuro al modal principal para consistencia
+  const modalContentClass = "modal-content bg-dark text-white"; 
 
   return (
     <div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+      {/* * 💡 NOTA: 
+        * Usamos modal-dialog-scrollable para que el modal en general sea scrolleable 
+        * si la pantalla es muy pequeña, pero nuestro arreglo de flexbox interno
+        * priorizará el scroll solo en el 'modal-body' si es posible.
+        */}
       <div className="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
         <div className={modalContentClass}> 
           
           {/* =====================================================================
-            === 🚨 ¡AQUÍ ESTÁ LA LÍNEA QUE ARREGLA TODO! 🚨 ===
-            =====================================================================
-            Añadimos las clases de flexbox de Bootstrap para que el <form>
-            ocupe el 100% de la altura y permita que el .modal-body (hijo)
-            pueda crecer y tener scroll.
-          */}
-          <form onSubmit={onSave} className="d-flex flex-column h-100">
-            
-            <div className="modal-header">
-              <h5 className="modal-title">{formData.id ? 'Editar Producto' : 'Añadir Nuevo Producto'}</h5>
-              {/* Añadimos 'btn-close-white' para que la 'X' se vea en fondo oscuro */}
-              <button type="button" className="btn-close btn-close-white" onClick={handleClose}></button>
-            </div>
+            * === 🚨 CAMBIO ESTRUCTURAL 1 🚨 ===
+            * El <modal-header> ahora va FUERA del <form>
+            * =====================================================================
+            */}
+          <div className="modal-header border-secondary">
+            <h5 className="modal-title">{formData.id ? 'Editar Producto' : 'Añadir Nuevo Producto'}</h5>
+            <button type="button" className="btn-close btn-close-white" onClick={handleClose}></button>
+          </div>
+          
+          {/* =====================================================================
+            * === 🚨 CAMBIO ESTRUCTURAL 2 🚨 ===
+            * El <form> ahora solo envuelve el BODY y el FOOTER.
+            * Le damos clases de flexbox para que CREZCA y permita el scroll del body.
+            * 'minHeight: 0' es un truco de flexbox para que funcione correctamente
+            * dentro de otro contenedor flex ('modal-dialog').
+            * =====================================================================
+            */}
+          <form onSubmit={onSave} className="d-flex flex-column flex-grow-1" style={{ minHeight: "0" }}>
             
             {/* ESTE ES EL CONTENEDOR QUE AHORA SÍ TENDRÁ SCROLL */}
             <div className="modal-body">
@@ -305,7 +315,7 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
               <hr />
 
               {/* --- SECCIÓN DE IMÁGENES --- */}
-              <div className="p-3 mb-3 border rounded">
+              <div className="p-3 mb-3 border border-secondary rounded">
                 <h6 className="mb-3">Imágenes del Producto</h6>
                 {(formData.imagenes || ['']).map((url, index) => (
                   <div key={index} className="d-flex align-items-center mb-2">
@@ -317,7 +327,7 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
               </div>
 
               {/* --- SECCIÓN DE OFERTA --- */}
-              <div className="p-3 mb-3 border rounded">
+              <div className="p-3 mb-3 border border-secondary rounded">
                 <h6 className="mb-3">Configuración de Oferta</h6>
                 <div className="row">
                   <div className="col-md-6">
@@ -333,81 +343,87 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
                 </div>
               </div>
 
-              {/* --- SECCIÓN DE OPCIONES (TOPPINGS) --- */}
-              <div className="p-3 border rounded">
-                <div className="form-check form-switch fs-5">
-                  <input 
-                    className="form-check-input" 
-                    type="checkbox" 
-                    role="switch" 
-                    id="gestionarOpcionesSwitch" 
-                    checked={gestionarOpciones} 
-                    onChange={(e) => setGestionarOpciones(e.target.checked)}
-                    disabled={!formData.id}
-                  />
-                  <label className="form-check-label" htmlFor="gestionarOpcionesSwitch">Gestionar Opciones (Toppings)</label>
-                </div>
-                {!formData.id && (
-                  <div className="form-text">Guarda el producto primero para poder añadirle opciones.</div>
-                )}
-
-                {/* ========================================================
-                  AQUÍ ESTÁ EL CONTENIDO QUE NO PODÍAS VER.
-                  Ahora aparecerá y podrás hacer scroll para verlo.
-                  ========================================================
+              {/* ========================================================
+                * === 🚨 MEJORA ESTÉTICA 🚨 ===
+                * Convertimos esta sección en una tarjeta oscura (card)
+                * para que se vea más estético e integrado.
+                * ========================================================
                 */}
-                {gestionarOpciones && formData.id && (
-                  <div className="mt-4">
-                    {/* Formulario para CREAR NUEVO GRUPO */}
-                    {/* Aplicamos estilos oscuros para que coincida */}
-                    <div className="p-3 mb-4 border rounded text-bg-dark border-secondary"> 
-                      <h5 className="mb-3">Crear Nuevo Grupo</h5>
-                      <form onSubmit={handleAddGroup} className="row g-3">
-                        <div className="col-md-5">
-                          <label className="form-label">Nombre del Grupo</label>
-                          <input type="text" className="form-control form-control-dark bg-dark text-white" placeholder="Ej: Elige tu Jarabe" value={nombreGrupo} onChange={(e) => setNombreGrupo(e.target.value)} />
-                        </div>
-                        <div className="col-md-4">
-                          <label className="form-label">Tipo de Selección</label>
-                          <select className="form-select form-control-dark bg-dark text-white" value={tipoSeleccion} onChange={(e) => setTipoSeleccion(e.target.value)}>
-                            <option value="unico">Única (Radio Button)</option>
-                            <option value="multiple">Múltiple (Checkbox)</option>
-                          </select>
-                        </div>
-                        <div className="col-md-3 d-flex align-items-end">
-                          <button type="submit" className="btn btn-success w-100">Crear Grupo</button>
-                        </div>
-                      </form>
-                    </div>
-
-                    <hr />
-
-                    {/* Lista de Grupos Existentes */}
-                    {loadingGrupos ? (
-                      <div className="text-center"><div className="spinner-border" role="status"></div></div>
-                    ) : (
-                      grupos.length > 0 ? (
-                        grupos.map(grupo => (
-                          <GrupoOpcionesCard
-                            key={grupo.id}
-                            grupo={grupo}
-                            onOptionAdded={handleOptionAdded} // Pasamos el handler
-                            onOptionDeleted={handleOptionDeleted} // Pasamos el handler
-                            onGroupDeleted={handleGroupDeleted} // Pasamos el handler
-                            theme={theme} // Pasamos el tema 'dark'
-                          />
-                        ))
-                      ) : (
-                        <p className="text-center text-muted">Este producto no tiene grupos de opciones. ¡Crea uno!</p>
-                      )
-                    )}
+              <div className="card text-bg-dark border-secondary">
+                <div className="card-body">
+                  <div className="form-check form-switch fs-5">
+                    <input 
+                      className="form-check-input" 
+                      type="checkbox" 
+                      role="switch" 
+                      id="gestionarOpcionesSwitch" 
+                      checked={gestionarOpciones} 
+                      onChange={(e) => setGestionarOpciones(e.target.checked)}
+                      disabled={!formData.id}
+                    />
+                    <label className="form-check-label" htmlFor="gestionarOpcionesSwitch">Gestionar Opciones (Toppings)</label>
                   </div>
-                )}
-              </div>
+                  {!formData.id && (
+                    <div className="form-text text-white-50">Guarda el producto primero para poder añadirle opciones.</div>
+                  )}
+
+                  {/* ========================================================
+                    * Este es el contenido que ahora SÍ podrás ver y
+                    * hará scroll junto con el resto del modal.
+                    * ========================================================
+                    */}
+                  {gestionarOpciones && formData.id && (
+                    <div className="mt-4">
+                      {/* Formulario para CREAR NUEVO GRUPO */}
+                      <div className="p-3 mb-4 border rounded text-bg-dark border-secondary"> 
+                        <h5 className="mb-3">Crear Nuevo Grupo</h5>
+                        <form onSubmit={handleAddGroup} className="row g-3">
+                          <div className="col-md-5">
+                            <label className="form-label">Nombre del Grupo</label>
+                            <input type="text" className="form-control form-control-dark bg-dark text-white" placeholder="Ej: Elige tu Jarabe" value={nombreGrupo} onChange={(e) => setNombreGrupo(e.target.value)} />
+                          </div>
+                          <div className="col-md-4">
+                            <label className="form-label">Tipo de Selección</label>
+                            <select className="form-select form-control-dark bg-dark text-white" value={tipoSeleccion} onChange={(e) => setTipoSeleccion(e.target.value)}>
+                              <option value="unico">Única (Radio Button)</option>
+                              <option value="multiple">Múltiple (Checkbox)</option>
+                            </select>
+                          </div>
+                          <div className="col-md-3 d-flex align-items-end">
+                            <button type="submit" className="btn btn-success w-100">Crear Grupo</button>
+                          </div>
+                        </form>
+                      </div>
+
+                      <hr className="border-secondary" />
+
+                      {/* Lista de Grupos Existentes */}
+                      {loadingGrupos ? (
+                        <div className="text-center"><div className="spinner-border" role="status"></div></div>
+                      ) : (
+                        grupos.length > 0 ? (
+                          grupos.map(grupo => (
+                            <GrupoOpcionesCard
+                              key={grupo.id}
+                              grupo={grupo}
+                              onOptionAdded={handleOptionAdded} 
+                              onOptionDeleted={handleOptionDeleted} 
+                              onGroupDeleted={handleGroupDeleted} 
+                              theme={theme} 
+                            />
+                          ))
+                        ) : (
+                          <p className="text-center text-muted">Este producto no tiene grupos de opciones. ¡Crea uno!</p>
+                        )
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div> {/* Fin de la nueva .card */}
 
             </div> {/* Fin .modal-body */}
             
-            <div className="modal-footer">
+            <div className="modal-footer border-secondary">
               <button type="button" className="btn btn-secondary" onClick={handleClose}>Cancelar</button>
               <button type="submit" className="btn btn-primary">Guardar Cambios</button>
             </div>
