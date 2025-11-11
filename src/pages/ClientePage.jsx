@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import toast from 'react-hot-toast'; // Asegúrate de que toast esté importado
+import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
@@ -230,7 +230,7 @@ function ClientePage() {
             precioOriginal = precioFinal / (1 - item.descuento_porcentaje / 100);
           }
           return {
-            ...item, // Esto conserva `grupos_opciones` si viene de la API
+            ...item, 
             precio: precioFinal,
             precio_original: precioOriginal,
             nombre: item.nombre || item.titulo,
@@ -294,7 +294,8 @@ function ClientePage() {
     setShowCartModal(false);
   };
 
-  // (handleLocationSelect se queda igual)
+
+  // 🚨 CAMBIO: 1. Corregimos el error de sintaxis en el 'catch'
   const handleLocationSelect = async (location) => {
     setDireccion(location);
     setCalculandoEnvio(true);
@@ -303,14 +304,14 @@ function ClientePage() {
       const res = await apiClient.post('/pedidos/calcular-envio', { lat: location.lat, lng: location.lng });
       setCostoEnvio(res.data.deliveryCost);
       notify('success', `Costo de envío: $${res.data.deliveryCost.toFixed(2)}`);
-    } catch (err)
- {
+    } catch (err) { // <-- Aquí estaba el error, ya está corregido.
       notify('error', err.response?.data?.msg || 'No se pudo calcular el costo de envío.');
       setDireccion(null);
     } finally {
       setCalculandoEnvio(false);
     }
   };
+
 
   // (usarDireccionGuardada se queda igual)
   const usarDireccionGuardada = () => {
@@ -323,7 +324,7 @@ function ClientePage() {
     }
   };
 
-  // (handleProcederAlPago se queda igual que en la respuesta anterior)
+  // (handleProcederAlPago se queda igual)
   const handleProcederAlPago = async () => {
     if (totalFinal <= 0) return;
     if (tipoOrden === 'domicilio' && !direccion) { return notify('error', 'Por favor, selecciona o escribe tu ubicación.'); }
@@ -393,10 +394,15 @@ function ClientePage() {
     setActiveTab('ver');
   };
 
-  // 🚨 CAMBIO: 1. Añadimos la función que decide qué hacer
+  
+  // 🚨 CAMBIO: 2. Corregimos la doble notificación
   const handleProductClick = (item) => {
-    // Asumimos que la info de toppings está en `item.grupos_opciones`
-    // Si tu propiedad se llama `opciones`, cámbialo aquí.
+    // Descomenta esta línea para ver el objeto en la consola y encontrar el nombre:
+    // console.log("Producto clickeado:", item); 
+
+    // 🚨 CAMBIO IMPORTANTE: 
+    // Reemplaza 'grupos_opciones' con el nombre real de tu propiedad.
+    // Viendo tu imagen, podría ser 'grupos_opciones'.
     const tieneOpciones = item.grupos_opciones && item.grupos_opciones.length > 0;
 
     if (tieneOpciones) {
@@ -404,8 +410,9 @@ function ClientePage() {
       setProductoSeleccionadoParaModal(item);
     } else {
       // Si NO tiene toppings, AGREGA DIRECTO
+      // 🚨 CAMBIO: Quitamos el notify() de aquí.
+      // La función agregarProductoAPedido (del context) ya se encarga de notificar.
       agregarProductoAPedido(item);
-      notify('success', `${item.nombre} agregado al carrito`);
     }
   };
 
@@ -417,7 +424,6 @@ function ClientePage() {
   return (
     <div>
       <ul className="nav nav-tabs mb-4">
-        {/* ... (pestañas de navegación) ... */}
         <li className="nav-item"><button className={`nav-link ${activeTab === 'crear' ? 'active' : ''}`} onClick={() => setActiveTab('crear')}>Hacer un Pedido</button></li>
         <li className="nav-item"><button className={`nav-link ${activeTab === 'ver' ? 'active' : ''}`} onClick={() => setActiveTab('ver')}>Mis Pedidos</button></li>
         <li className="nav-item"><button className={`nav-link ${activeTab === 'recompensas' ? 'active' : ''}`} onClick={() => setActiveTab('recompensas')}>Mis Recompensas</button></li>
@@ -434,7 +440,7 @@ function ClientePage() {
               {menuItems?.map(item => (
                 <div key={item.id} className="col-6 col-md-4 col-lg-3">
                   
-                  {/* 🚨 CAMBIO: 2. El onClick ahora usa la nueva función */}
+                  {/* El onClick usa la función corregida */}
                   <div 
                     className="card h-100 text-center shadow-sm" 
                     onClick={() => handleProductClick(item)} 
@@ -459,7 +465,6 @@ function ClientePage() {
 
           <div className="col-md-4 d-none d-md-block">
             <div className="card shadow-sm position-sticky" style={{ top: '20px' }}>
-              {/* CarritoContent no cambia */}
               <CarritoContent
                 isModal={false}
                 pedidoActual={pedidoActual}
