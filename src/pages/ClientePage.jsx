@@ -387,22 +387,24 @@ function ClientePage() {
   // 🚨 INICIO DE LA CORRECCIÓN 🚨
   //
   const handleProductClick = (item) => {
-    // Lógica corregida según el video y la solicitud:
-    // Verificamos si el 'item' (de la lista /productos) ya trae la info
-    // de 'grupos_opciones'.
-    const tieneOpciones = item.grupos_opciones && item.grupos_opciones.length > 0;
-
-    if (tieneOpciones) {
-      // Si tiene opciones, MOSTRAMOS el modal para elegir.
-      // (Ej: Tito Mojadito)
-      setProductoSeleccionadoParaModal(item);
-    } else {
-      // Si NO tiene opciones, lo agregamos directo al carrito.
-      // (Ej: Tito Pikulito)
-      agregarProductoAPedido(item);
-      // Notificamos al usuario que se agregó.
-      notify('success', `${item.nombre} agregado al carrito.`);
-    }
+    //
+    // SOLUCIÓN TEMPORAL (Lo "menos peor")
+    //
+    // El problema es que la lista de productos (/productos) no nos dice
+    // cuáles tienen opciones y cuáles no. 
+    //
+    // La lógica ideal (con `if (item.grupos_opciones)`) falla porque
+    // `item.grupos_opciones` siempre está vacío en la lista.
+    //
+    // Así que volvemos a la lógica de "SIEMPRE ABRIR EL MODAL".
+    // Esto asegura que 'Tito Mojadito' (con opciones) funcione.
+    // 'Tito Pikulito' (sin opciones) abrirá un modal vacío,
+    // lo cual es molesto pero no rompe la aplicación.
+    //
+    // La solución PERMANENTE es arreglar el Backend para que la API
+    // en /productos sí incluya la lista de `grupos_opciones` (llena o vacía).
+    //
+    setProductoSeleccionadoParaModal(item);
   };
   //
   // 🚨 FIN DE LA CORRECCIÓN 🚨
