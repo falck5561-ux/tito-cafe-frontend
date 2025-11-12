@@ -5,6 +5,11 @@ import { motion } from 'framer-motion';
 import apiClient from '../services/api';
 import DetallesPedidoModal from '../components/DetallesPedidoModal';
 
+// --- NUEVO ---
+// 1. Importamos el modal de detalles del producto
+import ProductDetailModal from '../components/ProductDetailModal';
+
+
 function PosPage() {
   const [activeTab, setActiveTab] = useState('pos');
   const [menuItems, setMenuItems] = useState([]);
@@ -18,7 +23,11 @@ function PosPage() {
   const [selectedOrderDetails, setSelectedOrderDetails] = useState(null);
   const [emailCliente, setEmailCliente] = useState('');
   const [clienteEncontrado, setClienteEncontrado] = useState(null);
-  const [recompensaAplicadaId, setRecompensaAplicadaId] = useState(null); // Guarda el ID de la recompensa ya usada en ESTE ticket
+  const [recompensaAplicadaId, setRecompensaAplicadaId] = useState(null);
+
+  // --- NUEVO ---
+  // 2. Añadimos el estado para controlar el modal de productos
+  const [productoSeleccionadoParaModal, setProductoSeleccionadoParaModal] = useState(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -76,49 +85,92 @@ function PosPage() {
   }, [ventaActual]);
 
   const agregarProductoAVenta = (item) => {
-    // Asegúrate de que el item tenga 'categoria' antes de agregarlo
-    const itemConCategoria = { ...item, categoria: String(item.categoria || 'General') }; // Forzar string
-    const precioFinal = itemConCategoria.precio;
+    // --- LÓGICA DEL MODAL ---
+    // El 'item' que viene del modal de detalles (cuando tiene opciones)
+    // puede traer 'opcionesSeleccionadas' y un 'precio' (total) actualizado.
+    
+    // Si el 'item' viene del modal SIN OPCIONES,
+    // 'item.opcionesSeleccionadas' será undefined.
+    // Si el 'item' viene del modal CON OPCIONES,
+    // 'item.opcionesSeleccionadas' será un array.
+    
+    const tieneOpciones = item.opcionesSeleccionadas && item.opcionesSeleccionadas.length > 0;
+    
+    // El precioFinal es el 'precio' que viene del modal (que ya es el total)
+    // o el precio base del item.
+    const precioFinal = Number(item.precio); 
 
     setVentaActual(prevVenta => {
-      const productoExistente = prevVenta.find(p => p.id === itemConCategoria.id && !p.esRecompensa);
+      
+      // ID Único para el ticket
+      // Si tiene opciones, creamos un ID único para que no se agrupe
+      // Si NO tiene opciones, usamos el ID normal para que SÍ se agrupe
+      const idUnicoTicket = tieneOpciones ? `${item.id}-${Date.now()}` : item.id;
+      const esRecompensa = false; // Asumimos que nunca es recompensa al agregar
+
+      const productoExistente = prevVenta.find(p => 
+        (p.idUnicoTicket === idUnicoTicket || (!tieneOpciones && p.id === item.id)) && 
+        !p.esRecompensa
+      );
+
       if (productoExistente) {
+        // Si existe y no tiene opciones, agrupamos
         return prevVenta.map(p =>
-          p.id === itemConCategoria.id && !p.esRecompensa ? { ...p, cantidad: p.cantidad + 1 } : p
+          (p.idUnicoTicket === idUnicoTicket || (!tieneOpciones && p.id === item.id)) && !p.esRecompensa 
+            ? { ...p, cantidad: p.cantidad + 1 } 
+            : p
         );
       }
+      
+      // Si es nuevo o tiene opciones, lo añadimos como línea nueva
       return [...prevVenta, {
-        ...itemConCategoria,
+        ...item,
+        idUnicoTicket: idUnicoTicket, // Guardamos el ID único
         cantidad: 1,
         precioFinal: parseFloat(precioFinal).toFixed(2),
-        esRecompensa: false
+        esRecompensa: esRecompensa,
+        // Guardamos las opciones para mostrarlas en el ticket (si las hay)
+        opcionesSeleccionadas: item.opcionesSeleccionadas || [] 
       }];
     });
+    
+    // Mostramos toast solo si el modal no lo hizo (agregado manual)
+    if (!item.opcionesSeleccionadas) {
+         toast.success(`${item.nombre} agregado al ticket`);
+    }
   };
 
 
-  const incrementarCantidad = (productoId, esRecompensa) => {
+  const incrementarCantidad = (idUnicoTicket, id, esRecompensa) => {
     if (esRecompensa) return;
     setVentaActual(prev => prev.map(item =>
-      item.id === productoId && !item.esRecompensa ? { ...item, cantidad: item.cantidad + 1 } : item
+      (item.idUnicoTicket === idUnicoTicket || item.id === id) && !item.esRecompensa 
+        ? { ...item, cantidad: item.cantidad + 1 } 
+        : item
     ));
   };
 
-  const decrementarCantidad = (productoId, esRecompensa) => {
+  const decrementarCantidad = (idUnicoTicket, id, esRecompensa) => {
     if (esRecompensa) return;
     setVentaActual(prev => {
-      const p = prev.find(item => item.id === productoId && !item.esRecompensa);
+      const p = prev.find(item => (item.idUnicoTicket === idUnicoTicket || item.id === id) && !item.esRecompensa);
+      
       if (p && p.cantidad === 1) {
-        return prev.filter(item => !(item.id === productoId && !item.esRecompensa));
+        return prev.filter(item => !( (item.idUnicoTicket === idUnicoTicket || item.id === id) && !item.esRecompensa ));
       }
+      
       return prev.map(item =>
-        item.id === productoId && !item.esRecompensa ? { ...item, cantidad: item.cantidad - 1 } : item
+        (item.idUnicoTicket === idUnicoTicket || item.id === id) && !item.esRecompensa 
+          ? { ...item, cantidad: item.cantidad - 1 } 
+          : item
       );
     });
   };
 
-  const eliminarProducto = (productoId, esRecompensa) => {
-     setVentaActual(prev => prev.filter(item => !(item.id === productoId && item.esRecompensa === esRecompensa)));
+  const eliminarProducto = (idUnicoTicket, id, esRecompensa) => {
+     setVentaActual(prev => prev.filter(item => 
+        !((item.idUnicoTicket === idUnicoTicket || item.id === id) && item.esRecompensa === esRecompensa)
+     ));
      if (esRecompensa) {
        setRecompensaAplicadaId(null);
      }
@@ -135,10 +187,15 @@ function PosPage() {
   const handleCobrar = async () => {
     if (ventaActual.length === 0) return toast.error('El ticket está vacío.');
 
-    const itemsParaEnviar = ventaActual.map(({ id, cantidad, precioFinal }) => ({
+    const itemsParaEnviar = ventaActual.map(({ id, cantidad, precioFinal, opcionesSeleccionadas, nombre }) => ({
         id,
         cantidad,
         precio: Number(precioFinal),
+        // --- NUEVO: Enviamos las opciones al backend ---
+        nombre: nombre, // Enviamos el nombre (por si es recompensa)
+        opciones: opcionesSeleccionadas 
+            ? opcionesSeleccionadas.map(op => op.nombre).join(', ') 
+            : null
     }));
 
     const ventaData = {
@@ -229,7 +286,7 @@ function PosPage() {
     setVentaActual(prevVenta => {
       let itemModificado = false;
       return prevVenta.map(item => {
-        if (!itemModificado && item.id === itemParaDescontar.id && !item.esRecompensa) {
+        if (!itemModificado && (item.idUnicoTicket === itemParaDescontar.idUnicoTicket || item.id === itemParaDescontar.id) && !item.esRecompensa) {
           itemModificado = true;
           return {
             ...item,
@@ -246,7 +303,16 @@ function PosPage() {
     toast.success('¡Recompensa aplicada!');
   };
 
+  // --- NUEVO ---
+  // 3. Handlers para el modal de producto
+  const handleProductClick = (item) => {
+    setProductoSeleccionadoParaModal(item);
+  };
 
+  const handleCloseProductModal = () => {
+    setProductoSeleccionadoParaModal(null);
+  };
+  
   // --- Render Contenido ---
   const renderContenido = () => {
     if (loading) return <div className="text-center"><div className="spinner-border" role="status"></div></div>;
@@ -294,7 +360,9 @@ function PosPage() {
             <div className="row g-3">
               {menuItems.map(item => (
                 <div key={item.id} className="col-md-4 col-lg-3">
-                  <motion.div whileHover={{ scale: 1.05 }} className={`card h-100 text-center ${item.en_oferta ? 'border-danger' : ''}`} onClick={() => agregarProductoAVenta(item)} style={{ cursor: 'pointer', position: 'relative' }}>
+                  {/* --- CAMBIO --- */}
+                  {/* 4. El onClick ahora llama a handleProductClick */}
+                  <motion.div whileHover={{ scale: 1.05 }} className={`card h-100 text-center ${item.en_oferta ? 'border-danger' : ''}`} onClick={() => handleProductClick(item)} style={{ cursor: 'pointer', position: 'relative' }}>
                     {item.en_oferta && (<span className="badge bg-danger" style={{ position: 'absolute', top: '10px', right: '10px' }}>-{Number(item.descuento_porcentaje || 0).toFixed(0)}%</span>)}
                     <div className="card-body d-flex flex-column justify-content-center pt-4">
                       <h5 className="card-title">{item.nombre}</h5>
@@ -347,17 +415,29 @@ function PosPage() {
                 {/* Lista de Items en el Ticket */}
                 <ul className="list-group list-group-flush" style={{ maxHeight: '300px', overflowY: 'auto' }}>
                   {ventaActual.length === 0 && <li className="list-group-item text-center text-muted">El ticket está vacío</li>}
-                  {ventaActual.map((item, index) => (
-                    // --- CORRECCIÓN FINAL APLICADA ---
-                    <li key={`${item.id}-${index}-${item.esRecompensa}`} className="list-group-item d-flex align-items-center justify-content-between p-1">
-                      <span className={`me-auto ${item.esRecompensa ? 'text-success fw-bold' : ''}`}>{item.nombre}</span>
+                  
+                  {ventaActual.map((item) => (
+                    <li key={item.idUnicoTicket} className="list-group-item d-flex align-items-center justify-content-between p-1">
+                      
+                      <div className="me-auto" style={{ paddingRight: '10px' }}>
+                        <span className={`me-auto ${item.esRecompensa ? 'text-success fw-bold' : ''}`}>{item.nombre}</span>
+                        {/* --- NUEVO: Mostrar opciones en el ticket --- */}
+                        {item.opcionesSeleccionadas && item.opcionesSeleccionadas.length > 0 && (
+                          <ul className="list-unstyled small text-muted mb-0" style={{ marginTop: '-3px' }}>
+                            {item.opcionesSeleccionadas.map(opcion => (
+                              <li key={opcion.id}>+ {opcion.nombre}</li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+
                       <div className="d-flex align-items-center">
-                        <button className="btn btn-outline-secondary btn-sm" onClick={() => decrementarCantidad(item.id, item.esRecompensa)} disabled={item.esRecompensa}>-</button>
+                        <button className="btn btn-outline-secondary btn-sm" onClick={() => decrementarCantidad(item.idUnicoTicket, item.id, item.esRecompensa)} disabled={item.esRecompensa}>-</button>
                         <span className="mx-2">{item.cantidad}</span>
-                        <button className="btn btn-outline-secondary btn-sm" onClick={() => incrementarCantidad(item.id, item.esRecompensa)} disabled={item.esRecompensa}>+</button>
+                        <button className="btn btn-outline-secondary btn-sm" onClick={() => incrementarCantidad(item.idUnicoTicket, item.id, item.esRecompensa)} disabled={item.esRecompensa}>+</button>
                       </div>
                       <span className="mx-3" style={{ minWidth: '60px', textAlign: 'right' }}>${(item.cantidad * Number(item.precioFinal)).toFixed(2)}</span>
-                       <button className="btn btn-outline-danger btn-sm" onClick={() => eliminarProducto(item.id, item.esRecompensa)} >&times;</button>
+                       <button className="btn btn-outline-danger btn-sm" onClick={() => eliminarProducto(item.idUnicoTicket, item.id, item.esRecompensa)} >&times;</button>
                     </li>
                   ))}
                 </ul>
@@ -408,13 +488,24 @@ function PosPage() {
         <li className="nav-item"><button className={`nav-link ${activeTab === 'pos' ? 'active' : ''}`} onClick={() => setActiveTab('pos')}>Punto de Venta</button></li>
         <li className="nav-item"><button className={`nav-link ${activeTab === 'historial' ? 'active' : ''}`} onClick={() => setActiveTab('historial')}>Ventas del Día (POS)</button></li>
       </ul>
+      
       {/* Contenido de la Pestaña Activa */}
       {renderContenido()}
+      
       {/* Modal para Detalles del Pedido */}
       {showDetailsModal && (<DetallesPedidoModal pedido={selectedOrderDetails} onClose={handleCloseDetailsModal} />)}
+
+      {/* --- NUEVO --- */}
+      {/* 5. Renderizamos el modal de producto aquí */}
+      {productoSeleccionadoParaModal && (
+        <ProductDetailModal
+          product={productoSeleccionadoParaModal}
+          onClose={handleCloseProductModal}
+          onAddToCart={agregarProductoAVenta} 
+        />
+      )}
     </div>
   );
 }
 
 export default PosPage;
-
