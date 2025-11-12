@@ -68,9 +68,10 @@ function PaymentMethodModal({ total, onClose, onSelectPayment }) {
             Efectivo
           </button>
           
+          {/* --- AQUÍ ESTÁ LA CORRECCIÓN --- */}
           <button 
             className="btn btn-primary btn-lg"
-            onClick={() => onSelectPayment('Terminal')}
+            onClick={() => onSelectPayment('Tarjeta')} 
           >
             Terminal (Tarjeta)
           </button>
