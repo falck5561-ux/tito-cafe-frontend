@@ -20,7 +20,7 @@ export default defineConfig({
             type: 'image/png'
           },
           {
-            src: 'logo-inicio.png', // <-- Tu otro archivo de la carpeta public
+            src: 'icon.png', // <-- Tu otro archivo de la carpeta public
             sizes: '512x512',       // <-- Revisa que este sea el tamaño real
             type: 'image/png'
           }
