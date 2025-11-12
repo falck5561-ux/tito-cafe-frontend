@@ -117,11 +117,11 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
           if (tieneOpciones) {
             // CASO 1: SÍ tiene opciones
             setFullProduct(data); 
-            setLoadingToppings(false);
+            setLoadingToppings(false); // Deja que el modal se renderice
           } else {
             // CASO 2: NO tiene opciones
-            onAddToCart(data); 
-            onClose();
+            onAddToCart(data); // Añade directo
+            onClose(); // Cierra el modal (que nunca fue visible)
           }
         })
         .catch(err => {
@@ -218,21 +218,12 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
   const placeholderImage = `https://placehold.co/500x250/333333/CCCCCC?text=${encodeURIComponent(fullProduct.nombre)}`;
 
   
-  // 🚨 SOLUCIÓN BUG 2: SPINNER DE CARGA
-  // Esto maneja el "flash" mientras la API decide si mostrar o cerrar.
+  // 🚨 SOLUCIÓN BUG 2 (Estético):
+  // Si está cargando, no retornamos NADA.
+  // Esto evita el "flash" del spinner en los productos sin opciones.
+  // El modal solo se renderizará cuando SÍ tenga opciones y esté listo.
   if (loadingToppings) {
-    return (
-      <motion.div
-        style={modalStyles.backdrop}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        onClick={onClose} 
-      >
-        <div className="spinner-border text-light" role="status">
-          <span className="visually-hidden">Cargando...</span>
-        </div>
-      </motion.div>
-    );
+    return null;
   }
   
   // Si no está cargando (y tiene opciones), muestra el modal:
