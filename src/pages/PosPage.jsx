@@ -8,6 +8,8 @@ import DetallesPedidoModal from '../components/DetallesPedidoModal';
 // --- NUEVO ---
 // 1. Importamos el modal de detalles del producto
 import ProductDetailModal from '../components/ProductDetailModal';
+// --- CAMBIO 1: Importa el nuevo modal ---
+import PaymentMethodModal from '../components/PaymentMethodModal';
 
 
 function PosPage() {
@@ -28,6 +30,9 @@ function PosPage() {
   // --- NUEVO ---
   // 2. Añadimos el estado para controlar el modal de productos
   const [productoSeleccionadoParaModal, setProductoSeleccionadoParaModal] = useState(null);
+
+  // --- CAMBIO 2: Añadir estado para el modal de pago ---
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
@@ -184,15 +189,22 @@ function PosPage() {
     setRecompensaAplicadaId(null);
   };
 
-  const handleCobrar = async () => {
+  // --- CAMBIO 3: 'handleCobrar' ahora solo abre el modal ---
+  const handleCobrar = () => {
+    if (ventaActual.length === 0) return toast.error('El ticket está vacío.');
+    // Si el ticket no está vacío, abre el modal de pago
+    setIsPaymentModalOpen(true);
+  };
+
+  // --- CAMBIO 4: Creamos 'handleFinalizarVenta' ---
+  const handleFinalizarVenta = async (metodoDePago) => {
     if (ventaActual.length === 0) return toast.error('El ticket está vacío.');
 
     const itemsParaEnviar = ventaActual.map(({ id, cantidad, precioFinal, opcionesSeleccionadas, nombre }) => ({
         id,
         cantidad,
         precio: Number(precioFinal),
-        // --- NUEVO: Enviamos las opciones al backend ---
-        nombre: nombre, // Enviamos el nombre (por si es recompensa)
+        nombre: nombre, 
         opciones: opcionesSeleccionadas 
             ? opcionesSeleccionadas.map(op => op.nombre).join(', ') 
             : null
@@ -200,7 +212,8 @@ function PosPage() {
 
     const ventaData = {
       total: totalVenta,
-      metodo_pago: 'Efectivo',
+      // --- Usamos el método de pago que viene del modal ---
+      metodo_pago: metodoDePago,
       items: itemsParaEnviar,
       clienteId: clienteEncontrado ? clienteEncontrado.cliente.id : null,
       recompensaUsadaId: recompensaAplicadaId
@@ -210,6 +223,7 @@ function PosPage() {
       await apiClient.post('/ventas', ventaData);
       toast.success('¡Venta registrada con éxito!');
       limpiarVenta();
+      setIsPaymentModalOpen(false); // Cerramos el modal de pago
       if (activeTab === 'historial') {
         fetchData();
       }
@@ -437,7 +451,7 @@ function PosPage() {
                         <button className="btn btn-outline-secondary btn-sm" onClick={() => incrementarCantidad(item.idUnicoTicket, item.id, item.esRecompensa)} disabled={item.esRecompensa}>+</button>
                       </div>
                       <span className="mx-3" style={{ minWidth: '60px', textAlign: 'right' }}>${(item.cantidad * Number(item.precioFinal)).toFixed(2)}</span>
-                       <button className="btn btn-outline-danger btn-sm" onClick={() => eliminarProducto(item.idUnicoTicket, item.id, item.esRecompensa)} >&times;</button>
+                        <button className="btn btn-outline-danger btn-sm" onClick={() => eliminarProducto(item.idUnicoTicket, item.id, item.esRecompensa)} >&times;</button>
                     </li>
                   ))}
                 </ul>
@@ -445,6 +459,7 @@ function PosPage() {
                 {/* Total y Botones */}
                 <h4>Total: ${totalVenta.toFixed(2)}</h4>
                 <div className="d-grid gap-2 mt-3">
+                  {/* --- CAMBIO 5: Confirmado, onClick llama a handleCobrar --- */}
                   <button className="btn btn-success" onClick={handleCobrar} disabled={ventaActual.length === 0}>Cobrar</button>
                   <button className="btn btn-danger" onClick={limpiarVenta}>Cancelar Venta</button>
                 </div>
@@ -502,6 +517,15 @@ function PosPage() {
           product={productoSeleccionadoParaModal}
           onClose={handleCloseProductModal}
           onAddToCart={agregarProductoAVenta} 
+        />
+      )}
+
+      {/* --- CAMBIO 6: Renderizar el nuevo modal de pago --- */}
+      {isPaymentModalOpen && (
+        <PaymentMethodModal
+          total={totalVenta}
+          onClose={() => setIsPaymentModalOpen(false)}
+          onSelectPayment={handleFinalizarVenta} 
         />
       )}
     </div>
