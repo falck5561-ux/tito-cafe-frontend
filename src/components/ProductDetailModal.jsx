@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import AuthContext from '../context/AuthContext';
 import { getProductById } from '../services/productService'; 
 
-// (Los estilos se quedan igual)
+// (Los estilos no cambian)
 const modalStyles = {
   backdrop: {
     position: 'fixed',
@@ -103,33 +103,51 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
   const [fullProduct, setFullProduct] = useState(product); 
   const [selectedOptions, setSelectedOptions] = useState({});
   const [totalPrice, setTotalPrice] = useState(0); 
-  const [loadingToppings, setLoadingToppings] = useState(true);
+  const [loadingToppings, setLoadingToppings] = useState(true); // Se mantiene en true por defecto
 
-  // --- 1. EFECTO PARA BUSCAR LOS DATOS COMPLETOS DEL PRODUCTO (SIN CAMBIOS) ---
+  // --- 1. EFECTO PARA BUSCAR DATOS Y DECIDIR ---
   useEffect(() => {
+    // Dependencias añadidas: onAddToCart y onClose
     if (product?.id) {
-      setLoadingToppings(true);
+      // 1. No establecemos loading en true aquí, se queda en su estado inicial
       setSelectedOptions({}); 
       
       getProductById(product.id)
         .then(data => {
-          setFullProduct(data); 
+          // ======================================================
+          // ✅ ¡AQUÍ ESTÁ LA LÓGICA QUE SOLUCIONA TU PROBLEMA!
+          // ======================================================
+          
+          const tieneOpciones = data.grupos_opciones && data.grupos_opciones.length > 0;
+
+          if (tieneOpciones) {
+            // CASO 1: SÍ tiene opciones (Tito Mojadito)
+            // Carga el modal normalmente.
+            setFullProduct(data); 
+            setLoadingToppings(false); // Ponemos el loading en false aquí
+          } else {
+            // CASO 2: NO tiene opciones (Tito Pikulito)
+            // 1. Lo agregamos al carrito directamente
+            // (Usamos 'data' porque es el 'fullProduct' que acabamos de recibir)
+            onAddToCart(data); 
+            
+            // 2. Cerramos el modal
+            onClose();
+            
+            // No necesitamos llamar a setLoadingToppings(false) porque
+            // el componente se va a desmontar.
+          }
         })
         .catch(err => {
           console.error("Error al cargar detalles del producto:", err);
-          setFullProduct(product); 
-        })
-        .finally(() => {
-          setLoadingToppings(false);
+          // Si falla, solo cerramos el modal para evitar un error.
+          onClose(); 
         });
+        // 🚫 IMPORTANTE: Quitamos el .finally() de aquí
     }
-  }, [product]);
+  }, [product, onAddToCart, onClose]); // <-- Añadimos onAddToCart y onClose a las dependencias
 
   
-  // --- 🚨 CORRECCIÓN 1: Eliminado el `useEffect` de auto-añadir ---
-  // (El `useEffect` que estaba aquí fue eliminado para quitar el "flash")
-  
-
   // --- 2. EFECTO PARA CALCULAR EL PRECIO TOTAL (Corregido) ---
   useEffect(() => {
     if (!fullProduct) return;
@@ -201,8 +219,7 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
     const cartProduct = {
       ...fullProduct,
       
-      // 🚨 CORRECCIÓN 2: El precio enviado al carrito DEBE ser el total (base + opciones)
-      // El carrito usa `item.precio` para sus cálculos.
+      // El precio enviado al carrito DEBE ser el total (base + opciones)
       precio: totalPrice, 
       
       opcionesSeleccionadas: opcionesParaCarrito,
@@ -210,6 +227,9 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
       // 🚨 CORRECCIÓN 3: El `cartItemId` es la clave para sumar (stacking)
       // Si SÍ tiene opciones, dale un ID único para que sea un item nuevo.
       // Si NO tiene opciones, dale `null` para que `useCart` lo busque por `product.id` y lo sume.
+      // 
+      // (Este 'cartItemId' no se usa si el item no tiene opciones, 
+      // pero lo dejamos así por consistencia con tu código anterior)
       cartItemId: tieneOpciones ? `${fullProduct.id}-${Date.now()}` : null 
     };
 
@@ -227,6 +247,25 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
     
   const placeholderImage = `https://placehold.co/500x250/333333/CCCCCC?text=${encodeURIComponent(fullProduct.nombre)}`;
 
+  // 
+  // 🚨 SI EL MODAL ESTÁ CARGANDO, MUESTRA UN SPINNER EN LUGAR DEL MODAL VACÍO
+  // Esto maneja el "flash" mientras la API decide si mostrar o cerrar.
+  if (loadingToppings) {
+    return (
+      <motion.div
+        style={modalStyles.backdrop}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        onClick={onClose} // Permite cerrar si se queda atascado
+      >
+        <div className="spinner-border text-light" role="status">
+          <span className="visually-hidden">Cargando...</span>
+        </div>
+      </motion.div>
+    );
+  }
+  
+  // Si no está cargando (y tiene opciones), muestra el modal:
   return (
     <motion.div
       style={modalStyles.backdrop}
@@ -258,14 +297,9 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
           )}
 
           <div style={modalStyles.optionsContainer}>
-            {loadingToppings && (
-              <div className="text-center">
-                <div className="spinner-border" role="status">
-                  <span className="visually-hidden">Cargando opciones...</span>
-                </div>
-              </div>
-            )}
+            {/* Ya no necesitamos el spinner aquí, se maneja arriba */}
 
+            {/* El resto de tu lógica de renderizado de opciones está perfecta */}
             {!loadingToppings && fullProduct.grupos_opciones?.length > 0 && 
               fullProduct.grupos_opciones.map(grupo => (
                 <div key={grupo.id} style={modalStyles.optionGroup}>
@@ -323,10 +357,11 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
                 </div>
             ))}
 
-            {/* Mensaje si no hay opciones */}
-            {!loadingToppings && (!fullProduct.grupos_opciones || fullProduct.grupos_opciones.length === 0) && (
-                <p className="text-muted text-center">Este producto no tiene opciones adicionales.</p>
+            {/* Este mensaje ahora es redundante, porque si no tiene opciones, el modal nunca se muestra */}
+            {/* {!loadingToppings && (!fullProduct.grupos_opciones || fullProduct.grupos_opciones.length === 0) && (
+              <p className="text-muted text-center">Este producto no tiene opciones adicionales.</p>
             )}
+            */}
           </div>
         </div>
 
@@ -335,7 +370,6 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
             <div>
               <span className="fs-3 fw-bold">${totalPrice.toFixed(2)}</span>
               
-              {/* 🚨 CORRECCIÓN 4: Usar `precio_original` (que viene de la API) en lugar de `precio` */}
               {fullProduct.en_oferta && Number(fullProduct.precio_original) > Number(fullProduct.precio) && (
                 <span className="text-muted text-decoration-line-through ms-2">${Number(fullProduct.precio_original).toFixed(2)}</span>
               )}
@@ -343,8 +377,8 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
 
             {(!user || user.rol === 'Cliente') && (
               <button className="btn btn-primary" onClick={handleAddToCart}>
-                {/* 🚨 CORRECCIÓN 5: Texto del botón (opcional pero bueno) */}
-                {fullProduct.grupos_opciones?.length > 0 ? 'Hacer Pedido' : 'Agregar al Carrito'}
+                {/* Este texto ya no es necesario, siempre será 'Hacer Pedido' */}
+                {'Hacer Pedido'}
               </button>
             )}
           </div>
