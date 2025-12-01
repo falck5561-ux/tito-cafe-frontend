@@ -6,7 +6,7 @@ function DetallesPedidoModal({ pedido, onClose }) {
 
   const { theme } = useTheme();
 
-  // --- LÓGICA ROBUSTA PARA ENCONTRAR PRODUCTOS ---
+  // --- LÓGICA PARA ENCONTRAR PRODUCTOS ---
   const productos = 
       pedido.items || 
       pedido.detalles_pedido || 
@@ -30,30 +30,42 @@ function DetallesPedidoModal({ pedido, onClose }) {
   };
   const mutedTextColor = theme === 'dark' ? 'text-white-50' : 'text-muted';
 
-  // --- FUNCIÓN HELPER PARA LIMPIAR EL TEXTO "FEO" (JSON) ---
+  // --- FUNCIÓN DE LIMPIEZA AGRESIVA ---
   const parseOpciones = (raw) => {
     if (!raw) return [];
     
-    // 1. Si ya es una lista correcta, solo sacamos los nombres
+    // 1. Si ya es un arreglo, solo sacamos los nombres
     if (Array.isArray(raw)) {
         return raw.map(op => (typeof op === 'string' ? op : op.nombre));
     }
 
-    // 2. Si es texto con código, intentamos descifrarlo
+    // 2. Si es texto, aplicamos limpieza profunda
     if (typeof raw === 'string') {
+        // A. Intentamos parsear JSON estándar
         try {
-            // Intentamos convertir el texto JSON a objetos reales
             const parsed = JSON.parse(raw);
-            if (Array.isArray(parsed)) {
-                return parsed.map(op => (typeof op === 'string' ? op : op.nombre));
-            } else if (typeof parsed === 'object') {
-                 return [parsed.nombre || JSON.stringify(parsed)];
-            }
-        } catch (e) {
-            // Si no es JSON, limpiamos símbolos feos manualmente
-            const limpio = raw.replace(/[\[\]"{}]/g, '').replace(/nombre:/g, ''); 
-            return limpio.split(',').map(s => s.trim()).filter(s => s !== '' && !s.includes('id:'));
-        }
+            if (Array.isArray(parsed)) return parsed.map(op => op.nombre || op);
+        } catch (e) {}
+
+        // B. Intentamos parsear JSON "sucio" (quitando barras invertidas primero)
+        try {
+            const unescaped = raw.replace(/\\/g, ''); 
+            const parsed = JSON.parse(unescaped);
+            if (Array.isArray(parsed)) return parsed.map(op => op.nombre || op);
+        } catch (e) {}
+
+        // C. FALLBACK MANUAL (El que arreglará tu problema visual)
+        // Divide por comas
+        return raw.split(',')
+            // Filtra cualquier parte que contenga "id" o sea solo números/símbolos
+            .filter(part => !part.includes('id') && /[a-zA-Z]/.test(part))
+            .map(part => {
+                // Borra: barras, comillas, llaves, corchetes, dos puntos y la palabra "nombre"
+                let limpio = part.replace(/[\\"{}\[\]:]/g, '').replace('nombre', '').trim();
+                return limpio;
+            })
+            // Elimina vacíos
+            .filter(part => part !== '');
     }
     
     return [];
@@ -96,7 +108,7 @@ function DetallesPedidoModal({ pedido, onClose }) {
             <ul className="list-unstyled mb-3">
               {productos.map((producto, index) => {
                 
-                // Usamos la función de limpieza aquí
+                // Usamos la nueva limpieza agresiva
                 const opcionesLimpias = parseOpciones(producto.opciones || producto.selectedOptions);
 
                 return (
@@ -106,7 +118,7 @@ function DetallesPedidoModal({ pedido, onClose }) {
                       <span className="text-end">${(producto.cantidad * Number(producto.precio || producto.precio_unitario || 0)).toFixed(2)}</span>
                     </div>
 
-                    {/* Mostramos las opciones limpias */}
+                    {/* Renderizado de Opciones Limpias */}
                     {opcionesLimpias.length > 0 && (
                       <ul className="list-unstyled small ps-3 mb-0" style={{ opacity: 0.8 }}>
                         {opcionesLimpias.map((textoOpcion, opIndex) => (
