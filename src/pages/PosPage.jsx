@@ -6,9 +6,8 @@ import apiClient from '../services/api';
 import DetallesPedidoModal from '../components/DetallesPedidoModal';
 
 // --- NUEVO ---
-// 1. Importamos el modal de detalles del producto
+// 1. Importamos el modal de detalles del producto y pago
 import ProductDetailModal from '../components/ProductDetailModal';
-// --- CAMBIO 1: Importa el nuevo modal ---
 import PaymentMethodModal from '../components/PaymentMethodModal';
 
 
@@ -21,18 +20,17 @@ function PosPage() {
   const [ventasDelDia, setVentasDelDia] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  
+  // Estados para Modales
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedOrderDetails, setSelectedOrderDetails] = useState(null);
+  const [productoSeleccionadoParaModal, setProductoSeleccionadoParaModal] = useState(null);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+
+  // Estados para Cliente y Recompensas
   const [emailCliente, setEmailCliente] = useState('');
   const [clienteEncontrado, setClienteEncontrado] = useState(null);
   const [recompensaAplicadaId, setRecompensaAplicadaId] = useState(null);
-
-  // --- NUEVO ---
-  // 2. Añadimos el estado para controlar el modal de productos
-  const [productoSeleccionadoParaModal, setProductoSeleccionadoParaModal] = useState(null);
-
-  // --- CAMBIO 2: Añadir estado para el modal de pago ---
-  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
@@ -56,7 +54,7 @@ function PosPage() {
 
           return {
             ...item,
-            categoria: String(categoria), // Forzar a string por si acaso
+            categoria: String(categoria), 
             precio: precioFinal,
             precio_original: precioOriginal,
             nombre: item.nombre || item.titulo,
@@ -90,15 +88,10 @@ function PosPage() {
   }, [ventaActual]);
 
   const agregarProductoAVenta = (item) => {
-    // --- LÓGICA DEL MODAL ---
     const tieneOpciones = item.opcionesSeleccionadas && item.opcionesSeleccionadas.length > 0;
-    
-    // El precioFinal es el 'precio' que viene del modal (que ya es el total)
-    // o el precio base del item.
     const precioFinal = Number(item.precio); 
 
     setVentaActual(prevVenta => {
-      
       // ID Único para el ticket
       const idUnicoTicket = tieneOpciones ? `${item.id}-${Date.now()}` : item.id;
       const esRecompensa = false; 
@@ -109,7 +102,6 @@ function PosPage() {
       );
 
       if (productoExistente) {
-        // Si existe y no tiene opciones, agrupamos
         return prevVenta.map(p =>
           (p.idUnicoTicket === idUnicoTicket || (!tieneOpciones && p.id === item.id)) && !p.esRecompensa 
             ? { ...p, cantidad: p.cantidad + 1 } 
@@ -117,19 +109,16 @@ function PosPage() {
         );
       }
       
-      // Si es nuevo o tiene opciones, lo añadimos como línea nueva
       return [...prevVenta, {
         ...item,
-        idUnicoTicket: idUnicoTicket, // Guardamos el ID único
+        idUnicoTicket: idUnicoTicket,
         cantidad: 1,
         precioFinal: parseFloat(precioFinal).toFixed(2),
         esRecompensa: esRecompensa,
-        // Guardamos las opciones para mostrarlas en el ticket (si las hay)
         opcionesSeleccionadas: item.opcionesSeleccionadas || [] 
       }];
     });
     
-    // Mostramos toast solo si el modal no lo hizo (agregado manual)
     if (!item.opcionesSeleccionadas) {
           toast.success(`${item.nombre} agregado al ticket`);
     }
@@ -171,7 +160,6 @@ function PosPage() {
       }
   };
 
-
   const limpiarVenta = () => {
     setVentaActual([]);
     setEmailCliente('');
@@ -179,18 +167,14 @@ function PosPage() {
     setRecompensaAplicadaId(null);
   };
 
-  // --- CAMBIO 3: 'handleCobrar' ahora solo abre el modal ---
   const handleCobrar = () => {
     if (ventaActual.length === 0) return toast.error('El ticket está vacío.');
-    // Si el ticket no está vacío, abre el modal de pago
     setIsPaymentModalOpen(true);
   };
 
-  // --- CAMBIO 4: Creamos 'handleFinalizarVenta' ---
   const handleFinalizarVenta = async (metodoDePago) => {
     if (ventaActual.length === 0) return toast.error('El ticket está vacío.');
 
-    // CÓDIGO CORREGIDO 
     const itemsParaEnviar = ventaActual.map(({ id, cantidad, precioFinal, opcionesSeleccionadas, nombre }) => ({
       id,
       cantidad,
@@ -206,7 +190,6 @@ function PosPage() {
 
     const ventaData = {
       total: totalVenta,
-      // --- Usamos el método de pago que viene del modal ---
       metodo_pago: metodoDePago,
       items: itemsParaEnviar,
       clienteId: clienteEncontrado ? clienteEncontrado.cliente.id : null,
@@ -217,7 +200,7 @@ function PosPage() {
       await apiClient.post('/ventas', ventaData);
       toast.success('¡Venta registrada con éxito!');
       limpiarVenta();
-      setIsPaymentModalOpen(false); // Cerramos el modal de pago
+      setIsPaymentModalOpen(false); 
       if (activeTab === 'historial') {
         fetchData();
       }
@@ -227,11 +210,50 @@ function PosPage() {
     }
   };
 
-  const handleUpdateStatus = async (pedidoId, nuevoEstado) => { try { await apiClient.put(`/pedidos/${pedidoId}/estado`, { estado: nuevoEstado }); fetchData(); toast.success(`Pedido #${pedidoId} actualizado.`); } catch (err) { toast.error('No se pudo actualizar el estado.'); } };
-  
-  // --- ESTA ES LA FUNCIÓN QUE ABRE EL MODAL ---
-  const handleShowDetails = (pedido) => { setSelectedOrderDetails(pedido); setShowDetailsModal(true); };
+  // --- AQUI ESTA LA MAGIA: CARGA INTELIGENTE DE DETALLES ---
+  const handleShowDetails = async (venta) => {
+    // 1. Buscamos productos en lo que ya tenemos descargado localmente
+    const posiblesItems = venta.items || venta.detalles || venta.venta_detalles || venta.productos || [];
+
+    let datosParaModal = { 
+        ...venta,
+        items: posiblesItems
+    };
+    
+    // 2. Abrimos el modal INMEDIATAMENTE con lo que tenemos
+    setSelectedOrderDetails(datosParaModal);
+    setShowDetailsModal(true);
+
+    // 3. Si ya tenemos items, terminamos aquí.
+    if (posiblesItems.length > 0) {
+        return; 
+    }
+
+    // 4. SI NO HAY ITEMS (Tu problema actual), los pedimos al servidor silenciosamente
+    try {
+        const endpoint = activeTab === 'pedidos' 
+            ? `/pedidos/${venta.id}` 
+            : `/ventas/${venta.id}`; 
+
+        const res = await apiClient.get(endpoint);
+
+        if (res.data) {
+            // ¡Llegaron los datos! Actualizamos el modal que ya está abierto
+            setSelectedOrderDetails({
+                ...datosParaModal,
+                ...res.data,
+                // Combinamos todas las posibles formas en que el backend llama a los items
+                items: res.data.items || res.data.venta_detalles || res.data.detalles || []
+            });
+        }
+    } catch (error) {
+        console.warn(`No se pudieron cargar detalles extra para ID ${venta.id}`);
+    }
+  };
+
   const handleCloseDetailsModal = () => { setShowDetailsModal(false); setSelectedOrderDetails(null); };
+
+  const handleUpdateStatus = async (pedidoId, nuevoEstado) => { try { await apiClient.put(`/pedidos/${pedidoId}/estado`, { estado: nuevoEstado }); fetchData(); toast.success(`Pedido #${pedidoId} actualizado.`); } catch (err) { toast.error('No se pudo actualizar el estado.'); } };
 
   const handleBuscarCliente = async (e) => {
     e.preventDefault();
@@ -248,7 +270,6 @@ function PosPage() {
     }
   };
 
-  // --- FUNCIÓN 'handleAplicarRecompensa' (Lógica Final) ---
   const handleAplicarRecompensa = (recompensa) => {
     if (recompensaAplicadaId) {
       return toast.error('Ya se aplicó una recompensa en este ticket.');
@@ -258,41 +279,30 @@ function PosPage() {
     let precioMaximo = -1;
     const nombreRecompensaLower = recompensa.nombre ? recompensa.nombre.toLowerCase() : '';
 
-    // Buscar "pikulito" o "mojadito"
     if (nombreRecompensaLower.includes('pikulito') || nombreRecompensaLower.includes('mojadito')) {
-      const productosElegibles = ['Tito Pikulito', 'Tito Mojadito']; // Buscar por nombre exacto
-
+      const productosElegibles = ['Tito Pikulito', 'Tito Mojadito']; 
       ventaActual.forEach(item => {
         if (productosElegibles.includes(item.nombre) && !item.esRecompensa && Number(item.precioFinal) > precioMaximo) {
           precioMaximo = Number(item.precioFinal);
           itemParaDescontar = item;
         }
       });
-
-      if (!itemParaDescontar) {
-        return toast.error('Añade un Tito Pikulito o Tito Mojadito al ticket para aplicar la recompensa.');
-      }
+      if (!itemParaDescontar) return toast.error('Añade un Tito Pikulito o Tito Mojadito al ticket para aplicar la recompensa.');
 
     } else if (nombreRecompensaLower.includes('café') || nombreRecompensaLower.includes('frappe')) {
-      // Lógica vieja para café/frappe
       const productosElegibles = ['Café Americano', 'Frappe Coffee'];
-
       ventaActual.forEach(item => {
         if (productosElegibles.includes(item.nombre) && !item.esRecompensa && Number(item.precioFinal) > precioMaximo) {
           precioMaximo = Number(item.precioFinal);
           itemParaDescontar = item;
         }
       });
-
-      if (!itemParaDescontar) {
-        return toast.error('Añade un Café o Frappe al ticket para aplicar la recompensa.');
-      }
+      if (!itemParaDescontar) return toast.error('Añade un Café o Frappe al ticket para aplicar la recompensa.');
     } else {
       console.warn("Recompensa no reconocida:", recompensa.nombre);
       return toast.error('No se reconoce el tipo de recompensa.');
     }
 
-    // Aplicar descuento
     setVentaActual(prevVenta => {
       let itemModificado = false;
       return prevVenta.map(item => {
@@ -313,8 +323,6 @@ function PosPage() {
     toast.success('¡Recompensa aplicada!');
   };
 
-  // --- NUEVO ---
-  // 3. Handlers para el modal de producto
   const handleProductClick = (item) => {
     setProductoSeleccionadoParaModal(item);
   };
@@ -370,8 +378,6 @@ function PosPage() {
             <div className="row g-3">
               {menuItems.map(item => (
                 <div key={item.id} className="col-md-4 col-lg-3">
-                  {/* --- CAMBIO --- */}
-                  {/* 4. El onClick ahora llama a handleProductClick */}
                   <motion.div whileHover={{ scale: 1.05 }} className={`card h-100 text-center ${item.en_oferta ? 'border-danger' : ''}`} onClick={() => handleProductClick(item)} style={{ cursor: 'pointer', position: 'relative' }}>
                     {item.en_oferta && (<span className="badge bg-danger" style={{ position: 'absolute', top: '10px', right: '10px' }}>-{Number(item.descuento_porcentaje || 0).toFixed(0)}%</span>)}
                     <div className="card-body d-flex flex-column justify-content-center pt-4">
@@ -431,7 +437,6 @@ function PosPage() {
                       
                       <div className="me-auto" style={{ paddingRight: '10px' }}>
                         <span className={`me-auto ${item.esRecompensa ? 'text-success fw-bold' : ''}`}>{item.nombre}</span>
-                        {/* --- NUEVO: Mostrar opciones en el ticket --- */}
                         {item.opcionesSeleccionadas && item.opcionesSeleccionadas.length > 0 && (
                           <ul className="list-unstyled small text-muted mb-0" style={{ marginTop: '-3px' }}>
                             {item.opcionesSeleccionadas.map(opcion => (
@@ -455,7 +460,6 @@ function PosPage() {
                 {/* Total y Botones */}
                 <h4>Total: ${totalVenta.toFixed(2)}</h4>
                 <div className="d-grid gap-2 mt-3">
-                  {/* --- CAMBIO 5: Confirmado, onClick llama a handleCobrar --- */}
                   <button className="btn btn-success" onClick={handleCobrar} disabled={ventaActual.length === 0}>Cobrar</button>
                   <button className="btn btn-danger" onClick={limpiarVenta}>Cancelar Venta</button>
                 </div>
@@ -466,7 +470,7 @@ function PosPage() {
       );
     }
 
-    // --- Pestaña Historial de Ventas POS del Día (CORREGIDA) ---
+    // --- Pestaña Historial de Ventas POS del Día (CON BOTÓN CORREGIDO) ---
     if (activeTab === 'historial') {
       return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
@@ -504,7 +508,6 @@ function PosPage() {
     }
   };
 
-  // --- Render Principal ---
   return (
     <div>
       {/* Navegación por Pestañas */}
@@ -517,11 +520,10 @@ function PosPage() {
       {/* Contenido de la Pestaña Activa */}
       {renderContenido()}
       
-      {/* Modal para Detalles del Pedido */}
+      {/* Modal para Detalles del Pedido (Reutilizado) */}
       {showDetailsModal && (<DetallesPedidoModal pedido={selectedOrderDetails} onClose={handleCloseDetailsModal} />)}
 
-      {/* --- NUEVO --- */}
-      {/* 5. Renderizamos el modal de producto aquí */}
+      {/* Modal de Producto para POS */}
       {productoSeleccionadoParaModal && (
         <ProductDetailModal
           product={productoSeleccionadoParaModal}
@@ -530,7 +532,7 @@ function PosPage() {
         />
       )}
 
-      {/* --- CAMBIO 6: Renderizar el nuevo modal de pago --- */}
+      {/* Modal de Pago para POS */}
       {isPaymentModalOpen && (
         <PaymentMethodModal
           total={totalVenta}
