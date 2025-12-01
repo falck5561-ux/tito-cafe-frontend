@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import apiClient from '../services/api';
 import toast from 'react-hot-toast';
-import { useTheme } from '../context/ThemeContext'; // Importar useTheme
-import { X, Plus, Image as ImageIcon, Tag, Hash, DollarSign, List, Edit, Trash2 } from 'lucide-react'; // Iconos nuevos
+import { useTheme } from '../context/ThemeContext'; // Necesario para obtener el tema
+import { X, Plus, Image as ImageIcon, Tag, DollarSign, List, Edit, Trash2, Layers, Package, CheckCircle } from 'lucide-react'; // Iconos
 
 // --- Componente Interno: Tarjeta de Grupo de Opciones (MEJORADA) ---
 function GrupoOpcionesCard({ grupo, onOptionAdded, onOptionDeleted, onGroupDeleted, theme }) {
@@ -11,7 +11,7 @@ function GrupoOpcionesCard({ grupo, onOptionAdded, onOptionDeleted, onGroupDelet
 
   const isDark = theme === 'dark';
   const cardClass = `card shadow-sm mb-4 border-0`;
-  const cardBg = isDark ? '#2a2a2a' : '#f8f9fa';
+  const cardBg = isDark ? '#2a2a2a' : '#f8f9fa'; // Fondo más claro para la tarjeta interna
   const inputClass = `form-control ${isDark ? 'form-control-dark bg-dark text-white border-secondary' : 'form-control'}`;
   const listGroupClass = `list-group-item d-flex justify-content-between align-items-center ${isDark ? 'bg-dark text-white border-secondary' : ''}`;
 
@@ -262,7 +262,7 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
           {/* Header del Modal */}
           <div className="modal-header border-0 pb-0 pt-4 px-4">
             <h5 className="modal-title fw-bold d-flex align-items-center gap-3">
-                <Edit size={24} className="text-primary"/> {formData.id ? 'Editar Producto' : 'Añadir Nuevo Producto'}
+                <Package size={24} className="text-primary"/> {formData.id ? 'Editar Producto' : 'Añadir Nuevo Producto'}
             </h5>
             <button type="button" className={`btn-close ${isDark ? 'btn-close-white' : ''}`} onClick={handleClose}></button>
           </div>
@@ -416,7 +416,7 @@ function ProductModal({ show, handleClose, handleSave, productoActual }) {
             <div className="modal-footer border-0 p-4 justify-content-center">
               <button type="button" className="btn btn-secondary px-4 rounded-pill fw-bold" onClick={handleClose}>Cancelar</button>
               <button type="submit" className="btn btn-primary px-4 rounded-pill fw-bold d-flex align-items-center gap-2">
-                <Edit size={18}/> Guardar Cambios
+                <CheckCircle size={18}/> Guardar Cambios
               </button>
             </div>
 
