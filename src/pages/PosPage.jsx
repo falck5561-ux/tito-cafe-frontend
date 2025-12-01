@@ -1,16 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
-import { Eye } from 'lucide-react';
-// --- Usando rutas relativas estándar ---
+// --- ESTA ERA LA LÍNEA QUE FALTABA ---
+import { Eye } from 'lucide-react'; 
+// -------------------------------------
 import apiClient from '../services/api';
 import DetallesPedidoModal from '../components/DetallesPedidoModal';
 
-// --- NUEVO ---
 // 1. Importamos el modal de detalles del producto y pago
 import ProductDetailModal from '../components/ProductDetailModal';
 import PaymentMethodModal from '../components/PaymentMethodModal';
-
 
 function PosPage() {
   const [activeTab, setActiveTab] = useState('pos');
@@ -211,9 +210,8 @@ function PosPage() {
     }
   };
 
-  // --- AQUI ESTA LA MAGIA: CARGA INTELIGENTE DE DETALLES ---
+  // --- CARGA INTELIGENTE DE DETALLES ---
   const handleShowDetails = async (venta) => {
-    // 1. Buscamos productos en lo que ya tenemos descargado localmente
     const posiblesItems = venta.items || venta.detalles || venta.venta_detalles || venta.productos || [];
 
     let datosParaModal = { 
@@ -221,16 +219,13 @@ function PosPage() {
         items: posiblesItems
     };
     
-    // 2. Abrimos el modal INMEDIATAMENTE con lo que tenemos
     setSelectedOrderDetails(datosParaModal);
     setShowDetailsModal(true);
 
-    // 3. Si ya tenemos items, terminamos aquí.
     if (posiblesItems.length > 0) {
         return; 
     }
 
-    // 4. SI NO HAY ITEMS (Tu problema actual), los pedimos al servidor silenciosamente
     try {
         const endpoint = activeTab === 'pedidos' 
             ? `/pedidos/${venta.id}` 
@@ -239,11 +234,9 @@ function PosPage() {
         const res = await apiClient.get(endpoint);
 
         if (res.data) {
-            // ¡Llegaron los datos! Actualizamos el modal que ya está abierto
             setSelectedOrderDetails({
                 ...datosParaModal,
                 ...res.data,
-                // Combinamos todas las posibles formas en que el backend llama a los items
                 items: res.data.items || res.data.venta_detalles || res.data.detalles || []
             });
         }
@@ -471,7 +464,7 @@ function PosPage() {
       );
     }
 
-    // --- Pestaña Historial de Ventas POS del Día (CON BOTÓN CORREGIDO) ---
+    // --- Pestaña Historial de Ventas POS del Día ---
     if (activeTab === 'historial') {
       return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
@@ -493,16 +486,16 @@ function PosPage() {
                     </div>
                   </div>
 
-                  {/* Parte Derecha: Botón de Acción */}
+                  {/* Parte Derecha: Botón de Acción Estilizado */}
                   <div className="ms-3">
-    <button 
-        className="btn btn-outline-info btn-sm d-flex align-items-center gap-1" 
-        onClick={() => handleShowDetails(venta)}
-        style={{ borderRadius: '20px', padding: '5px 15px' }}
-    >
-        <Eye size={16} /> Ver Detalles
-    </button>
-</div>
+                     <button 
+                        className="btn btn-outline-info btn-sm d-flex align-items-center gap-1" 
+                        onClick={() => handleShowDetails(venta)}
+                        style={{ borderRadius: '20px', padding: '5px 15px' }}
+                     >
+                        <Eye size={16} /> Ver Detalles
+                     </button>
+                  </div>
 
                 </div>
               ))}
