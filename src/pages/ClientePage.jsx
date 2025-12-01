@@ -24,7 +24,8 @@ import {
     Truck, 
     Utensils, 
     Gift, 
-    Star
+    Star,
+    ArrowLeft
 } from 'lucide-react'; 
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
@@ -44,7 +45,7 @@ const notify = (type, message) => {
     }
 };
 
-// --- COMPONENTE CARRITO (Estructura Fija con Scroll Interno) ---
+// --- COMPONENTE CARRITO (Con Lógica de Pasos: Lista -> Mapa) ---
 const CarritoContent = ({
     isModal,
     pedidoActual,
@@ -65,129 +66,170 @@ const CarritoContent = ({
     costoEnvio,
     calculandoEnvio,
     totalFinal,
-    handleContinue,
     handleProcederAlPago,
     paymentLoading,
     limpiarPedidoCompleto,
     isDark,
-    inputClass
+    inputClass,
+    viewState,      // 'cart' o 'address'
+    setViewState    // Función para cambiar la vista
 }) => {
+
+    // Funciones de navegación interna del carrito
+    const irASiguiente = () => {
+        if (tipoOrden === 'domicilio') {
+            setViewState('address');
+        } else {
+            handleProcederAlPago();
+        }
+    };
+
+    const volverAlCarrito = () => {
+        setViewState('cart');
+    };
+
     return (
-        <div className="d-flex flex-column h-100"> 
-            {/* 1. HEADER DEL CARRITO (Fijo, no se mueve) */}
+        <div className="d-flex flex-column h-100 position-relative overflow-hidden"> 
+            
+            {/* 1. HEADER (Dinámico según el paso) */}
             <div className={isModal ? "modal-header border-0 pb-0 flex-shrink-0" : "card-header bg-transparent border-0 pb-0 flex-shrink-0"}>
-                {isModal ? (
-                    <div className="d-flex justify-content-between align-items-center w-100">
-                        <h5 className="modal-title fw-bold">Tu Pedido</h5>
-                        {/* El botón de cerrar lo maneja el modal padre */}
-                    </div>
+                {viewState === 'cart' ? (
+                    // Header Paso 1: Tu Pedido
+                    isModal ? (
+                        <div className="d-flex justify-content-between align-items-center w-100">
+                            <h5 className="modal-title fw-bold">Tu Pedido</h5>
+                        </div>
+                    ) : (
+                        <>
+                            <h4 className={`card-title fw-bold text-center mb-3 d-flex align-items-center justify-content-center gap-2 ${isDark ? 'text-primary' : 'text-dark'}`}>
+                                <ShoppingCart size={24} /> Mi Pedido
+                            </h4>
+                            <hr className={isDark ? 'border-secondary opacity-50' : ''} />
+                        </>
+                    )
                 ) : (
-                    <>
-                        <h4 className={`card-title fw-bold text-center mb-3 d-flex align-items-center justify-content-center gap-2 ${isDark ? 'text-primary' : 'text-dark'}`}>
-                            <ShoppingCart size={24} /> Mi Pedido
-                        </h4>
-                        <hr className={isDark ? 'border-secondary opacity-50' : ''} />
-                    </>
+                    // Header Paso 2: Ubicación
+                    <div className="d-flex align-items-center mb-2 w-100">
+                        <button 
+                            onClick={volverAlCarrito} 
+                            className={`btn btn-sm btn-link p-0 me-3 ${isDark ? 'text-white' : 'text-dark'}`}
+                            style={{ textDecoration: 'none' }}
+                        >
+                            <ArrowLeft size={24} />
+                        </button>
+                        <h5 className={`modal-title fw-bold m-0 ${isDark ? 'text-white' : 'text-dark'}`}>
+                            Confirmar Ubicación
+                        </h5>
+                    </div>
                 )}
             </div>
 
-            {/* 2. BODY DEL CARRITO (Scrollable) - Aquí ocurre el desplazamiento */}
+            {/* 2. BODY (Con Animación entre pasos) */}
             <div className={`flex-grow-1 overflow-auto custom-scrollbar ${isModal ? "modal-body" : "card-body"}`} style={{ minHeight: 0 }}>
-                
-                {/* Lista de Productos */}
-                <ul className="list-group list-group-flush mb-3">
-                    {pedidoActual.length === 0 && (
-                        <div className={`text-center py-5 ${isDark ? 'text-muted' : 'text-secondary'}`}>
-                            <ShoppingCart size={40} className="mb-2 opacity-50"/>
-                            <p className="mb-0">Tu carrito está vacío</p>
-                        </div>
-                    )}
+                <AnimatePresence mode="wait">
                     
-                    {pedidoActual.map((item) => (
-                        <li key={item.cartItemId || item.id} className={`list-group-item border-0 border-bottom d-flex align-items-center justify-content-between py-3 px-0 ${isDark ? 'bg-transparent text-white border-secondary' : ''}`}>
-                            <div className="me-auto pe-2"> 
-                                <span className="fw-bold d-block">{item.nombre}</span>
-                                {item.opcionesSeleccionadas && item.opcionesSeleccionadas.length > 0 && (
-                                    <small className={`d-block ${isDark ? 'text-info' : 'text-muted'}`} style={{ fontSize: '0.85em' }}>
-                                        {item.opcionesSeleccionadas.map(op => op.nombre).join(', ')}
-                                    </small>
-                                )}
-                            </div>
-
-                            <div className="d-flex align-items-center bg-opacity-10 rounded-pill border px-1 py-1" style={{ borderColor: isDark ? '#444' : '#ddd' }}>
-                                <button className="btn btn-sm btn-link text-decoration-none p-0 px-2 text-reset" onClick={() => decrementarCantidad(item.cartItemId || item.id)} disabled={paymentLoading}>-</button>
-                                <span className="fw-bold px-1" style={{minWidth: '20px', textAlign: 'center'}}>{item.cantidad}</span>
-                                <button className="btn btn-sm btn-link text-decoration-none p-0 px-2 text-reset" onClick={() => incrementarCantidad(item.cartItemId || item.id)} disabled={paymentLoading}>+</button>
-                            </div>
-                            
-                            <div className="text-end ps-3">
-                                <div className="fw-bold">${(item.cantidad * Number(item.precio)).toFixed(2)}</div>
-                                <button className="btn btn-link text-danger p-0 text-decoration-none" style={{ fontSize: '0.8em' }} onClick={() => eliminarProducto(item.cartItemId || item.id)}>Eliminar</button>
-                            </div>
-                        </li>
-                    ))}
-                </ul>
-
-                {/* Selector de Método de Entrega */}
-                <div className={`p-3 rounded-3 mb-3 ${isDark ? 'bg-secondary bg-opacity-10' : 'bg-light'}`}>
-                    <h6 className="fw-bold mb-3 small text-uppercase ls-1">Método de Entrega</h6>
-                    <div className="d-flex flex-column gap-2">
-                        {[
-                            { id: 'llevar', label: 'Para Recoger', icon: <Package size={16}/> },
-                            { id: 'local', label: 'Para La Escuela (Mesa)', icon: <ChefHat size={16}/> },
-                            { id: 'domicilio', label: 'A Domicilio', icon: <Truck size={16}/> }
-                        ].map(opt => (
-                            <div key={opt.id} className="form-check custom-radio-card">
-                                <input 
-                                    className="form-check-input" 
-                                    type="radio" 
-                                    name={isModal ? "tipoOrdenModal" : "tipoOrden"} 
-                                    id={isModal ? `${opt.id}Modal` : opt.id} 
-                                    value={opt.id} 
-                                    checked={tipoOrden === opt.id} 
-                                    onChange={(e) => setTipoOrden(e.target.value)} 
-                                />
-                                <label className={`form-check-label d-flex align-items-center gap-2 ${isDark ? 'text-white' : ''}`} htmlFor={isModal ? `${opt.id}Modal` : opt.id}>
-                                    {opt.icon} {opt.label}
-                                </label>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Formulario de Dirección (Se muestra solo si es Domicilio) */}
-                <AnimatePresence>
-                    {tipoOrden === 'domicilio' && !isModal && (
+                    {/* VISTA 1: LISTA DE PRODUCTOS */}
+                    {viewState === 'cart' ? (
                         <motion.div 
-                            initial={{ opacity: 0, height: 0 }} 
-                            animate={{ opacity: 1, height: 'auto' }} 
-                            exit={{ opacity: 0, height: 0 }}
-                            className="mb-3 overflow-hidden"
+                            key="cart-view"
+                            initial={{ x: -20, opacity: 0 }}
+                            animate={{ x: 0, opacity: 1 }}
+                            exit={{ x: -20, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
                         >
-                            <div className={`p-3 rounded border ${isDark ? 'border-secondary' : 'border-light'}`}>
-                                <h6 className="fw-bold text-primary mb-3 d-flex align-items-center gap-2"><MapPin size={18}/> Ubicación</h6>
-                                
-                                {direccionGuardada && (
-                                    <button className="btn btn-outline-primary btn-sm w-100 mb-3" onClick={usarDireccionGuardada}>Usar dirección guardada</button>
+                            {/* Lista */}
+                            <ul className="list-group list-group-flush mb-3">
+                                {pedidoActual.length === 0 && (
+                                    <div className={`text-center py-5 ${isDark ? 'text-muted' : 'text-secondary'}`}>
+                                        <ShoppingCart size={40} className="mb-2 opacity-50"/>
+                                        <p className="mb-0">Tu carrito está vacío</p>
+                                    </div>
                                 )}
+                                
+                                {pedidoActual.map((item) => (
+                                    <li key={item.cartItemId || item.id} className={`list-group-item border-0 border-bottom d-flex align-items-center justify-content-between py-3 px-0 ${isDark ? 'bg-transparent text-white border-secondary' : ''}`}>
+                                        <div className="me-auto pe-2"> 
+                                            <span className="fw-bold d-block">{item.nombre}</span>
+                                            {item.opcionesSeleccionadas && item.opcionesSeleccionadas.length > 0 && (
+                                                <small className={`d-block ${isDark ? 'text-info' : 'text-muted'}`} style={{ fontSize: '0.85em' }}>
+                                                    {item.opcionesSeleccionadas.map(op => op.nombre).join(', ')}
+                                                </small>
+                                            )}
+                                        </div>
 
-                                <div className="mb-2" style={{ height: '200px' }}> 
-                                    {/* Contenedor con altura fija para evitar que el mapa crezca infinitamente */}
+                                        <div className="d-flex align-items-center bg-opacity-10 rounded-pill border px-1 py-1" style={{ borderColor: isDark ? '#444' : '#ddd' }}>
+                                            <button className="btn btn-sm btn-link text-decoration-none p-0 px-2 text-reset" onClick={() => decrementarCantidad(item.cartItemId || item.id)} disabled={paymentLoading}>-</button>
+                                            <span className="fw-bold px-1" style={{minWidth: '20px', textAlign: 'center'}}>{item.cantidad}</span>
+                                            <button className="btn btn-sm btn-link text-decoration-none p-0 px-2 text-reset" onClick={() => incrementarCantidad(item.cartItemId || item.id)} disabled={paymentLoading}>+</button>
+                                        </div>
+                                        
+                                        <div className="text-end ps-3">
+                                            <div className="fw-bold">${(item.cantidad * Number(item.precio)).toFixed(2)}</div>
+                                            <button className="btn btn-link text-danger p-0 text-decoration-none" style={{ fontSize: '0.8em' }} onClick={() => eliminarProducto(item.cartItemId || item.id)}>Eliminar</button>
+                                        </div>
+                                    </li>
+                                ))}
+                            </ul>
+
+                            {/* Selector de Entrega */}
+                            <div className={`p-3 rounded-3 mb-3 ${isDark ? 'bg-secondary bg-opacity-10' : 'bg-light'}`}>
+                                <h6 className="fw-bold mb-3 small text-uppercase ls-1">Método de Entrega</h6>
+                                <div className="d-flex flex-column gap-2">
+                                    {[
+                                        { id: 'llevar', label: 'Para Recoger', icon: <Package size={16}/> },
+                                        { id: 'local', label: 'Para La Escuela (Mesa)', icon: <ChefHat size={16}/> },
+                                        { id: 'domicilio', label: 'A Domicilio', icon: <Truck size={16}/> }
+                                    ].map(opt => (
+                                        <div key={opt.id} className="form-check custom-radio-card">
+                                            <input 
+                                                className="form-check-input" 
+                                                type="radio" 
+                                                name={isModal ? "tipoOrdenModal" : "tipoOrden"} 
+                                                id={isModal ? `${opt.id}Modal` : opt.id} 
+                                                value={opt.id} 
+                                                checked={tipoOrden === opt.id} 
+                                                onChange={(e) => setTipoOrden(e.target.value)} 
+                                            />
+                                            <label className={`form-check-label d-flex align-items-center gap-2 ${isDark ? 'text-white' : ''}`} htmlFor={isModal ? `${opt.id}Modal` : opt.id}>
+                                                {opt.icon} {opt.label}
+                                            </label>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </motion.div>
+                    ) : (
+                        /* VISTA 2: MAPA Y DIRECCIÓN */
+                        <motion.div 
+                            key="address-view"
+                            initial={{ x: 20, opacity: 0 }}
+                            animate={{ x: 0, opacity: 1 }}
+                            exit={{ x: 20, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                        >
+                            <div className={`p-3 rounded border mb-3 ${isDark ? 'border-secondary' : 'border-light'}`}>
+                                {direccionGuardada && (
+                                    <button className="btn btn-outline-primary btn-sm w-100 mb-3" onClick={usarDireccionGuardada}>
+                                        <MapPin size={14} className="me-1"/> Usar dirección guardada
+                                    </button>
+                                )}
+                                
+                                <div className="mb-2" style={{ height: '300px' }}> 
                                     <MapSelector onLocationSelect={handleLocationSelect} initialAddress={direccion} className={inputClass}/>
                                 </div>
-
-                                <label className="form-label small fw-bold mt-2">Referencia:</label>
+                                
+                                <label className="form-label small fw-bold mt-2">Referencia de entrega:</label>
                                 <input 
                                     type="text" 
                                     className={`form-control ${inputClass}`} 
-                                    placeholder="Ej: Portón negro, al lado de..." 
+                                    placeholder="Ej: Casa azul, portón negro..." 
                                     value={referencia} 
                                     onChange={(e) => setReferencia(e.target.value)} 
                                 />
-
-                                <div className="form-check mt-2">
-                                    <input className="form-check-input" type="checkbox" id="guardarDireccionDesktop" checked={guardarDireccion} onChange={(e) => setGuardarDireccion(e.target.checked)} />
-                                    <label className={`form-check-label small ${isDark ? 'text-secondary' : 'text-muted'}`} htmlFor="guardarDireccionDesktop">Guardar dirección para el futuro</label>
+                                
+                                <div className="form-check mt-3">
+                                    <input className="form-check-input" type="checkbox" id="guardarDireccionCheck" checked={guardarDireccion} onChange={(e) => setGuardarDireccion(e.target.checked)} />
+                                    <label className={`form-check-label small ${isDark ? 'text-secondary' : 'text-muted'}`} htmlFor="guardarDireccionCheck">Guardar esta dirección para futuros pedidos</label>
                                 </div>
                             </div>
                         </motion.div>
@@ -195,7 +237,7 @@ const CarritoContent = ({
                 </AnimatePresence>
             </div>
 
-            {/* 3. FOOTER DEL CARRITO (Fijo al fondo) - Botones de acción */}
+            {/* 3. FOOTER (Fijo) */}
             <div className={isModal ? "modal-footer border-0 pt-2 flex-shrink-0" : "card-footer border-0 pt-2 bg-transparent flex-shrink-0"}>
                 <div className="d-flex justify-content-between mb-2 small fw-bold text-muted">
                     <span>Subtotal</span> <span>${subtotal.toFixed(2)}</span>
@@ -210,19 +252,28 @@ const CarritoContent = ({
                 <div className="d-grid gap-2">
                     <button
                         className="btn btn-primary btn-lg fw-bold rounded-pill shadow-sm d-flex justify-content-between align-items-center px-4"
-                        onClick={isModal && tipoOrden === 'domicilio' ? handleContinue : handleProcederAlPago}
-                        disabled={pedidoActual.length === 0 || paymentLoading || (tipoOrden === 'domicilio' && !isModal && !direccion) || calculandoEnvio}
+                        onClick={viewState === 'cart' ? irASiguiente : handleProcederAlPago}
+                        disabled={pedidoActual.length === 0 || paymentLoading || (viewState === 'address' && !direccion) || calculandoEnvio}
                     >
-                        <span>{paymentLoading ? 'Procesando...' : (isModal && tipoOrden === 'domicilio' ? 'Siguiente' : 'Pagar')}</span>
+                        {/* Texto del Botón Cambia Dinámicamente */}
+                        <span>
+                            {paymentLoading ? 'Procesando...' : (
+                                viewState === 'cart' && tipoOrden === 'domicilio' ? 'Siguiente' : 'Pagar'
+                            )}
+                        </span>
                         <span className="bg-white bg-opacity-25 rounded px-2 py-1 small">${totalFinal.toFixed(2)}</span>
                     </button>
-                    <button 
-                        className={`btn btn-sm ${isDark ? 'btn-link text-muted' : 'btn-link text-danger'} text-decoration-none`} 
-                        onClick={limpiarPedidoCompleto} 
-                        disabled={paymentLoading}
-                    >
-                        Vaciar Carrito
-                    </button>
+                    
+                    {/* Botón Vaciar solo visible en el primer paso */}
+                    {viewState === 'cart' && (
+                        <button 
+                            className={`btn btn-sm ${isDark ? 'btn-link text-muted' : 'btn-link text-danger'} text-decoration-none`} 
+                            onClick={limpiarPedidoCompleto} 
+                            disabled={paymentLoading}
+                        >
+                            Vaciar Carrito
+                        </button>
+                    )}
                 </div>
             </div>
         </div>
@@ -272,7 +323,11 @@ function ClientePage() {
     const [guardarDireccion, setGuardarDireccion] = useState(false);
     const [referencia, setReferencia] = useState('');
     const [showCartModal, setShowCartModal] = useState(false);
-    const [modalView, setModalView] = useState('cart'); // 'cart' o 'address'
+    
+    // ESTADO PARA CONTROLAR EL PASO DEL CARRITO (Cart vs Address)
+    // Este estado lo compartimos entre el carrito Desktop y el Modal Móvil
+    const [cartViewState, setCartViewState] = useState('cart'); 
+
     const [productoSeleccionadoParaModal, setProductoSeleccionadoParaModal] = useState(null);
 
     const totalFinal = subtotal + costoEnvio;
@@ -347,11 +402,12 @@ function ClientePage() {
         fetchTabData();
     }, [activeTab]);
 
-    // Resetear envío al cambiar tipo de orden
+    // Resetear envío al cambiar tipo de orden y volver al paso 1
     useEffect(() => {
         if (tipoOrden !== 'domicilio') {
             setCostoEnvio(0);
             setDireccion(null);
+            setCartViewState('cart'); // Si cambian a "Para llevar", volvemos al paso 1 automáticamente
         }
     }, [tipoOrden]);
 
@@ -363,6 +419,7 @@ function ClientePage() {
         setDireccion(null);
         setReferencia('');
         setShowCartModal(false);
+        setCartViewState('cart'); // Resetear al paso 1
     };
 
     const handleLocationSelect = async (location) => {
@@ -429,7 +486,7 @@ function ClientePage() {
             const res = await apiClient.post('/payments/create-payment-intent', { amount: totalFinal });
             
             setShowCartModal(false);
-            setModalView('cart');
+            setCartViewState('cart'); // Resetear vista
             setClientSecret(res.data.clientSecret);
             setShowPaymentModal(true);
         } catch (err) {
@@ -437,15 +494,6 @@ function ClientePage() {
             console.error(err);
         } finally {
             setPaymentLoading(false);
-        }
-    };
-
-    const handleContinue = () => {
-        // En modal móvil, pasa de carrito a dirección
-        if (tipoOrden !== 'domicilio') {
-            handleProcederAlPago();
-        } else {
-            setModalView('address');
         }
     };
 
@@ -546,7 +594,7 @@ function ClientePage() {
                             </div>
                         </div>
 
-                        {/* CARRITO VERSION DESKTOP (STICKY) */}
+                        {/* CARRITO VERSION DESKTOP (STICKY CON PASOS) */}
                         <div className="col-lg-4 d-none d-lg-block">
                             <div className="shadow border-0" style={{ position: 'sticky', top: '100px', height: 'calc(100vh - 120px)', backgroundColor: cardBg, borderRadius: '16px' }}>
                                 <CarritoContent
@@ -569,12 +617,13 @@ function ClientePage() {
                                     costoEnvio={costoEnvio}
                                     calculandoEnvio={calculandoEnvio}
                                     totalFinal={totalFinal}
-                                    handleContinue={handleContinue}
                                     handleProcederAlPago={handleProcederAlPago}
                                     paymentLoading={paymentLoading}
                                     limpiarPedidoCompleto={limpiarPedidoCompleto}
                                     isDark={isDark}
                                     inputClass={inputClass}
+                                    viewState={cartViewState}
+                                    setViewState={setCartViewState}
                                 />
                             </div>
                         </div>
@@ -741,7 +790,7 @@ function ClientePage() {
                 </motion.div>
             )}
 
-            {/* MODAL CARRITO (MOBILE) */}
+            {/* MODAL CARRITO (MOBILE) - REUTILIZA EL COMPONENTE CON LÓGICA DE PASOS */}
             {showCartModal && (
                 <div className="modal show fade d-block" style={{ backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(5px)', pointerEvents: 'auto' }}>
                     <motion.div 
@@ -751,82 +800,41 @@ function ClientePage() {
                         style={{ margin: '1rem' }}
                     >
                         <div className="modal-content border-0 shadow-lg" style={{ backgroundColor: cardBg, borderRadius: '20px', color: textMain, maxHeight: '85vh' }}>
-                            {/* HEADER DEL MODAL */}
                             <div className="modal-header border-0 pb-0">
-                                <h5 className="modal-title fw-bold">{modalView === 'cart' ? 'Tu Pedido' : 'Dirección de Entrega'}</h5>
-                                <button type="button" className={`btn-close ${isDark ? 'btn-close-white' : ''}`} onClick={() => { setShowCartModal(false); setModalView('cart'); }}></button>
+                                {/* El título se maneja dentro de CarritoContent dinámicamente */}
+                                <div className="w-100 d-flex justify-content-end">
+                                    <button type="button" className={`btn-close ${isDark ? 'btn-close-white' : ''}`} onClick={() => { setShowCartModal(false); setCartViewState('cart'); }}></button>
+                                </div>
                             </div>
                             
-                            {/* CONTENIDO DEL MODAL */}
-                            {modalView === 'cart' ? (
-                                <CarritoContent
-                                    isModal={true}
-                                    pedidoActual={pedidoActual}
-                                    decrementarCantidad={decrementarCantidad}
-                                    incrementarCantidad={incrementarCantidad}
-                                    eliminarProducto={eliminarProducto}
-                                    tipoOrden={tipoOrden}
-                                    setTipoOrden={setTipoOrden}
-                                    direccionGuardada={direccionGuardada}
-                                    usarDireccionGuardada={usarDireccionGuardada}
-                                    handleLocationSelect={handleLocationSelect}
-                                    direccion={direccion}
-                                    referencia={referencia}
-                                    setReferencia={setReferencia}
-                                    guardarDireccion={guardarDireccion}
-                                    setGuardarDireccion={setGuardarDireccion}
-                                    subtotal={subtotal}
-                                    costoEnvio={costoEnvio}
-                                    calculandoEnvio={calculandoEnvio}
-                                    totalFinal={totalFinal}
-                                    handleContinue={handleContinue}
-                                    handleProcederAlPago={handleProcederAlPago}
-                                    paymentLoading={paymentLoading}
-                                    limpiarPedidoCompleto={limpiarPedidoCompleto}
-                                    isDark={isDark}
-                                    inputClass={inputClass}
-                                />
-                            ) : (
-                                <div className="modal-body p-4">
-                                     <button className="btn btn-link text-decoration-none mb-3 px-0 d-flex align-items-center" onClick={() => setModalView('cart')}>
-                                        <Edit3 size={16} className="me-1"/> Volver al carrito
-                                     </button>
-                                     
-                                     <div className={`p-4 rounded border ${isDark ? 'border-secondary bg-dark bg-opacity-50' : 'bg-light border-0'}`}>
-                                         <h5 className="fw-bold mb-3 d-flex align-items-center">
-                                            <MapPin size={20} className="me-2 text-primary"/> Confirma tu ubicación
-                                         </h5>
-                                         
-                                         <div className="mb-3" style={{ height:'200px' }}>
-                                            <MapSelector onLocationSelect={handleLocationSelect} initialAddress={direccion} className={inputClass} />
-                                         </div>
-                                         
-                                         <div className="form-floating">
-                                            <input 
-                                                type="text" 
-                                                className={inputClass} 
-                                                id="floatingInput" 
-                                                placeholder="Referencia" 
-                                                value={referencia} 
-                                                onChange={(e) => setReferencia(e.target.value)} 
-                                                style={{height: '60px'}}
-                                            />
-                                            <label htmlFor="floatingInput" className={isDark ? 'text-muted' : ''}>Referencia (Ej: Casa azul, portón negro...)</label>
-                                         </div>
-                                     </div>
-                                     
-                                     <div className="mt-4">
-                                        <button 
-                                            className="btn btn-primary btn-lg w-100 fw-bold rounded-pill py-3 shadow-sm d-flex justify-content-center align-items-center" 
-                                            onClick={handleProcederAlPago} 
-                                            disabled={!direccion || paymentLoading}
-                                        >
-                                            {paymentLoading ? <span className="spinner-border spinner-border-sm me-2"></span> : <DollarSign size={20} className="me-1"/>}
-                                            Pagar ${totalFinal.toFixed(2)}
-                                        </button>
-                                     </div>
-                                </div>
-                            )}
+                            <CarritoContent
+                                isModal={true}
+                                pedidoActual={pedidoActual}
+                                decrementarCantidad={decrementarCantidad}
+                                incrementarCantidad={incrementarCantidad}
+                                eliminarProducto={eliminarProducto}
+                                tipoOrden={tipoOrden}
+                                setTipoOrden={setTipoOrden}
+                                direccionGuardada={direccionGuardada}
+                                usarDireccionGuardada={usarDireccionGuardada}
+                                handleLocationSelect={handleLocationSelect}
+                                direccion={direccion}
+                                referencia={referencia}
+                                setReferencia={setReferencia}
+                                guardarDireccion={guardarDireccion}
+                                setGuardarDireccion={setGuardarDireccion}
+                                subtotal={subtotal}
+                                costoEnvio={costoEnvio}
+                                calculandoEnvio={calculandoEnvio}
+                                totalFinal={totalFinal}
+                                handleProcederAlPago={handleProcederAlPago}
+                                paymentLoading={paymentLoading}
+                                limpiarPedidoCompleto={limpiarPedidoCompleto}
+                                isDark={isDark}
+                                inputClass={inputClass}
+                                viewState={cartViewState}
+                                setViewState={setCartViewState}
+                            />
                         </div>
                     </motion.div>
                 </div>
