@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
+import { Eye } from 'lucide-react';
 // --- Usando rutas relativas estándar ---
 import apiClient from '../services/api';
 import DetallesPedidoModal from '../components/DetallesPedidoModal';
