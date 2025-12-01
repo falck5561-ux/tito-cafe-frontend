@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { motion } from 'framer-motion'; // <--- VERIFICAR INSTALACIÓN: npm install framer-motion
+import { motion } from 'framer-motion'; // Requerido para las animaciones suaves
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 import { ShoppingBag, Package, Star, MapPin, Truck, CheckCircle, Minus, Plus as PlusIcon, Trash2, Home, School } from 'lucide-react'; 
@@ -9,7 +9,8 @@ import MapSelector from '../components/MapSelector';
 import apiClient from '../services/api';
 import { useCart } from '../context/CartContext';
 import ProductDetailModal from '../components/ProductDetailModal';
-// Definición del mock de useTheme (reemplazar con tu importación real)
+
+// Nota: Asegúrate de que tu useTheme esté importado correctamente desde tu context.
 const useTheme = () => ({ theme: 'dark' }); 
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
@@ -30,7 +31,7 @@ const notify = (type, message) => {
 };
 
 
-// --- CarritoContent ---
+// --- CarritoContent (Componente interno con estilos aplicados) ---
 const CarritoContent = ({
   isModal, pedidoActual, decrementarCantidad, incrementarCantidad, eliminarProducto, tipoOrden, setTipoOrden, direccionGuardada, usarDireccionGuardada, handleLocationSelect, direccion, referencia, setReferencia, guardarDireccion, setGuardarDireccion, subtotal, costoEnvio, calculandoEnvio, totalFinal, handleContinue, handleProcederAlPago, paymentLoading, limpiarPedidoCompleto
 }) => {
@@ -39,6 +40,7 @@ const CarritoContent = ({
     const listClass = isDark ? 'list-group-item bg-dark text-white border-secondary' : 'list-group-item';
     const listGroupFlushClass = isDark ? 'list-group-flush border-top border-secondary' : 'list-group-flush';
     const formCheckInputClass = isDark ? 'form-check-input bg-dark border-secondary' : 'form-check-input';
+    const inputClass = isDark ? 'form-control form-control-dark bg-dark text-white border-secondary' : 'form-control';
 
     return (
         <>
@@ -151,7 +153,7 @@ const CarritoContent = ({
 };
 
 
-// --- ClientePage ---
+// --- ClientePage (Componente Principal) ---
 function ClientePage() {
     const { theme } = useTheme();
     const isDark = theme === 'dark';
@@ -215,7 +217,8 @@ function ClientePage() {
     };
     // --- FIN RENDER TABS ---
 
-    // ... (useEffect y otros manejadores sin cambios) ...
+
+    // --- Efectos y Manejadores (Sin cambios funcionales mayores) ---
     useEffect(() => {
         const fetchInitialData = async () => {
           if (activeTab !== 'crear') return;
@@ -548,7 +551,7 @@ function ClientePage() {
                         <div className="row g-4">
                             {misRecompensas.map(recompensa => (
                                 <div key={recompensa.id} className="col-12">
-                                    {/* Reemplazando styles.cupon con un estilo Bootstrap mejorado */}
+                                    {/* Estilo de cupón mejorado con alto contraste */}
                                     <div className={`d-flex align-items-center p-4 rounded-3 shadow-sm ${isDark ? 'bg-info text-dark' : 'bg-success text-white'}`} style={{ borderLeft: '8px solid var(--bs-warning)' }}>
                                         <div className="fs-1 me-4">🎁</div>
                                         <div className="flex-grow-1">
@@ -570,7 +573,7 @@ function ClientePage() {
                 <button 
                     className="boton-carrito-flotante d-md-none" 
                     onClick={() => setShowCartModal(true)}
-                    style={{ pointerEvents: 'auto' }} // Permite clic en este botón
+                    style={{ pointerEvents: 'auto' }}
                 >
                     🛒 <span className="badge-carrito">{totalItemsEnCarrito}</span>
                 </button>
@@ -624,7 +627,7 @@ function ClientePage() {
                                         
                                         <div className="mt-3">
                                             <label htmlFor="referenciaModal" className="form-label fw-bold">Referencia:</label>
-                                            <input type="text" id="referenciaModal" className={inputClass} value={referencia} onChange={(e) => setReferencia(e.target.value)} />
+                                            <input type="text" id="referenciaModal" className={`form-control ${isDark ? 'form-control-dark bg-dark text-white border-secondary' : ''}`} value={referencia} onChange={(e) => setReferencia(e.target.value)} />
                                         </div>
                                         <div className="form-check mt-3">
                                             <input className="form-check-input" type="checkbox" id="guardarDireccionModal" checked={guardarDireccion} onChange={(e) => setGuardarDireccion(e.target.checked)} />
@@ -644,7 +647,7 @@ function ClientePage() {
 
 
             {productoSeleccionadoParaModal && (
-                <div style={{ pointerEvents: 'auto' }}> {/* Anula el 'none' del padre */}
+                <div style={{ pointerEvents: 'auto' }}>
                     <ProductDetailModal
                         product={productoSeleccionadoParaModal}
                         onClose={() => setProductoSeleccionadoParaModal(null)}
@@ -678,7 +681,7 @@ function ClientePage() {
                     </motion.div>
                 </div>
             )}
-        </div> // <--- ESTA ES LA ETIQUETA DE CIERRE FALTANTE
+        </div> // Cierre final del componente
     );
 }
 
