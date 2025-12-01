@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { 
   Package, ShoppingBag, BarChart2, Trash2, Edit, Plus, Eye, 
-  CheckCircle, XCircle, AlertTriangle, Layers, TrendingUp 
-} from 'lucide-react'; // Iconos modernos
+  CheckCircle, XCircle, AlertTriangle, Layers, TrendingUp, Truck 
+} from 'lucide-react'; // Agregué Truck para "En Camino"
 import ProductModal from '../components/ProductModal';
 import ComboModal from '../components/ComboModal';
 import SalesReportChart from '../components/SalesReportChart';
@@ -99,7 +99,7 @@ function AdminPage() {
 
   useEffect(() => { fetchData(); }, [activeTab]);
   
-  // --- HANDLERS ---
+  // --- HANDLERS (Iguales a tu lógica anterior) ---
   const handleOpenProductModal = (producto = null) => {
     if (producto) {
       apiClient.get(`/productos/${producto.id}`)
@@ -195,7 +195,7 @@ function AdminPage() {
 
   const handlePurgePedidos = async () => { if (purgeConfirmText !== 'ELIMINAR') return toast.error('Texto incorrecto.'); try { await apiClient.delete('/pedidos/purgar'); toast.success('Historial eliminado.'); setShowPurgeModal(false); setPurgeConfirmText(''); fetchData(); } catch { toast.error('Error al purgar.'); } };
 
-  // --- RENDERIZADO DE TABS ---
+  // --- RENDERIZADO DE TABS (COLOR CORREGIDO) ---
   const renderTabs = () => (
     <div className="d-flex gap-2 mb-4 overflow-auto py-2">
       {[
@@ -210,7 +210,8 @@ function AdminPage() {
           onClick={() => setActiveTab(tab.id)}
           className={`btn d-flex align-items-center gap-2 px-4 py-2 rounded-pill fw-bold transition-all shadow-sm`}
           style={{
-            backgroundColor: activeTab === tab.id ? '#FF4081' : (isDark ? '#333' : '#fff'),
+            // AZUL PROFESIONAL - Reemplaza el rosado feo
+            backgroundColor: activeTab === tab.id ? '#0d6efd' : (isDark ? '#333' : '#fff'),
             color: activeTab === tab.id ? '#fff' : (isDark ? '#ccc' : '#555'),
             border: activeTab === tab.id ? 'none' : `1px solid ${isDark ? '#444' : '#eee'}`,
             whiteSpace: 'nowrap'
@@ -282,7 +283,7 @@ function AdminPage() {
           </div>
         )}
         
-        {/* VISTA PEDIDOS */}
+        {/* VISTA PEDIDOS (CON BOTONES DE GESTIÓN COMPLETOS) */}
         {!loading && !error && activeTab === 'pedidosEnLinea' && (
           <div className={cardClass}>
             <div className="card-body p-4">
@@ -307,11 +308,19 @@ function AdminPage() {
                         <td>{p.tipo_orden === 'domicilio' ? <span className="badge bg-info text-dark rounded-pill">🛵 Envío</span> : <span className="badge bg-secondary rounded-pill">🏪 Local</span>}</td>
                         <td><span className={`badge ${p.estado === 'Pendiente' ? 'bg-warning text-dark' : 'bg-success'}`}>{p.estado}</span></td>
                         <td className="text-center">
-                          <div className="d-flex justify-content-center gap-2">
+                          <div className="d-flex justify-content-center flex-wrap gap-2">
+                            {/* Ver Detalles (Con carga inteligente) */}
                             <button className="btn btn-sm btn-outline-primary d-flex align-items-center gap-1 px-3 rounded-pill" onClick={() => handleShowDetails(p)}><Eye size={14}/> Ver</button>
-                            {p.estado !== 'Completado' && (
+                            
+                            {/* Botones de Workflow (Si no está completado) */}
+                            {p.estado !== 'Completado' && p.estado !== 'Entregado' && (
                                 <>
-                                    <button className="btn btn-sm btn-outline-warning d-flex align-items-center gap-1 px-3 rounded-pill" onClick={() => handleUpdateStatus(p.id, 'En Preparacion')}><Layers size={14}/> Preparar</button>
+                                    <button className="btn btn-sm btn-outline-warning d-flex align-items-center gap-1 px-3 rounded-pill" onClick={() => handleUpdateStatus(p.id, 'En Preparacion')}><Layers size={14}/> Prep</button>
+                                    
+                                    {/* CORRECCIÓN FUNCIONAL: Botones de estado faltantes */}
+                                    <button className="btn btn-sm btn-outline-info d-flex align-items-center gap-1 px-3 rounded-pill" onClick={() => handleUpdateStatus(p.id, 'En Camino')}><Truck size={14}/> Envío</button>
+                                    <button className="btn btn-sm btn-outline-light text-dark d-flex align-items-center gap-1 px-3 rounded-pill" onClick={() => handleUpdateStatus(p.id, 'Listo para Recoger')}><CheckCircle size={14}/> Listo</button>
+                                    
                                     <button className="btn btn-sm btn-success d-flex align-items-center gap-1 px-3 rounded-pill" onClick={() => handleUpdateStatus(p.id, 'Completado')}><CheckCircle size={14}/> Fin</button>
                                 </>
                             )}
