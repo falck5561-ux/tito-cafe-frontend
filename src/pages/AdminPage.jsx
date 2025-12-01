@@ -3,7 +3,7 @@ import toast from 'react-hot-toast';
 import { 
   Package, ShoppingBag, BarChart2, Trash2, Edit, Plus, Eye, 
   CheckCircle, XCircle, AlertTriangle, Layers, TrendingUp, Truck 
-} from 'lucide-react'; // Agregué Truck para "En Camino"
+} from 'lucide-react'; 
 import ProductModal from '../components/ProductModal';
 import ComboModal from '../components/ComboModal';
 import SalesReportChart from '../components/SalesReportChart';
@@ -19,7 +19,7 @@ const ConfirmationModal = ({ show, onClose, onConfirm, title, message, theme }) 
   const isDark = theme === 'dark';
   
   return (
-    <div className="modal show fade" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(2px)' }}>
+    <div className="modal show fade" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(3px)' }}>
       <div className="modal-dialog modal-dialog-centered">
         <div className={`modal-content shadow-lg border-0 ${isDark ? 'bg-dark text-white' : ''}`}>
           <div className="modal-header border-0 pb-0">
@@ -71,7 +71,9 @@ function AdminPage() {
   const [confirmMessage, setConfirmMessage] = useState('');
 
   // Estilos base
-  const cardClass = `card shadow-sm border-0 h-100 ${isDark ? 'bg-secondary text-white' : 'bg-white'}`;
+  // Card base para alto contraste en dark mode
+  const cardBgColor = isDark ? '#1e1e1e' : '#ffffff'; 
+  const cardClass = `card shadow-lg border-0 h-100`;
   const headerClass = `d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom ${isDark ? 'border-secondary' : ''}`;
 
   const fetchData = async () => {
@@ -99,7 +101,7 @@ function AdminPage() {
 
   useEffect(() => { fetchData(); }, [activeTab]);
   
-  // --- HANDLERS (Iguales a tu lógica anterior) ---
+  // --- HANDLERS (Tu lógica se mantiene intacta) ---
   const handleOpenProductModal = (producto = null) => {
     if (producto) {
       apiClient.get(`/productos/${producto.id}`)
@@ -159,24 +161,12 @@ function AdminPage() {
   
   const handleUpdateStatus = async (id, est) => { try { await apiClient.put(`/pedidos/${id}/estado`, { estado: est }); toast.success("Estado actualizado."); fetchData(); } catch { toast.error("Error al actualizar."); } };
   
-  // --- CARGA INTELIGENTE DE DETALLES (Copiada del POS) ---
   const handleShowDetails = async (pedido) => {
-    // 1. Buscamos productos en lo que ya tenemos
     const posiblesItems = pedido.items || pedido.detalles || pedido.venta_detalles || pedido.productos || [];
-
-    let datosParaModal = { 
-        ...pedido,
-        items: posiblesItems
-    };
-    
-    // 2. Abrimos el modal inmediatamente
+    let datosParaModal = { ...pedido, items: posiblesItems };
     setSelectedOrderDetails(datosParaModal);
     setShowDetailsModal(true);
-
-    // 3. Si ya tenemos items, terminamos
     if (posiblesItems.length > 0) return;
-
-    // 4. Si faltan datos, los pedimos al servidor
     try {
         const res = await apiClient.get(`/pedidos/${pedido.id}`);
         if (res.data) {
@@ -195,7 +185,7 @@ function AdminPage() {
 
   const handlePurgePedidos = async () => { if (purgeConfirmText !== 'ELIMINAR') return toast.error('Texto incorrecto.'); try { await apiClient.delete('/pedidos/purgar'); toast.success('Historial eliminado.'); setShowPurgeModal(false); setPurgeConfirmText(''); fetchData(); } catch { toast.error('Error al purgar.'); } };
 
-  // --- RENDERIZADO DE TABS (COLOR CORREGIDO) ---
+  // --- RENDERIZADO DE TABS (ESTILO CORREGIDO) ---
   const renderTabs = () => (
     <div className="d-flex gap-2 mb-4 overflow-auto py-2">
       {[
@@ -210,10 +200,10 @@ function AdminPage() {
           onClick={() => setActiveTab(tab.id)}
           className={`btn d-flex align-items-center gap-2 px-4 py-2 rounded-pill fw-bold transition-all shadow-sm`}
           style={{
-            // AZUL PROFESIONAL - Reemplaza el rosado feo
-            backgroundColor: activeTab === tab.id ? '#0d6efd' : (isDark ? '#333' : '#fff'),
+            // Azul profesional primary para la pestaña activa
+            backgroundColor: activeTab === tab.id ? '#0d6efd' : cardBgColor, 
             color: activeTab === tab.id ? '#fff' : (isDark ? '#ccc' : '#555'),
-            border: activeTab === tab.id ? 'none' : `1px solid ${isDark ? '#444' : '#eee'}`,
+            border: activeTab === tab.id ? 'none' : `1px solid ${isDark ? '#333' : '#eee'}`,
             whiteSpace: 'nowrap'
           }}
         >
@@ -240,7 +230,7 @@ function AdminPage() {
         
         {/* VISTA PRODUCTOS */}
         {!loading && !error && activeTab === 'productos' && (
-          <div className={cardClass}>
+          <div className={cardClass} style={{ backgroundColor: cardBgColor }}>
             <div className="card-body p-4">
               <div className={headerClass}>
                 <h4 className="fw-bold m-0">Inventario de Productos</h4>
@@ -249,17 +239,18 @@ function AdminPage() {
                 </button>
               </div>
               <div className="table-responsive">
-                <table className={`table align-middle table-hover ${isDark ? 'table-dark' : ''}`}>
-                  <thead className="bg-light">
-                    <tr><th className="py-3 ps-3 rounded-start">Producto</th><th>Precio</th><th>Stock</th><th>Estado</th><th className="text-end pe-3 rounded-end">Acciones</th></tr>
+                <table className={`table align-middle table-hover ${isDark ? 'table-dark' : 'table-light'}`}>
+                  <thead>
+                    <tr><th className="py-3 ps-3">Producto</th><th>Precio</th><th>Stock</th><th>Estado</th><th className="text-end pe-3">Acciones</th></tr>
                   </thead>
                   <tbody>
                     {productos.map((p) => (
                       <tr key={p.id}>
                         <td className="ps-3 fw-bold">
                           <div className="d-flex align-items-center gap-3">
-                            <div className="rounded bg-secondary bg-opacity-10 d-flex align-items-center justify-content-center" style={{width: 40, height: 40}}>
-                                <Package size={20} className="text-primary"/>
+                            {/* Ícono más visible */}
+                            <div className="rounded d-flex align-items-center justify-content-center p-2" style={{ backgroundColor: isDark ? '#333' : '#e9ecef' }}>
+                                <Package size={20} className="text-info"/>
                             </div>
                             <div>
                                 <div>{p.nombre}</div>
@@ -271,8 +262,9 @@ function AdminPage() {
                         <td><span className={`badge ${p.stock < 5 ? 'bg-danger' : 'bg-success bg-opacity-75'}`}>{p.stock} unid.</span></td>
                         <td>{p.en_oferta ? <span className="badge bg-warning text-dark">Oferta {p.descuento_porcentaje}%</span> : <span className="badge bg-secondary">Regular</span>}</td>
                         <td className="text-end pe-3">
-                          <button className="btn btn-sm btn-light text-primary me-2 rounded-circle p-2" title="Editar" onClick={() => handleOpenProductModal(p)}><Edit size={16}/></button>
-                          <button className="btn btn-sm btn-light text-danger rounded-circle p-2" title="Eliminar" onClick={() => handleDeleteProducto(p)}><Trash2 size={16}/></button>
+                          {/* CORRECCIÓN BOTÓN NEGRO: Uso de colores fuertes para iconos circulares */}
+                          <button className={`btn btn-sm ${isDark ? 'text-warning' : 'text-primary'}`} style={{ backgroundColor: 'transparent' }} title="Editar" onClick={() => handleOpenProductModal(p)}><Edit size={18}/></button>
+                          <button className={`btn btn-sm ${isDark ? 'text-danger' : 'text-danger'}`} style={{ backgroundColor: 'transparent' }} title="Eliminar" onClick={() => handleDeleteProducto(p)}><Trash2 size={18}/></button>
                         </td>
                       </tr>
                     ))}
@@ -283,18 +275,18 @@ function AdminPage() {
           </div>
         )}
         
-        {/* VISTA PEDIDOS (CON BOTONES DE GESTIÓN COMPLETOS) */}
+        {/* VISTA PEDIDOS */}
         {!loading && !error && activeTab === 'pedidosEnLinea' && (
-          <div className={cardClass}>
+          <div className={cardClass} style={{ backgroundColor: cardBgColor }}>
             <div className="card-body p-4">
               <div className={headerClass}>
                 <h4 className="fw-bold m-0">Pedidos Entrantes</h4>
                 <span className="badge bg-primary rounded-pill px-3 py-2">{pedidos.length} Pendientes</span>
               </div>
               <div className="table-responsive">
-                <table className={`table align-middle table-hover ${isDark ? 'table-dark' : ''}`}>
-                  <thead className="bg-light">
-                    <tr><th className="py-3 ps-3 rounded-start">ID</th><th>Cliente</th><th>Total</th><th>Tipo</th><th>Estado</th><th className="text-center rounded-end">Gestión</th></tr>
+                <table className={`table align-middle table-hover ${isDark ? 'table-dark' : 'table-light'}`}>
+                  <thead>
+                    <tr><th className="py-3 ps-3">ID</th><th>Cliente</th><th>Total</th><th>Tipo</th><th>Estado</th><th className="text-center">Gestión</th></tr>
                   </thead>
                   <tbody>
                     {pedidos.map((p) => (
@@ -309,18 +301,23 @@ function AdminPage() {
                         <td><span className={`badge ${p.estado === 'Pendiente' ? 'bg-warning text-dark' : 'bg-success'}`}>{p.estado}</span></td>
                         <td className="text-center">
                           <div className="d-flex justify-content-center flex-wrap gap-2">
-                            {/* Ver Detalles (Con carga inteligente) */}
+                            {/* Botón Ver (con icono) */}
                             <button className="btn btn-sm btn-outline-primary d-flex align-items-center gap-1 px-3 rounded-pill" onClick={() => handleShowDetails(p)}><Eye size={14}/> Ver</button>
                             
-                            {/* Botones de Workflow (Si no está completado) */}
+                            {/* Botones de Workflow (CORRECCIÓN FUNCIONAL COMPLETA) */}
                             {p.estado !== 'Completado' && p.estado !== 'Entregado' && (
                                 <>
                                     <button className="btn btn-sm btn-outline-warning d-flex align-items-center gap-1 px-3 rounded-pill" onClick={() => handleUpdateStatus(p.id, 'En Preparacion')}><Layers size={14}/> Prep</button>
                                     
-                                    {/* CORRECCIÓN FUNCIONAL: Botones de estado faltantes */}
-                                    <button className="btn btn-sm btn-outline-info d-flex align-items-center gap-1 px-3 rounded-pill" onClick={() => handleUpdateStatus(p.id, 'En Camino')}><Truck size={14}/> Envío</button>
-                                    <button className="btn btn-sm btn-outline-light text-dark d-flex align-items-center gap-1 px-3 rounded-pill" onClick={() => handleUpdateStatus(p.id, 'Listo para Recoger')}><CheckCircle size={14}/> Listo</button>
+                                    {/* Botón En Camino */}
+                                    {p.tipo_orden === 'domicilio' && (
+                                      <button className="btn btn-sm btn-outline-info d-flex align-items-center gap-1 px-3 rounded-pill" onClick={() => handleUpdateStatus(p.id, 'En Camino')}><Truck size={14}/> Envío</button>
+                                    )}
+
+                                    {/* Botón Listo para Recoger (Visible en modo oscuro) */}
+                                    <button className={`btn btn-sm ${isDark ? 'btn-outline-light text-white' : 'btn-outline-secondary' } d-flex align-items-center gap-1 px-3 rounded-pill`} onClick={() => handleUpdateStatus(p.id, 'Listo para Recoger')}><CheckCircle size={14}/> Listo</button>
                                     
+                                    {/* Botón Finalizar */}
                                     <button className="btn btn-sm btn-success d-flex align-items-center gap-1 px-3 rounded-pill" onClick={() => handleUpdateStatus(p.id, 'Completado')}><CheckCircle size={14}/> Fin</button>
                                 </>
                             )}
@@ -337,15 +334,15 @@ function AdminPage() {
 
         {/* VISTA COMBOS */}
         {!loading && !error && activeTab === 'combos' && (
-          <div className={cardClass}>
+          <div className={cardClass} style={{ backgroundColor: cardBgColor }}>
             <div className="card-body p-4">
               <div className={headerClass}>
                 <h4 className="fw-bold m-0">Combos y Paquetes</h4>
                 <button className="btn btn-primary d-flex align-items-center gap-2 rounded-pill px-4" onClick={() => handleOpenComboModal()}><Plus size={18}/> Nuevo Combo</button>
               </div>
               <div className="table-responsive">
-                <table className={`table align-middle table-hover ${isDark ? 'table-dark' : ''}`}>
-                  <thead className="bg-light"><tr><th className="py-3 ps-3 rounded-start">Nombre</th><th>Precio</th><th>Estado</th><th className="text-end pe-3 rounded-end">Acciones</th></tr></thead>
+                <table className={`table align-middle table-hover ${isDark ? 'table-dark' : 'table-light'}`}>
+                  <thead><tr><th className="py-3 ps-3">Nombre</th><th>Precio</th><th>Estado</th><th className="text-end pe-3">Acciones</th></tr></thead>
                   <tbody>
                     {combos.map((c) => (
                       <tr key={c.id} className={!c.esta_activo ? 'opacity-50' : ''}>
@@ -353,8 +350,8 @@ function AdminPage() {
                         <td className="fw-bold text-success">${Number(c.precio).toFixed(2)}</td>
                         <td>{c.esta_activo ? <span className="badge bg-success">Activo</span> : <span className="badge bg-secondary">Inactivo</span>}</td>
                         <td className="text-end pe-3">
-                            <button className="btn btn-sm btn-light text-primary me-2 rounded-circle p-2" onClick={() => handleOpenComboModal(c)}><Edit size={16}/></button>
-                            {c.esta_activo && <button className="btn btn-sm btn-light text-danger rounded-circle p-2" onClick={() => handleDeleteCombo(c)}><XCircle size={16}/></button>}
+                            <button className={`btn btn-sm ${isDark ? 'text-warning' : 'text-primary'}`} style={{ backgroundColor: 'transparent' }} onClick={() => handleOpenComboModal(c)}><Edit size={18}/></button>
+                            {c.esta_activo && <button className={`btn btn-sm ${isDark ? 'text-danger' : 'text-danger'}`} style={{ backgroundColor: 'transparent' }} onClick={() => handleDeleteCombo(c)}><XCircle size={18}/></button>}
                         </td>
                       </tr>
                     ))}
@@ -365,17 +362,20 @@ function AdminPage() {
           </div>
         )}
 
-        {/* VISTA REPORTES */}
+        {/* VISTA REPORTES (ESTILO CORREGIDO) */}
         {!loading && !error && activeTab === 'reporteGeneral' && (
            <div className="d-flex flex-column gap-4">
-              <div className={cardClass}>
+              <div className={cardClass} style={{ backgroundColor: cardBgColor }}>
                   <div className="card-body p-4">
                     <h4 className="fw-bold mb-4">Resumen de Ventas</h4>
-                    {reportData.length > 0 ? <SalesReportChart reportData={reportData} /> : <p className="text-center text-muted py-5">No hay datos suficientes para graficar.</p>}
+                    {/* Contenedor del gráfico con mejor contraste */}
+                    <div style={{ backgroundColor: isDark ? '#2a2a2a' : '#f0f0f0', padding: '15px', borderRadius: '8px' }}>
+                        {reportData.length > 0 ? <SalesReportChart reportData={reportData} /> : <p className="text-center text-muted py-5">No hay datos suficientes para graficar.</p>}
+                    </div>
                   </div>
               </div>
 
-              <div className={`card border-danger border-2 shadow-sm ${isDark ? 'bg-dark' : 'bg-white'}`}>
+              <div className={`card border-danger border-2 shadow-sm ${isDark ? 'bg-dark text-white' : 'bg-white'}`}>
                   <div className="card-body p-4">
                     <div className="d-flex align-items-center gap-3 mb-3 text-danger">
                         <AlertTriangle size={30} />
@@ -397,7 +397,6 @@ function AdminPage() {
       {showProductModal && <ProductModal show={showProductModal} handleClose={handleCloseProductModal} handleSave={handleSaveProducto} productoActual={productoActual} />}
       {showComboModal && <ComboModal show={showComboModal} handleClose={handleCloseComboModal} handleSave={handleSaveCombo} comboActual={comboActual} />}
       
-      {/* AQUÍ USAMOS EL MODAL COMPARTIDO CON LA ESTÉTICA MISS DONITAS */}
       {showDetailsModal && <DetallesPedidoModal pedido={selectedOrderDetails} onClose={handleCloseDetailsModal} />}
       
       <ConfirmationModal show={showConfirmModal} onClose={() => setShowConfirmModal(false)} onConfirm={confirmAction} title={confirmTitle} message={confirmMessage} theme={theme} />
