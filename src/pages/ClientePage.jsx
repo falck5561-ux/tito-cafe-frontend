@@ -77,7 +77,7 @@ const CarritoContent = ({
     isDark,
     viewState,
     setViewState,
-    closeModal 
+    closeModal // Nueva prop para cerrar el modal desde dentro
 }) => {
 
     // --- Lógica de Navegación entre Pasos ---
@@ -94,19 +94,13 @@ const CarritoContent = ({
     };
 
     // --- Estilos Dinámicos (Glassmorphism & Temas) ---
-    // Ajustado para mayor contraste en modo Light (bg-white sólido en lugar de translúcido para evitar mezclas)
     const glassHeader = isDark 
         ? "bg-black/40 backdrop-blur-md border-b border-white/10" 
-        : "bg-white border-b border-gray-200";
+        : "bg-white/60 backdrop-blur-md border-b border-gray-200";
     
     const glassFooter = isDark 
         ? "bg-black/40 backdrop-blur-md border-t border-white/10" 
-        : "bg-white border-t border-gray-200";
-
-    // Text Colors Helpers (Para forzar contraste)
-    const textPrimary = isDark ? 'text-white' : 'text-gray-900';
-    const textSecondary = isDark ? 'text-gray-400' : 'text-gray-600';
-    const iconColor = isDark ? 'text-white' : 'text-gray-700';
+        : "bg-white/80 backdrop-blur-md border-t border-gray-200";
 
     // Función para generar clases de las tarjetas de selección
     const cardSelectable = (selected) => `
@@ -118,22 +112,22 @@ const CarritoContent = ({
     `;
 
     return (
-        <div className={`d-flex flex-column h-100 position-relative overflow-hidden ${isDark ? 'text-white' : 'text-gray-900'}`}> 
+        <div className="d-flex flex-column h-100 position-relative overflow-hidden"> 
             
-            {/* 1. HEADER DEL CARRITO */}
+            {/* 1. HEADER DEL CARRITO (Fijo y Estilizado) */}
             <div className={`flex-shrink-0 px-4 py-3 ${glassHeader} z-10 d-flex align-items-center justify-content-between`}>
                 {viewState === 'cart' ? (
                     <>
-                        <h5 className={`m-0 fw-bold d-flex align-items-center gap-2 ${textPrimary}`}>
+                        <h5 className={`m-0 fw-bold d-flex align-items-center gap-2 ${isDark ? 'text-white' : 'text-gray-800'}`}>
                             <ShoppingCart size={20} className="text-blue-500"/> 
                             {isModal ? 'Tu Pedido' : 'Mi Pedido'}
                         </h5>
                         {isModal && (
                             <button 
                                 onClick={closeModal}
-                                className={`btn btn-sm p-1 rounded-circle ${isDark ? 'hover:bg-white/10 text-white' : 'hover:bg-gray-100 text-gray-800'}`}
+                                className={`btn btn-sm p-1 rounded-circle ${isDark ? 'hover:bg-white/10 text-white' : 'hover:bg-gray-100 text-gray-600'}`}
                             >
-                                <X size={22} />
+                                <X size={20} />
                             </button>
                         )}
                     </>
@@ -141,23 +135,23 @@ const CarritoContent = ({
                     <div className="d-flex align-items-center w-100">
                         <button 
                             onClick={volverAlCarrito} 
-                            className={`btn btn-link p-0 me-3 ${isDark ? 'text-white/70 hover:text-white' : 'text-gray-600 hover:text-black'}`} 
+                            className={`btn btn-link p-0 me-3 ${isDark ? 'text-white/70 hover:text-white' : 'text-gray-500 hover:text-black'}`} 
                             style={{textDecoration: 'none'}}
                         >
                             <ArrowLeft size={24} />
                         </button>
-                        <h5 className={`m-0 fw-bold ${textPrimary}`}>
+                        <h5 className={`m-0 fw-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>
                             Ubicación de Entrega
                         </h5>
                     </div>
                 )}
             </div>
 
-            {/* 2. BODY DEL CARRITO */}
+            {/* 2. BODY DEL CARRITO (Scrollable) */}
             <div className="flex-grow-1 overflow-auto custom-scrollbar px-4 py-3" style={{ minHeight: 0 }}>
                 <AnimatePresence mode="wait">
                     
-                    {/* --- VISTA 1: LISTA DE PRODUCTOS --- */}
+                    {/* --- VISTA 1: LISTA DE PRODUCTOS Y SELECCIÓN DE ENVÍO --- */}
                     {viewState === 'cart' ? (
                         <motion.div 
                             key="cart-view"
@@ -166,19 +160,21 @@ const CarritoContent = ({
                             exit={{ x: -20, opacity: 0 }}
                             transition={{ duration: 0.2 }}
                         >
+                            {/* Lista de Productos */}
                             <div className="d-flex flex-column gap-3 mb-4">
                                 {pedidoActual.length === 0 && (
-                                    <div className={`text-center py-5 ${isDark ? 'opacity-50' : 'opacity-75'}`}>
-                                        <ShoppingCart size={48} className={`mb-2 mx-auto ${textSecondary}`}/>
-                                        <p className={textSecondary}>Tu carrito está vacío</p>
+                                    <div className="text-center py-5 opacity-50">
+                                        <ShoppingCart size={48} className="mb-2 mx-auto"/>
+                                        <p>Tu carrito está vacío</p>
                                     </div>
                                 )}
                                 
                                 {pedidoActual.map((item) => (
-                                    <div key={item.cartItemId || item.id} className={`d-flex align-items-center p-3 rounded-xl ${isDark ? 'bg-white/5 border border-white/5' : 'bg-gray-50 border border-gray-200'}`}>
+                                    <div key={item.cartItemId || item.id} className={`d-flex align-items-center p-3 rounded-xl ${isDark ? 'bg-white/5 border border-white/5' : 'bg-gray-50 border border-gray-100'}`}>
                                         <div className="flex-grow-1">
-                                            <span className={`fw-bold d-block ${textPrimary}`}>{item.nombre}</span>
+                                            <span className={`fw-bold d-block ${isDark ? 'text-white' : 'text-gray-900'}`}>{item.nombre}</span>
                                             
+                                            {/* Opciones seleccionadas */}
                                             {item.opcionesSeleccionadas && item.opcionesSeleccionadas.length > 0 && (
                                                 <small className={`${isDark ? 'text-blue-300' : 'text-blue-600'} d-block mb-1`}>
                                                     {item.opcionesSeleccionadas.map(op => op.nombre).join(', ')}
@@ -191,18 +187,18 @@ const CarritoContent = ({
                                         </div>
 
                                         <div className="d-flex flex-column align-items-end gap-2">
-                                            {/* Selector de Cantidad */}
-                                            <div className={`d-flex align-items-center rounded-pill px-1 py-1 ${isDark ? 'bg-black/30 border border-white/10' : 'bg-white border border-gray-300 shadow-sm'}`}>
+                                            {/* Selector de Cantidad (Diseño Cápsula) */}
+                                            <div className={`d-flex align-items-center rounded-pill px-1 py-1 ${isDark ? 'bg-black/30 border border-white/10' : 'bg-white border border-gray-200 shadow-sm'}`}>
                                                 <button 
                                                     className="btn btn-sm p-1 rounded-circle hover-bg-primary d-flex align-items-center justify-content-center" 
                                                     style={{width: '28px', height: '28px'}} 
                                                     onClick={() => decrementarCantidad(item.cartItemId || item.id)} 
                                                     disabled={paymentLoading}
                                                 >
-                                                    <span className={`fw-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>-</span>
+                                                    <span className={isDark ? 'text-white' : 'text-black'}>-</span>
                                                 </button>
                                                 
-                                                <span className={`mx-2 fw-bold small ${textPrimary}`}>
+                                                <span className={`mx-2 fw-bold small ${isDark ? 'text-white' : 'text-black'}`}>
                                                     {item.cantidad}
                                                 </span>
                                                 
@@ -212,13 +208,13 @@ const CarritoContent = ({
                                                     onClick={() => incrementarCantidad(item.cartItemId || item.id)} 
                                                     disabled={paymentLoading}
                                                 >
-                                                    <span className={`fw-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>+</span>
+                                                    <span className={isDark ? 'text-white' : 'text-black'}>+</span>
                                                 </button>
                                             </div>
                                             
                                             <button 
                                                 className="btn btn-link p-0 text-danger text-decoration-none small" 
-                                                style={{fontSize: '0.8rem', fontWeight: '500'}} 
+                                                style={{fontSize: '0.8rem'}} 
                                                 onClick={() => eliminarProducto(item.cartItemId || item.id)}
                                             >
                                                 Eliminar
@@ -228,10 +224,10 @@ const CarritoContent = ({
                                 ))}
                             </div>
 
-                            {/* Método de Entrega */}
+                            {/* Selector de Método de Entrega (Visible solo si hay items) */}
                             {pedidoActual.length > 0 && (
                                 <div className="mb-4">
-                                    <h6 className={`fw-bold mb-3 small text-uppercase tracking-wider ${textSecondary}`} style={{letterSpacing: '1px'}}>
+                                    <h6 className={`fw-bold mb-3 small text-uppercase tracking-wider ${isDark ? 'text-gray-400' : 'text-gray-500'}`} style={{letterSpacing: '1px'}}>
                                         Método de Entrega
                                     </h6>
                                     
@@ -250,8 +246,8 @@ const CarritoContent = ({
                                                     {opt.icon}
                                                 </div>
                                                 <div>
-                                                    <div className={`fw-bold ${textPrimary}`}>{opt.label}</div>
-                                                    <div className={`small ${textSecondary}`} style={{fontSize: '0.8rem'}}>{opt.sub}</div>
+                                                    <div className={`fw-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{opt.label}</div>
+                                                    <div className={`small ${isDark ? 'text-gray-400' : 'text-gray-500'}`} style={{fontSize: '0.8rem'}}>{opt.sub}</div>
                                                 </div>
                                                 {tipoOrden === opt.id && (
                                                     <div className="ms-auto">
@@ -273,15 +269,17 @@ const CarritoContent = ({
                             exit={{ x: 20, opacity: 0 }}
                             transition={{ duration: 0.2 }}
                         >
+                            {/* Botón para usar dirección guardada */}
                             {direccionGuardada && (
                                 <button 
-                                    className={`btn w-100 mb-3 rounded-xl py-2 d-flex align-items-center justify-content-center gap-2 border-2 fw-semibold ${isDark ? 'btn-outline-primary' : 'btn-outline-primary'}`} 
+                                    className="btn btn-outline-primary w-100 mb-3 rounded-xl py-2 d-flex align-items-center justify-content-center gap-2 border-2 fw-semibold" 
                                     onClick={usarDireccionGuardada}
                                 >
                                     <MapPin size={16}/> Usar dirección guardada
                                 </button>
                             )}
                             
+                            {/* Contenedor del Mapa */}
                             <div className="rounded-xl overflow-hidden border border-white/10 shadow-md mb-3" style={{ height: '300px' }}> 
                                 <MapSelector 
                                     onLocationSelect={handleLocationSelect} 
@@ -290,20 +288,17 @@ const CarritoContent = ({
                                 />
                             </div>
                             
-                            {/* Input de Referencia (CORREGIDO COLOR) */}
+                            {/* Input de Referencia */}
                             <div className="form-group mb-3">
-                                <label className={`form-label small fw-bold ms-1 ${textSecondary}`}>
+                                <label className={`form-label small fw-bold ms-1 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
                                     Referencia de entrega
                                 </label>
-                                <div className={`d-flex align-items-center px-3 py-2 rounded-xl border transition-all ${isDark ? 'bg-black/20 border-white/10 focus-within:border-blue-500' : 'bg-white border-gray-300 focus-within:border-blue-500'}`}>
-                                    <MapPin size={18} className={`${isDark ? 'opacity-50' : 'text-gray-500'} me-2`}/>
+                                <div className={`d-flex align-items-center px-3 py-2 rounded-xl border transition-all ${isDark ? 'bg-black/20 border-white/10 focus-within:border-blue-500' : 'bg-gray-50 border-gray-200 focus-within:border-blue-500'}`}>
+                                    <MapPin size={18} className="opacity-50 me-2"/>
                                     <input 
                                         type="text" 
                                         className="bg-transparent border-0 w-100 outline-none shadow-none"
-                                        style={{ 
-                                            color: isDark ? 'white' : 'black', // FORZAR NEGRO EN LIGHT MODE
-                                            outline: 'none' 
-                                        }}
+                                        style={{ color: isDark ? 'white' : 'black', outline: 'none' }}
                                         placeholder="Ej: Portón negro, casa de dos pisos..." 
                                         value={referencia} 
                                         onChange={(e) => setReferencia(e.target.value)} 
@@ -311,8 +306,8 @@ const CarritoContent = ({
                                 </div>
                             </div>
                             
-                            {/* Checkbox */}
-                            <div className={`d-flex align-items-center gap-2 p-3 rounded-xl ${isDark ? 'bg-blue-500/10' : 'bg-blue-50'}`}>
+                            {/* Checkbox Guardar Dirección */}
+                            <div className="d-flex align-items-center gap-2 p-3 rounded-xl bg-opacity-10" style={{backgroundColor: isDark ? 'rgba(59,130,246,0.1)' : '#eff6ff'}}>
                                 <input 
                                     className="form-check-input mt-0" 
                                     type="checkbox" 
@@ -320,7 +315,7 @@ const CarritoContent = ({
                                     checked={guardarDireccion} 
                                     onChange={(e) => setGuardarDireccion(e.target.checked)} 
                                 />
-                                <label className={`form-check-label small cursor-pointer ${textPrimary}`} htmlFor="guardarDireccionCheck">
+                                <label className={`form-check-label small cursor-pointer ${isDark ? 'text-white' : 'text-black'}`} htmlFor="guardarDireccionCheck">
                                     Guardar esta dirección para futuros pedidos
                                 </label>
                             </div>
@@ -329,17 +324,17 @@ const CarritoContent = ({
                 </AnimatePresence>
             </div>
 
-            {/* 3. FOOTER FLOTANTE */}
+            {/* 3. FOOTER FLOTANTE CON GRADIENTE */}
             <div className={`flex-shrink-0 px-4 py-3 ${glassFooter} z-10`}>
                 <div className="d-flex justify-content-between align-items-end mb-3">
-                    <span className={`small fw-bold ${textSecondary}`}>Total a Pagar</span>
+                    <span className={`small fw-bold ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Total a Pagar</span>
                     <div className="text-end">
                         {tipoOrden === 'domicilio' && (
-                             <div className={`small mb-1 fw-bold ${textSecondary}`}>
+                             <div className={`small mb-1 fw-bold ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                                 Envío: {calculandoEnvio ? <span className="spinner-border spinner-border-sm"/> : <span className="text-success">+${costoEnvio.toFixed(2)}</span>}
                              </div>
                         )}
-                        <span className={`h4 fw-bold m-0 ${textPrimary}`}>${totalFinal.toFixed(2)}</span>
+                        <span className={`h4 fw-bold m-0 ${isDark ? 'text-white' : 'text-gray-900'}`}>${totalFinal.toFixed(2)}</span>
                     </div>
                 </div>
                 
@@ -350,6 +345,7 @@ const CarritoContent = ({
                         onClick={viewState === 'cart' ? irASiguiente : handleProcederAlPago}
                         disabled={pedidoActual.length === 0 || paymentLoading || (viewState === 'address' && !direccion) || calculandoEnvio}
                     >
+                        {/* Efecto de brillo en el botón */}
                         <div className="position-absolute top-0 start-0 w-100 h-100 bg-white opacity-10" style={{ transform: 'skewX(-20deg) translateX(-150%)', animation: 'shine 3s infinite' }}></div>
                         
                         {paymentLoading ? (
@@ -364,7 +360,7 @@ const CarritoContent = ({
                     
                     {viewState === 'cart' && (
                         <button 
-                            className={`btn btn-sm ${isDark ? 'text-gray-500 hover:text-white' : 'text-gray-500 hover:text-gray-900'}`} 
+                            className={`btn btn-sm ${isDark ? 'text-gray-500 hover:text-white' : 'text-gray-400 hover:text-gray-700'}`} 
                             onClick={limpiarPedidoCompleto} 
                             disabled={paymentLoading}
                         >
@@ -385,11 +381,11 @@ function ClientePage() {
     const { theme } = useTheme(); 
     const isDark = theme === 'dark';
 
-    // Colores base corregidos para contraste
+    // Colores de fondo más profundos para look premium
     const bgBase = isDark ? '#09090b' : '#f3f4f6'; 
     const cardBg = isDark ? '#18181b' : '#ffffff'; 
-    const textMain = isDark ? '#ffffff' : '#111827'; // Negro casi puro para Light
-    const textMuted = isDark ? '#a1a1aa' : '#4b5563'; // Gris oscuro para Light
+    const textMain = isDark ? '#ffffff' : '#1f2937';
+    const textMuted = isDark ? '#a1a1aa' : '#6b7280';
     
     // --- 2. HOOKS Y ESTADOS ---
     const {
@@ -402,6 +398,7 @@ function ClientePage() {
         agregarProductoAPedido
     } = useCart();
 
+    // Estados de navegación y datos
     const [activeTab, setActiveTab] = useState('crear');
     const [ordenExpandida, setOrdenExpandida] = useState(null);
     const [menuItems, setMenuItems] = useState([]);
@@ -410,6 +407,7 @@ function ClientePage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
+    // Estados del Carrito y Pago
     const [tipoOrden, setTipoOrden] = useState('llevar');
     const [direccion, setDireccion] = useState(null);
     const [costoEnvio, setCostoEnvio] = useState(0);
@@ -419,18 +417,23 @@ function ClientePage() {
     const [clientSecret, setClientSecret] = useState('');
     const [paymentLoading, setPaymentLoading] = useState(false);
     
+    // Estados de Dirección
     const [direccionGuardada, setDireccionGuardada] = useState(null);
     const [guardarDireccion, setGuardarDireccion] = useState(false);
     const [referencia, setReferencia] = useState('');
     
+    // Estados de Modales
     const [showCartModal, setShowCartModal] = useState(false);
     const [productoSeleccionadoParaModal, setProductoSeleccionadoParaModal] = useState(null);
     
+    // ESTADO PARA CONTROLAR EL PASO DEL CARRITO (Cart vs Address)
     const [cartViewState, setCartViewState] = useState('cart'); 
 
     const totalFinal = subtotal + costoEnvio;
 
     // --- 3. EFECTOS (DATA FETCHING) ---
+
+    // Cargar menú inicial, combos y dirección guardada
     useEffect(() => {
         const fetchInitialData = async () => {
             if (activeTab !== 'crear') return;
@@ -474,6 +477,7 @@ function ClientePage() {
         fetchInitialData();
     }, [activeTab]);
 
+    // Cargar Historial o Recompensas al cambiar de Tab
     useEffect(() => {
         const fetchTabData = async () => {
             if (activeTab === 'crear') return;
@@ -496,6 +500,7 @@ function ClientePage() {
         fetchTabData();
     }, [activeTab]);
 
+    // Resetear envío al cambiar tipo de orden y volver al paso 1
     useEffect(() => {
         if (tipoOrden !== 'domicilio') {
             setCostoEnvio(0); 
@@ -504,7 +509,8 @@ function ClientePage() {
         }
     }, [tipoOrden]);
 
-    // --- 4. HANDLERS ---
+    // --- 4. HANDLERS (LOGICA DE NEGOCIO) ---
+
     const limpiarPedidoCompleto = () => {
         limpiarPedido(); 
         setCostoEnvio(0); 
@@ -603,6 +609,7 @@ function ClientePage() {
         setActiveTab('ver'); 
     };
 
+    // Helper para badges de estado
     const getStatusBadge = (estado) => {
         const style = "badge rounded-pill d-inline-flex align-items-center gap-1 px-3 py-2 border";
         switch (estado) { 
@@ -650,6 +657,7 @@ function ClientePage() {
                 </ul>
             </div>
 
+            {/* Añadimos pb-32 para que el botón flotante no tape el contenido al final */}
             <div className="container pb-5 md:pb-5 pb-32">
                 {loading && <div className="text-center py-5"><div className="spinner-border text-primary" role="status"></div></div>}
                 {error && <div className="alert alert-danger shadow-sm border-0">{error}</div>}
@@ -669,16 +677,17 @@ function ClientePage() {
                                             onClick={() => setProductoSeleccionadoParaModal(item)}
                                         >
                                             <div className="card-body d-flex flex-column text-center p-3 md:p-4">
+                                                {/* ICONO DEL PRODUCTO */}
                                                 <div className={`mb-3 mb-md-4 d-flex align-items-center justify-content-center rounded-circle mx-auto shadow-sm ${isDark ? 'bg-white/5' : 'bg-blue-50'}`} style={{ width: '60px', height: '60px', md: {width: '80px', height: '80px'} }}>
                                                     <Utensils size={28} className="text-blue-500 md:w-8 md:h-8" />
                                                 </div>
                                                 
-                                                <h6 className="card-title fw-bold mb-2 line-clamp-2" style={{fontSize: '1rem', color: textMain}}>{item.nombre}</h6>
+                                                <h6 className="card-title fw-bold mb-2 line-clamp-2" style={{fontSize: '1rem'}}>{item.nombre}</h6>
                                                 
                                                 <div className="mt-auto pt-2">
                                                     {item.en_oferta ? (
                                                         <div className="d-flex justify-content-center align-items-center gap-2 flex-wrap">
-                                                            <small className="text-decoration-line-through opacity-75" style={{fontSize: '0.8rem', color: textMuted}}>
+                                                            <small className="text-decoration-line-through text-muted opacity-75" style={{fontSize: '0.8rem'}}>
                                                                 ${Number(item.precio_original).toFixed(2)}
                                                             </small>
                                                             <span className="badge bg-green-500/10 text-green-500 border border-green-500/20 px-2 py-1 rounded-pill">
@@ -698,7 +707,7 @@ function ClientePage() {
                             </div>
                         </div>
 
-                        {/* CARRITO VERSION DESKTOP */}
+                        {/* CARRITO VERSION DESKTOP (STICKY) */}
                         <div className="col-lg-4 d-none d-lg-block">
                             <div className="shadow-xl border border-white/5" style={{ position: 'sticky', top: '100px', height: 'calc(100vh - 120px)', backgroundColor: cardBg, borderRadius: '24px' }}>
                                 <CarritoContent
@@ -755,7 +764,7 @@ function ClientePage() {
                                                     <Package size={24} className="text-blue-500"/>
                                                 </div>
                                                 <div>
-                                                    <div className={`fw-bold fs-5 ${textMain}`}>Pedido #{p.id}</div>
+                                                    <div className="fw-bold fs-5">Pedido #{p.id}</div>
                                                     <small className={textMuted}>{new Date(p.fecha).toLocaleDateString()}</small>
                                                 </div>
                                             </div>
@@ -785,7 +794,7 @@ function ClientePage() {
                                                                         </div>
                                                                     )}
                                                                 </div>
-                                                                <span className={`fw-bold ${isDark ? 'opacity-75' : 'text-gray-900'}`}>${(prod.cantidad * Number(prod.precio)).toFixed(2)}</span>
+                                                                <span className="fw-bold opacity-75">${(prod.cantidad * Number(prod.precio)).toFixed(2)}</span>
                                                             </div>
                                                         ))}
                                                         
@@ -806,7 +815,7 @@ function ClientePage() {
                     </motion.div>
                 )}
 
-                {/* --- PESTAÑA 3: RECOMPENSAS --- */}
+                {/* --- PESTAÑA 3: RECOMPENSAS (DISEÑO TICKET) --- */}
                 {!loading && activeTab === 'recompensas' && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                         <div className="text-center mb-5">
@@ -846,7 +855,7 @@ function ClientePage() {
                                         </div>
 
                                         <div className="p-4 flex-grow-1 d-flex flex-column justify-content-center">
-                                            <h5 className={`fw-bold mb-1 ${textMain}`}>{recompensa.nombre}</h5>
+                                            <h5 className={`fw-bold mb-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>{recompensa.nombre}</h5>
                                             <p className={`small mb-3 ${textMuted}`}>Canjéalo en tu próximo pedido.</p>
                                             <span className="badge bg-green-500/10 text-green-600 border border-green-500/20 px-3 py-1 rounded-pill align-self-start">Activo</span>
                                         </div>
@@ -860,7 +869,7 @@ function ClientePage() {
 
             {/* --- MODALES Y FLOTANTES --- */}
 
-            {/* BOTÓN FLOTANTE MÓVIL (FAB) */}
+            {/* BOTÓN FLOTANTE MÓVIL (FAB) - NUEVO DISEÑO CIRCULAR */}
             {activeTab === 'crear' && pedidoActual.length > 0 && (
                 <div 
                     className="position-fixed bottom-0 end-0 m-4 d-lg-none" 
@@ -891,15 +900,17 @@ function ClientePage() {
                 </div>
             )}
 
-            {/* MODAL CARRITO MÓVIL */}
+            {/* MODAL CARRITO MÓVIL (CENTRADO Y FLOTANTE) */}
             {showCartModal && (
                 <div className="modal show fade d-block" style={{ backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 1060 }}>
                     <motion.div 
                         initial={{ scale: 0.9, opacity: 0 }} 
                         animate={{ scale: 1, opacity: 1 }} 
                         className="modal-dialog modal-dialog-centered mx-3" 
+                        // mx-3 asegura margen lateral para que parezca tarjeta flotante
                     >
                         <div className="modal-content border-0 shadow-2xl rounded-3xl overflow-hidden" style={{ backgroundColor: cardBg, color: textMain, maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}>
+                            {/* Pasamos la función closeModal para que el botón X funcione */}
                             <CarritoContent
                                 isModal={true}
                                 closeModal={() => { setShowCartModal(false); setCartViewState('cart'); }} 
