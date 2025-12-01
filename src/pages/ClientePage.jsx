@@ -9,10 +9,9 @@ import MapSelector from '../components/MapSelector';
 import apiClient from '../services/api';
 import { useCart } from '../context/CartContext';
 import ProductDetailModal from '../components/ProductDetailModal';
-// CORRECCIÓN: Se añadieron DollarSign, Clock, Package, CheckCircle, etc.
 import { 
     ShoppingCart, ListChecks, Award, Edit3, MapPin, DollarSign, 
-    Clock, Package, CheckCircle, AlertCircle, ChefHat, Truck 
+    Clock, Package, CheckCircle, AlertCircle, ChefHat, Truck, Utensils // Agregado Utensils
 } from 'lucide-react'; 
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
@@ -433,9 +432,9 @@ function ClientePage() {
                                             onClick={() => setProductoSeleccionadoParaModal(item)}
                                         >
                                             <div className="card-body d-flex flex-column text-center p-3">
-                                                {/* Placeholder imagen si no hay */}
-                                                <div className="mb-3 d-flex align-items-center justify-content-center bg-secondary bg-opacity-10 rounded-circle mx-auto" style={{ width: '60px', height: '60px' }}>
-                                                    <span style={{ fontSize: '24px' }}>🍔</span>
+                                                {/* CORRECCIÓN 2: Ícono genérico (Utensils) en lugar de hamburguesa */}
+                                                <div className={`mb-3 d-flex align-items-center justify-content-center rounded-circle mx-auto ${isDark ? 'bg-dark bg-opacity-50' : 'bg-primary bg-opacity-10'}`} style={{ width: '64px', height: '64px' }}>
+                                                    <Utensils size={28} className="text-primary" />
                                                 </div>
                                                 <h6 className="card-title fw-bold mb-2 line-clamp-2">{item.nombre}</h6>
                                                 <div className="mt-auto pt-2">
@@ -529,16 +528,24 @@ function ClientePage() {
                                                     initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} 
                                                     className="overflow-hidden"
                                                 >
-                                                    <div className="card-body border-top border-light p-3 bg-opacity-10">
+                                                    {/* CORRECCIÓN 3: Mostrar opciones/toppings en el historial */}
+                                                    <div className="card-body p-3" style={{ backgroundColor: isDark ? 'rgba(0,0,0,0.2)' : '#f8f9fa' }}>
                                                         {p.productos?.map((prod, idx) => (
-                                                            <div key={idx} className="d-flex justify-content-between mb-2 small">
-                                                                <span className={textMuted}>{prod.cantidad}x {prod.nombre}</span>
-                                                                <span className="fw-semibold">${(prod.cantidad * prod.precio).toFixed(2)}</span>
+                                                            <div key={idx} className="d-flex justify-content-between align-items-start mb-2">
+                                                                <div className="small">
+                                                                    <span className={`fw-bold ${textMain}`}>{prod.cantidad}x {prod.nombre}</span>
+                                                                    {prod.opciones && (
+                                                                        <div className={`small fst-italic ${textMuted}`} style={{ fontSize: '0.85em' }}>
+                                                                            + {prod.opciones}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                <span className="fw-semibold small">${(prod.cantidad * Number(prod.precio)).toFixed(2)}</span>
                                                             </div>
                                                         ))}
                                                         {p.costo_envio > 0 && (
-                                                            <div className="d-flex justify-content-between mt-2 pt-2 border-top text-info small">
-                                                                <span>Envío</span><span>${p.costo_envio}</span>
+                                                            <div className="d-flex justify-content-between mt-2 pt-2 border-top border-secondary border-opacity-25 text-info small fw-bold">
+                                                                <span>Costo de Envío</span><span>${Number(p.costo_envio).toFixed(2)}</span>
                                                             </div>
                                                         )}
                                                     </div>
@@ -588,17 +595,25 @@ function ClientePage() {
 
             {/* --- MODALES Y FLOTANTES --- */}
 
-            {/* Botón Flotante Carrito (Móvil) */}
+            {/* CORRECCIÓN 1: Botón Flotante Carrito (Móvil) Estético */}
             {activeTab === 'crear' && pedidoActual.length > 0 && (
-                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="fixed-bottom p-3 d-lg-none" style={{ zIndex: 1050, pointerEvents: 'none' }}>
+                <motion.div 
+                    initial={{ y: 100, opacity: 0 }} 
+                    animate={{ y: 0, opacity: 1 }} 
+                    className="fixed-bottom p-3 d-lg-none d-flex justify-content-center" 
+                    style={{ zIndex: 1050, pointerEvents: 'none' }}
+                >
                     <button 
-                        className="btn btn-primary w-100 rounded-pill py-3 shadow-lg d-flex justify-content-between align-items-center px-4"
+                        className="btn btn-primary rounded-pill shadow-lg d-flex justify-content-between align-items-center px-4 py-3 fw-bold"
                         onClick={() => setShowCartModal(true)}
-                        style={{ pointerEvents: 'auto' }}
+                        style={{ pointerEvents: 'auto', width: '90%', maxWidth: '400px',border: '2px solid rgba(255,255,255,0.1)' }}
                     >
-                        <span className="badge bg-white text-primary rounded-pill px-2">{pedidoActual.reduce((acc, el) => acc + el.cantidad, 0)}</span>
-                        <span className="fw-bold">Ver Carrito</span>
-                        <span className="fw-bold">${totalFinal.toFixed(2)}</span>
+                        <div className="d-flex align-items-center">
+                            <ShoppingCart size={20} className="me-2"/>
+                            <span className="badge bg-white text-primary rounded-pill me-2 px-2">{pedidoActual.reduce((acc, el) => acc + el.cantidad, 0)}</span>
+                            <span>Ver Carrito</span>
+                        </div>
+                        <span className="fs-5">${totalFinal.toFixed(2)}</span>
                     </button>
                 </motion.div>
             )}
@@ -609,8 +624,9 @@ function ClientePage() {
                     <motion.div 
                         initial={{ y: '100%' }} animate={{ y: 0 }} 
                         className="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg"
+                        style={{ margin: '1rem' }} // Margen para que no pegue a los bordes en móvil
                     >
-                        <div className="modal-content border-0 shadow-lg" style={{ backgroundColor: cardBg, borderRadius: '20px', color: textMain }}>
+                        <div className="modal-content border-0 shadow-lg" style={{ backgroundColor: cardBg, borderRadius: '20px', color: textMain, maxHeight: '85vh' }}>
                             <div className="modal-header border-0 pb-0">
                                 <h5 className="modal-title fw-bold">{modalView === 'cart' ? 'Tu Pedido' : 'Dirección de Entrega'}</h5>
                                 <button type="button" className={`btn-close ${isDark ? 'btn-close-white' : ''}`} onClick={() => { setShowCartModal(false); setModalView('cart'); }}></button>
@@ -645,20 +661,25 @@ function ClientePage() {
                                     inputClass={inputClass}
                                 />
                             ) : (
-                                // Renderizado duplicado de dirección para el modal si se requiere lógica separada
-                                // Reutilizamos CarritoContent arriba para simplificar, 
-                                // pero si necesitas vista exclusiva de address:
                                 <div className="modal-body p-4">
-                                     <button className="btn btn-link text-decoration-none mb-3 px-0" onClick={() => setModalView('cart')}>← Volver al carrito</button>
-                                     <div className={`p-4 rounded border ${isDark ? 'border-secondary' : 'bg-light border-0'}`}>
-                                         <h5 className="fw-bold mb-3">Confirma tu ubicación</h5>
-                                         <MapSelector onLocationSelect={handleLocationSelect} initialAddress={direccion} className={inputClass} />
-                                         <input type="text" className={`form-control mt-3 ${inputClass}`} placeholder="Referencia / Color de casa" value={referencia} onChange={(e) => setReferencia(e.target.value)} />
-                                         <div className="mt-4 d-grid">
-                                            <button className="btn btn-primary btn-lg rounded-pill" onClick={handleProcederAlPago} disabled={!direccion || paymentLoading}>
-                                                Confirmar y Pagar ${totalFinal.toFixed(2)}
-                                            </button>
+                                     <button className="btn btn-link text-decoration-none mb-3 px-0 d-flex align-items-center" onClick={() => setModalView('cart')}>
+                                        <Edit3 size={16} className="me-1"/> Volver al carrito
+                                     </button>
+                                     <div className={`p-4 rounded border ${isDark ? 'border-secondary bg-dark bg-opacity-50' : 'bg-light border-0'}`}>
+                                         <h5 className="fw-bold mb-3 d-flex align-items-center"><MapPin size={20} className="me-2 text-primary"/>Confirma tu ubicación</h5>
+                                         <div className="mb-3">
+                                            <MapSelector onLocationSelect={handleLocationSelect} initialAddress={direccion} className={inputClass} />
                                          </div>
+                                         <div className="form-floating">
+                                            <input type="text" className={inputClass} id="floatingInput" placeholder="Referencia" value={referencia} onChange={(e) => setReferencia(e.target.value)} style={{height: '60px'}}/>
+                                            <label htmlFor="floatingInput" className={isDark ? 'text-muted' : ''}>Referencia (Ej: Casa azul, portón negro...)</label>
+                                         </div>
+                                     </div>
+                                     <div className="mt-4">
+                                        <button className="btn btn-primary btn-lg w-100 fw-bold rounded-pill py-3 shadow-sm d-flex justify-content-center align-items-center" onClick={handleProcederAlPago} disabled={!direccion || paymentLoading}>
+                                            {paymentLoading ? <span className="spinner-border spinner-border-sm me-2"></span> : <DollarSign size={20} className="me-1"/>}
+                                            Pagar ${totalFinal.toFixed(2)}
+                                        </button>
                                      </div>
                                 </div>
                             )}
@@ -691,7 +712,7 @@ function ClientePage() {
                                 <button type="button" className={`btn-close ${isDark ? 'btn-close-white' : ''}`} onClick={() => setShowPaymentModal(false)}></button>
                             </div>
                             <div className="modal-body p-4">
-                                <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: isDark ? 'night' : 'stripe' } }}>
+                                <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: isDark ? 'night' : 'stripe', variables: { colorPrimary: '#0d6efd' } } }}>
                                     <CheckoutForm handleSuccess={handleSuccessfulPayment} total={totalFinal} datosPedido={datosParaCheckout} isDark={isDark} />
                                 </Elements>
                             </div>
