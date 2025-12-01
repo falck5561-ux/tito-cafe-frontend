@@ -647,7 +647,8 @@ function ClientePage() {
                 </ul>
             </div>
 
-            <div className="container pb-5">
+            {/* Añadimos pb-32 para que el botón flotante no tape el contenido al final */}
+            <div className="container pb-5 md:pb-5 pb-32">
                 {loading && <div className="text-center py-5"><div className="spinner-border text-primary" role="status"></div></div>}
                 {error && <div className="alert alert-danger shadow-sm border-0">{error}</div>}
 
@@ -661,25 +662,26 @@ function ClientePage() {
                                     <div key={item.id} className="col-6 col-md-4">
                                         <motion.div 
                                             whileHover={{ y: -8, scale: 1.02 }}
-                                            className="card h-100 border-0 shadow-lg overflow-hidden position-relative"
+                                            // AQUI ESTA LA CORRECCION DEL BORDE AZUL PARA PROMOCIONES
+                                            className={`card h-100 shadow-lg overflow-hidden position-relative ${item.en_oferta ? 'border border-2 border-blue-500' : 'border-0'}`}
                                             style={{ backgroundColor: cardBg, borderRadius: '24px', cursor: 'pointer' }}
                                             onClick={() => setProductoSeleccionadoParaModal(item)}
                                         >
-                                            <div className="card-body d-flex flex-column text-center p-4">
+                                            <div className="card-body d-flex flex-column text-center p-3 md:p-4">
                                                 {/* ICONO DEL PRODUCTO */}
-                                                <div className={`mb-4 d-flex align-items-center justify-content-center rounded-circle mx-auto shadow-sm ${isDark ? 'bg-white/5' : 'bg-blue-50'}`} style={{ width: '80px', height: '80px' }}>
-                                                    <Utensils size={32} className="text-blue-500" />
+                                                <div className={`mb-3 mb-md-4 d-flex align-items-center justify-content-center rounded-circle mx-auto shadow-sm ${isDark ? 'bg-white/5' : 'bg-blue-50'}`} style={{ width: '60px', height: '60px', md: {width: '80px', height: '80px'} }}>
+                                                    <Utensils size={28} className="text-blue-500 md:w-8 md:h-8" />
                                                 </div>
                                                 
-                                                <h6 className="card-title fw-bold mb-2 line-clamp-2 text-lg">{item.nombre}</h6>
+                                                <h6 className="card-title fw-bold mb-2 line-clamp-2" style={{fontSize: '1rem'}}>{item.nombre}</h6>
                                                 
-                                                <div className="mt-auto pt-3">
+                                                <div className="mt-auto pt-2">
                                                     {item.en_oferta ? (
-                                                        <div className="d-flex justify-content-center align-items-center gap-2">
-                                                            <small className="text-decoration-line-through text-muted opacity-75">
+                                                        <div className="d-flex justify-content-center align-items-center gap-2 flex-wrap">
+                                                            <small className="text-decoration-line-through text-muted opacity-75" style={{fontSize: '0.8rem'}}>
                                                                 ${Number(item.precio_original).toFixed(2)}
                                                             </small>
-                                                            <span className="badge bg-green-500/10 text-green-500 border border-green-500/20 px-3 py-1 rounded-pill fs-6">
+                                                            <span className="badge bg-green-500/10 text-green-500 border border-green-500/20 px-2 py-1 rounded-pill">
                                                                 ${Number(item.precio).toFixed(2)}
                                                             </span>
                                                         </div>
