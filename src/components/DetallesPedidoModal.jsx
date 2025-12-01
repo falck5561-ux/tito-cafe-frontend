@@ -6,7 +6,7 @@ function DetallesPedidoModal({ pedido, onClose }) {
 
   const { theme } = useTheme();
 
-  // --- LÓGICA ROBUSTA DE MISS DONITAS PARA ENCONTRAR PRODUCTOS ---
+  // --- LÓGICA ROBUSTA PARA ENCONTRAR PRODUCTOS ---
   const productos = 
       pedido.items || 
       pedido.detalles_pedido || 
@@ -29,6 +29,38 @@ function DetallesPedidoModal({ pedido, onClose }) {
     backgroundColor: theme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)'
   };
   const mutedTextColor = theme === 'dark' ? 'text-white-50' : 'text-muted';
+
+  // --- FUNCIÓN HELPER PARA LIMPIAR EL TEXTO "FEO" (JSON) ---
+  const parseOpciones = (raw) => {
+    if (!raw) return [];
+    
+    // 1. Si ya es un arreglo (Array), solo sacamos los nombres
+    if (Array.isArray(raw)) {
+        return raw.map(op => (typeof op === 'string' ? op : op.nombre));
+    }
+
+    // 2. Si es texto (String), intentamos descifrarlo
+    if (typeof raw === 'string') {
+        // A. Intentamos leerlo como JSON primero (esto arregla lo de las llaves {})
+        try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) {
+                return parsed.map(op => (typeof op === 'string' ? op : op.nombre));
+            } else if (typeof parsed === 'object') {
+                 return [parsed.nombre || JSON.stringify(parsed)];
+            }
+        } catch (e) {
+            // No era JSON válido, continuamos...
+        }
+
+        // B. Si falló el JSON, asumimos que es texto separado por comas
+        // Limpiamos corchetes y comillas extra por si acaso
+        const limpio = raw.replace(/[\[\]"{}]/g, ''); 
+        return limpio.split(',').map(s => s.trim()).filter(s => s !== '' && !s.includes('id:'));
+    }
+    
+    return [];
+  };
 
   return (
     <div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.7)' }}>
@@ -67,19 +99,8 @@ function DetallesPedidoModal({ pedido, onClose }) {
             <ul className="list-unstyled mb-3">
               {productos.map((producto, index) => {
                 
-                // --- AQUI ESTA LA MAGIA DE MISS DONITAS ADAPTADA ---
-                // 1. Buscamos en 'opciones' O en 'selectedOptions'
-                const rawOpciones = producto.opciones || producto.selectedOptions;
-                let opcionesParaMostrar = [];
-
-                // 2. Procesamos según si es Array o Texto para que Tito Spot lo entienda
-                if (Array.isArray(rawOpciones) && rawOpciones.length > 0) {
-                    // Si es array, extraemos los nombres
-                    opcionesParaMostrar = rawOpciones.map(op => (typeof op === 'string' ? op : op.nombre));
-                } else if (typeof rawOpciones === 'string' && rawOpciones.length > 0) {
-                    // Si es string (ej: "Extra salsa, con limon"), lo separamos por comas para hacer lista
-                    opcionesParaMostrar = rawOpciones.split(',').map(s => s.trim());
-                }
+                // Usamos nuestra nueva función de limpieza
+                const opcionesLimpias = parseOpciones(producto.opciones || producto.selectedOptions);
 
                 return (
                   <li key={index} className="mb-2 p-1 border-bottom">
@@ -88,10 +109,10 @@ function DetallesPedidoModal({ pedido, onClose }) {
                       <span className="text-end">${(producto.cantidad * Number(producto.precio || producto.precio_unitario || 0)).toFixed(2)}</span>
                     </div>
 
-                    {/* Renderizado de Opciones (Toppings) */}
-                    {opcionesParaMostrar.length > 0 && (
+                    {/* Renderizado de Opciones YA LIMPIAS */}
+                    {opcionesLimpias.length > 0 && (
                       <ul className="list-unstyled small ps-3 mb-0" style={{ opacity: 0.8 }}>
-                        {opcionesParaMostrar.map((textoOpcion, opIndex) => (
+                        {opcionesLimpias.map((textoOpcion, opIndex) => (
                           <li key={opIndex} className={mutedTextColor}>+ {textoOpcion}</li>
                         ))}
                       </ul>

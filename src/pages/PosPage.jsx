@@ -494,10 +494,14 @@ function PosPage() {
 
                   {/* Parte Derecha: Botón de Acción */}
                   <div className="ms-3">
-                     <button className="btn btn-info btn-sm" onClick={() => handleShowDetails(venta)}>
-                        Ver Detalles
-                     </button>
-                  </div>
+    <button 
+        className="btn btn-outline-info btn-sm d-flex align-items-center gap-1" 
+        onClick={() => handleShowDetails(venta)}
+        style={{ borderRadius: '20px', padding: '5px 15px' }}
+    >
+        <Eye size={16} /> Ver Detalles
+    </button>
+</div>
 
                 </div>
               ))}
