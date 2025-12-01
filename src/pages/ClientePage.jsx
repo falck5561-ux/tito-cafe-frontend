@@ -385,7 +385,8 @@ function ClientePage() {
     const bgBase = isDark ? '#09090b' : '#f3f4f6'; 
     const cardBg = isDark ? '#18181b' : '#ffffff'; 
     const textMain = isDark ? '#ffffff' : '#1f2937';
-    const textMuted = isDark ? '#a1a1aa' : '#6b7280';
+    // Corrección: Hacemos el texto "muted" más oscuro en modo claro para que se lea mejor (gray-700)
+    const textMuted = isDark ? '#a1a1aa' : '#374151'; 
     
     // --- 2. HOOKS Y ESTADOS ---
     const {
@@ -687,9 +688,14 @@ function ClientePage() {
                                                 <div className="mt-auto pt-2">
                                                     {item.en_oferta ? (
                                                         <div className="d-flex justify-content-center align-items-center gap-2 flex-wrap">
-                                                            <small className="text-decoration-line-through text-muted opacity-75" style={{fontSize: '0.8rem'}}>
+                                                            {/* CORRECCIÓN DE PRECIO TACHADO: Rojo en modo claro, Muted en modo oscuro */}
+                                                            <small 
+                                                                className={`text-decoration-line-through ${isDark ? 'text-muted opacity-75' : 'text-danger fw-bold'}`} 
+                                                                style={{fontSize: '0.9rem'}}
+                                                            >
                                                                 ${Number(item.precio_original).toFixed(2)}
                                                             </small>
+
                                                             <span className="badge bg-green-500/10 text-green-500 border border-green-500/20 px-2 py-1 rounded-pill">
                                                                 ${Number(item.precio).toFixed(2)}
                                                             </span>
@@ -971,7 +977,7 @@ function ClientePage() {
                                 <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: isDark ? 'night' : 'stripe', variables: { colorPrimary: '#2563eb', borderRadius: '12px' } } }}>
                                     <CheckoutForm 
                                         handleSuccess={handleSuccessfulPayment} 
-                                        total={totalFinal} 
+                                        total={totalFinal}
                                         datosPedido={datosParaCheckout} 
                                         isDark={isDark} 
                                     />
