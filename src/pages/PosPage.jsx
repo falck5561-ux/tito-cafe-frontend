@@ -91,14 +91,6 @@ function PosPage() {
 
   const agregarProductoAVenta = (item) => {
     // --- LÓGICA DEL MODAL ---
-    // El 'item' que viene del modal de detalles (cuando tiene opciones)
-    // puede traer 'opcionesSeleccionadas' y un 'precio' (total) actualizado.
-    
-    // Si el 'item' viene del modal SIN OPCIONES,
-    // 'item.opcionesSeleccionadas' será undefined.
-    // Si el 'item' viene del modal CON OPCIONES,
-    // 'item.opcionesSeleccionadas' será un array.
-    
     const tieneOpciones = item.opcionesSeleccionadas && item.opcionesSeleccionadas.length > 0;
     
     // El precioFinal es el 'precio' que viene del modal (que ya es el total)
@@ -108,10 +100,8 @@ function PosPage() {
     setVentaActual(prevVenta => {
       
       // ID Único para el ticket
-      // Si tiene opciones, creamos un ID único para que no se agrupe
-      // Si NO tiene opciones, usamos el ID normal para que SÍ se agrupe
       const idUnicoTicket = tieneOpciones ? `${item.id}-${Date.now()}` : item.id;
-      const esRecompensa = false; // Asumimos que nunca es recompensa al agregar
+      const esRecompensa = false; 
 
       const productoExistente = prevVenta.find(p => 
         (p.idUnicoTicket === idUnicoTicket || (!tieneOpciones && p.id === item.id)) && 
@@ -141,7 +131,7 @@ function PosPage() {
     
     // Mostramos toast solo si el modal no lo hizo (agregado manual)
     if (!item.opcionesSeleccionadas) {
-         toast.success(`${item.nombre} agregado al ticket`);
+          toast.success(`${item.nombre} agregado al ticket`);
     }
   };
 
@@ -173,12 +163,12 @@ function PosPage() {
   };
 
   const eliminarProducto = (idUnicoTicket, id, esRecompensa) => {
-     setVentaActual(prev => prev.filter(item => 
+      setVentaActual(prev => prev.filter(item => 
         !((item.idUnicoTicket === idUnicoTicket || item.id === id) && item.esRecompensa === esRecompensa)
-     ));
-     if (esRecompensa) {
-       setRecompensaAplicadaId(null);
-     }
+      ));
+      if (esRecompensa) {
+        setRecompensaAplicadaId(null);
+      }
   };
 
 
@@ -200,20 +190,19 @@ function PosPage() {
   const handleFinalizarVenta = async (metodoDePago) => {
     if (ventaActual.length === 0) return toast.error('El ticket está vacío.');
 
-    // CÓDIGO CORREGIDO (Lo que debes poner en su lugar)
-const itemsParaEnviar = ventaActual.map(({ id, cantidad, precioFinal, opcionesSeleccionadas, nombre }) => ({
-    id,
-    cantidad,
-    precio: Number(precioFinal),
-    nombre: nombre, 
-    // 🚨 CAMBIO AQUÍ: Enviamos un array de objetos { id, nombre } en lugar de un string
-    opciones: opcionesSeleccionadas 
+    // CÓDIGO CORREGIDO 
+    const itemsParaEnviar = ventaActual.map(({ id, cantidad, precioFinal, opcionesSeleccionadas, nombre }) => ({
+      id,
+      cantidad,
+      precio: Number(precioFinal),
+      nombre: nombre, 
+      opciones: opcionesSeleccionadas 
         ? opcionesSeleccionadas.map(op => ({
               id: op.id,
               nombre: op.nombre,
           })) 
-        : [] // Si no hay opciones, enviamos un array vacío
-}));
+        : [] 
+    }));
 
     const ventaData = {
       total: totalVenta,
@@ -239,6 +228,8 @@ const itemsParaEnviar = ventaActual.map(({ id, cantidad, precioFinal, opcionesSe
   };
 
   const handleUpdateStatus = async (pedidoId, nuevoEstado) => { try { await apiClient.put(`/pedidos/${pedidoId}/estado`, { estado: nuevoEstado }); fetchData(); toast.success(`Pedido #${pedidoId} actualizado.`); } catch (err) { toast.error('No se pudo actualizar el estado.'); } };
+  
+  // --- ESTA ES LA FUNCIÓN QUE ABRE EL MODAL ---
   const handleShowDetails = (pedido) => { setSelectedOrderDetails(pedido); setShowDetailsModal(true); };
   const handleCloseDetailsModal = () => { setShowDetailsModal(false); setSelectedOrderDetails(null); };
 
@@ -475,7 +466,7 @@ const itemsParaEnviar = ventaActual.map(({ id, cantidad, precioFinal, opcionesSe
       );
     }
 
-    // --- Pestaña Historial de Ventas POS del Día ---
+    // --- Pestaña Historial de Ventas POS del Día (CORREGIDA) ---
     if (activeTab === 'historial') {
       return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
@@ -483,13 +474,27 @@ const itemsParaEnviar = ventaActual.map(({ id, cantidad, precioFinal, opcionesSe
           {ventasDelDia.length === 0 ? <p>No se han registrado ventas en el POS hoy.</p> : (
             <div className="list-group">
               {ventasDelDia.map(venta => (
-                <div key={venta.id} className="list-group-item">
-                  <div className="d-flex w-100 justify-content-between">
-                    <h5 className="mb-1">Venta #{venta.id} (Empleado: {venta.nombre_empleado || 'N/A'})</h5>
-                    <small>{new Date(venta.fecha).toLocaleTimeString()}</small>
+                <div key={venta.id} className="list-group-item d-flex justify-content-between align-items-center">
+                  
+                  {/* Parte Izquierda: Información de la Venta */}
+                  <div className="flex-grow-1">
+                    <div className="d-flex w-100 justify-content-between">
+                      <h5 className="mb-1">Venta #{venta.id} (Empleado: {venta.nombre_empleado || 'N/A'})</h5>
+                    </div>
+                    <p className="mb-1">Total: <strong>${Number(venta.total).toFixed(2)}</strong></p>
+                    <div className="d-flex justify-content-between">
+                         <small>Método de Pago: {venta.metodo_pago}</small>
+                         <small className="text-muted">{new Date(venta.fecha).toLocaleTimeString()}</small>
+                    </div>
                   </div>
-                  <p className="mb-1">Total: <strong>${Number(venta.total).toFixed(2)}</strong></p>
-                  <small>Método de Pago: {venta.metodo_pago}</small>
+
+                  {/* Parte Derecha: Botón de Acción */}
+                  <div className="ms-3">
+                     <button className="btn btn-info btn-sm" onClick={() => handleShowDetails(venta)}>
+                        Ver Detalles
+                     </button>
+                  </div>
+
                 </div>
               ))}
             </div>
