@@ -1,16 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
-import { motion } from 'framer-motion'; // Requerido para las animaciones suaves
+import { motion } from 'framer-motion';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
-import { ShoppingBag, Package, Star, MapPin, Truck, CheckCircle, Minus, Plus as PlusIcon, Trash2, Home, School } from 'lucide-react'; 
+import { 
+    ShoppingBag, Package, Star, MapPin, Truck, CheckCircle, Minus, Plus as PlusIcon, Trash2, Home, School, Eye, EyeOff 
+} from 'lucide-react'; // <-- Importaciones de Iconos
+
 import CheckoutForm from '../components/CheckoutForm';
 import MapSelector from '../components/MapSelector';
 import apiClient from '../services/api';
 import { useCart } from '../context/CartContext';
 import ProductDetailModal from '../components/ProductDetailModal';
 
-// Nota: Asegúrate de que tu useTheme esté importado correctamente desde tu context.
+// --- Asume que tienes un contexto de tema ---
 const useTheme = () => ({ theme: 'dark' }); 
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
@@ -31,9 +34,31 @@ const notify = (type, message) => {
 };
 
 
-// --- CarritoContent (Componente interno con estilos aplicados) ---
+// --- CarritoContent (Componente de Pedido - Mejorado Visualmente) ---
 const CarritoContent = ({
-  isModal, pedidoActual, decrementarCantidad, incrementarCantidad, eliminarProducto, tipoOrden, setTipoOrden, direccionGuardada, usarDireccionGuardada, handleLocationSelect, direccion, referencia, setReferencia, guardarDireccion, setGuardarDireccion, subtotal, costoEnvio, calculandoEnvio, totalFinal, handleContinue, handleProcederAlPago, paymentLoading, limpiarPedidoCompleto
+  isModal,
+  pedidoActual,
+  decrementarCantidad,
+  incrementarCantidad,
+  eliminarProducto,
+  tipoOrden,
+  setTipoOrden,
+  direccionGuardada,
+  usarDireccionGuardada,
+  handleLocationSelect,
+  direccion,
+  referencia,
+  setReferencia,
+  guardarDireccion,
+  setGuardarDireccion,
+  subtotal,
+  costoEnvio,
+  calculandoEnvio,
+  totalFinal,
+  handleContinue,
+  handleProcederAlPago,
+  paymentLoading,
+  limpiarPedidoCompleto
 }) => {
     const { theme } = useTheme();
     const isDark = theme === 'dark';
@@ -41,6 +66,8 @@ const CarritoContent = ({
     const listGroupFlushClass = isDark ? 'list-group-flush border-top border-secondary' : 'list-group-flush';
     const formCheckInputClass = isDark ? 'form-check-input bg-dark border-secondary' : 'form-check-input';
     const inputClass = isDark ? 'form-control form-control-dark bg-dark text-white border-secondary' : 'form-control';
+    const cardFooterClass = isModal ? "modal-footer d-grid gap-2" : "card-footer d-grid gap-2 mt-auto";
+
 
     return (
         <>
@@ -51,8 +78,10 @@ const CarritoContent = ({
                         <hr className={isDark ? "border-secondary" : ""}/>
                     </>
                 )}
+                
+                {/* Lista de Productos en Carrito */}
                 <ul className={`list-group ${listGroupFlushClass}`}>
-                    {pedidoActual.length === 0 && <li className={`${listClass} text-center text-muted`}>Tu carrito está vacío</li>}
+                    {pedidoActual.length === 0 && <li className={`${listClass} text-center text-muted fw-medium`}>🛒 Tu carrito está vacío</li>}
                     
                     {pedidoActual.map((item) => (
                         <li key={item.cartItemId || item.id} className={`${listClass} d-flex align-items-center justify-content-between p-2`}>
@@ -81,7 +110,8 @@ const CarritoContent = ({
                     ))}
                 </ul>
                 <hr className={isDark ? "border-secondary" : ""}/>
-
+                
+                {/* Opciones de Entrega */}
                 <h5 className="fw-bold mb-3">Elige una opción:</h5>
                 <div className="d-flex flex-column gap-2">
                     <div className="form-check">
@@ -98,10 +128,17 @@ const CarritoContent = ({
                     </div>
                 </div>
 
+                {/* Selección de Domicilio (solo visible en Domicilio y NO en modal inicial) */}
                 {tipoOrden === 'domicilio' && !isModal && (
                     <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-3 p-3 rounded" style={{ backgroundColor: isDark ? '#1e1e1e' : '#eee' }}>
+                        <hr className={isDark ? "border-secondary" : ""}/>
                         <h6 className="fw-bold mb-3 d-flex align-items-center gap-2 text-info"><MapPin size={18}/> Dirección de Envío</h6>
-                        {direccionGuardada && (<button className="btn btn-info w-100 mb-3 d-flex align-items-center justify-content-center gap-2 fw-bold rounded-pill" onClick={usarDireccionGuardada}><Home size={18}/> Usar mi dirección guardada</button>)}
+                        
+                        {direccionGuardada && (
+                            <button className="btn btn-info w-100 mb-3 d-flex align-items-center justify-content-center gap-2 fw-bold rounded-pill" onClick={usarDireccionGuardada}>
+                                <Home size={18}/> Usar mi dirección guardada
+                            </button>
+                        )}
 
                         <label className="form-label small text-muted">Busca tu dirección:</label>
                         <MapSelector onLocationSelect={handleLocationSelect} initialAddress={direccion} />
@@ -118,6 +155,7 @@ const CarritoContent = ({
                     </motion.div>
                 )}
 
+                {/* Totales */}
                 <hr className={isDark ? "border-secondary" : ""}/>
                 <p className="d-flex justify-content-between fw-medium">Subtotal: <span>${subtotal.toFixed(2)}</span></p>
                 {tipoOrden === 'domicilio' && (
@@ -128,7 +166,7 @@ const CarritoContent = ({
                 <h4 className="fw-bold d-flex justify-content-between pt-2 border-top">Total: <span className="text-success">${totalFinal.toFixed(2)}</span></h4>
             </div>
 
-            <div className={isModal ? "modal-footer d-grid gap-2" : "card-footer d-grid gap-2 mt-auto"}>
+            <div className={cardFooterClass}>
                 {isModal ? (
                     <button
                         className="btn btn-primary fw-bold rounded-pill"
@@ -153,11 +191,13 @@ const CarritoContent = ({
 };
 
 
-// --- ClientePage (Componente Principal) ---
+// --- ClientePage (Componente Principal - Mejorado Visualmente) ---
 function ClientePage() {
     const { theme } = useTheme();
     const isDark = theme === 'dark';
-    
+    const inputClass = isDark ? 'form-control form-control-dark bg-dark text-white border-secondary' : 'form-control';
+
+
     const {
         pedidoActual, subtotal, incrementarCantidad, decrementarCantidad, eliminarProducto, limpiarPedido, agregarProductoAPedido
     } = useCart();
@@ -196,7 +236,7 @@ function ClientePage() {
         const tabBg = isDark ? '#1e1e1e' : '#f8f9fa';
 
         return (
-            <div className="d-flex gap-2 mb-5 p-3 rounded-3 shadow-sm" style={{ backgroundColor: tabBg, maxWidth: 'fit-content' }}>
+            <div className={`d-flex gap-2 mb-5 p-2 rounded-3 shadow-sm ${isDark ? 'bg-secondary' : 'bg-light'}`} style={{ maxWidth: 'fit-content' }}>
                 {tabs.map(tab => (
                     <button
                         key={tab.id}
@@ -217,8 +257,7 @@ function ClientePage() {
     };
     // --- FIN RENDER TABS ---
 
-
-    // --- Efectos y Manejadores (Sin cambios funcionales mayores) ---
+    // --- Efectos y Manejadores ---
     useEffect(() => {
         const fetchInitialData = async () => {
           if (activeTab !== 'crear') return;
@@ -409,12 +448,13 @@ function ClientePage() {
     return (
         <div className="container mt-4" style={pageStyle}> 
             
-            {/* Reemplazamos el ul.nav con el componente estilizado */}
+            {/* PESTAÑAS ESTILO CÁPSULA */}
             {renderTabs()}
 
-            {loading && <div className="text-center"><div className="spinner-border" role="status"></div></div>}
+            {loading && <div className="text-center"><div className="spinner-border text-primary" role="status"></div></div>}
             {error && <div className="alert alert-danger">{error}</div>}
 
+            {/* PESTAÑA: HACER UN PEDIDO */}
             {!loading && activeTab === 'crear' && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="row">
                     <div className="col-md-8">
@@ -434,10 +474,10 @@ function ClientePage() {
                                             </span>
                                         )}
                                         <div className="card-body d-flex flex-column justify-content-center pt-4">
-                                            <h5 className="card-title fw-bold mt-2">{item.nombre}</h5>
+                                            <h5 className="card-title fw-bold mt-2 text-truncate">{item.nombre}</h5>
                                             {item.en_oferta ? (
                                                 <div>
-                                                    <span className="text-muted text-decoration-line-through me-2">${Number(item.precio_original).toFixed(2)}</span>
+                                                    <span className="text-muted text-decoration-line-through me-2 small">${Number(item.precio_original).toFixed(2)}</span>
                                                     <span className="card-text fw-bold fs-5 text-success">${Number(item.precio).toFixed(2)}</span>
                                                 </div>
                                             ) : (
@@ -482,6 +522,7 @@ function ClientePage() {
                 </motion.div>
             )}
 
+            {/* PESTAÑA: MIS PEDIDOS */}
             {!loading && activeTab === 'ver' && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                     <h2 className={`fw-bold mb-4 ${isDark ? 'text-white' : 'text-dark'}`}>Mis Pedidos</h2>
@@ -542,6 +583,7 @@ function ClientePage() {
                 </motion.div>
             )}
 
+            {/* PESTAÑA: MIS RECOMPENSAS */}
             {!loading && activeTab === 'recompensas' && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                     <h2 className={`fw-bold mb-4 ${isDark ? 'text-white' : 'text-dark'}`}>Mis Recompensas</h2>
@@ -551,7 +593,6 @@ function ClientePage() {
                         <div className="row g-4">
                             {misRecompensas.map(recompensa => (
                                 <div key={recompensa.id} className="col-12">
-                                    {/* Estilo de cupón mejorado con alto contraste */}
                                     <div className={`d-flex align-items-center p-4 rounded-3 shadow-sm ${isDark ? 'bg-info text-dark' : 'bg-success text-white'}`} style={{ borderLeft: '8px solid var(--bs-warning)' }}>
                                         <div className="fs-1 me-4">🎁</div>
                                         <div className="flex-grow-1">
@@ -579,10 +620,11 @@ function ClientePage() {
                 </button>
             )}
 
+            {/* Modal de Carrito/Dirección (para móviles) */}
             {showCartModal && (
                 <div 
-                    className="modal show fade" 
-                    style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(3px)' }}
+                    className="modal show fade d-block" 
+                    style={{ backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(3px)' }}
                 >
                     <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="modal-dialog modal-dialog-scrollable">
                         <div className={`modal-content shadow-lg ${isDark ? 'bg-dark text-white border-secondary' : ''}`}>
@@ -627,7 +669,7 @@ function ClientePage() {
                                         
                                         <div className="mt-3">
                                             <label htmlFor="referenciaModal" className="form-label fw-bold">Referencia:</label>
-                                            <input type="text" id="referenciaModal" className={`form-control ${isDark ? 'form-control-dark bg-dark text-white border-secondary' : ''}`} value={referencia} onChange={(e) => setReferencia(e.target.value)} />
+                                            <input type="text" id="referenciaModal" className={inputClass} value={referencia} onChange={(e) => setReferencia(e.target.value)} />
                                         </div>
                                         <div className="form-check mt-3">
                                             <input className="form-check-input" type="checkbox" id="guardarDireccionModal" checked={guardarDireccion} onChange={(e) => setGuardarDireccion(e.target.checked)} />
@@ -657,10 +699,11 @@ function ClientePage() {
             )}
 
 
+            {/* Modal de Pago (Stripe) */}
             {showPaymentModal && clientSecret && (
                 <div 
-                    className="modal show fade" 
-                    style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(3px)' }}
+                    className="modal show fade d-block" 
+                    style={{ backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(3px)' }}
                 >
                     <motion.div initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="modal-dialog">
                         <div className={`modal-content shadow-lg ${isDark ? 'bg-dark text-white border-secondary' : ''}`}>
@@ -681,7 +724,7 @@ function ClientePage() {
                     </motion.div>
                 </div>
             )}
-        </div> // Cierre final del componente
+        </div> 
     );
 }
 
