@@ -1,205 +1,200 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
-import { 
-    ShoppingBag, Package, Star, MapPin, Truck, CheckCircle, Minus, Plus as PlusIcon, Trash2, Home, School, Eye, EyeOff 
-} from 'lucide-react'; // <-- Importaciones de Iconos
-
+// 🚨 Asumo la existencia de useTheme para manejar el tema como en el ejemplo anterior
+import { useTheme } from '../context/ThemeContext'; 
 import CheckoutForm from '../components/CheckoutForm';
 import MapSelector from '../components/MapSelector';
 import apiClient from '../services/api';
 import { useCart } from '../context/CartContext';
 import ProductDetailModal from '../components/ProductDetailModal';
-
-// --- Asume que tienes un contexto de tema ---
-const useTheme = () => ({ theme: 'dark' }); 
+import { ShoppingCart, ListChecks, Award, Edit3, MapPin } from 'lucide-react'; // Importamos íconos para las pestañas y títulos
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
+// Estilos de cupón/recompensa (Ajustados para alto contraste)
+const styles = {
+    cupon: {
+        backgroundColor: '#2a9d8f', // Color primario fuerte
+        color: 'white',
+        borderRadius: '12px', // Más acorde al estilo moderno
+        padding: '1.5rem 2rem',
+        display: 'flex',
+        alignItems: 'center',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.3)', // Sombra definida
+        borderLeft: '8px solid #264653', // Borde sólido mejor que dashed
+        position: 'relative',
+        marginBottom: '1rem',
+        transition: 'all 0.2s',
+    },
+    cuponIcon: { fontSize: '2.5rem', marginRight: '1.5rem' },
+    cuponBody: { flexGrow: 1 },
+    cuponTitle: { margin: '0', fontSize: '1.4rem', fontWeight: 'bold' },
+};
+
 const notify = (type, message) => {
-  switch (type) {
-    case 'success':
-      toast.success(message);
-      break;
-    case 'error':
-      toast.error(message);
-      break;
-    default:
-      toast(message);
-      break;
-  }
+    // ... (función notify queda igual)
+    switch (type) {
+        case 'success':
+            toast.success(message);
+            break;
+        case 'error':
+            toast.error(message);
+            break;
+        default:
+            toast(message);
+            break;
+    }
 };
 
-
-// --- CarritoContent (Componente de Pedido - Mejorado Visualmente) ---
+// Componente CartContent actualizado con estilos dinámicos
 const CarritoContent = ({
-  isModal,
-  pedidoActual,
-  decrementarCantidad,
-  incrementarCantidad,
-  eliminarProducto,
-  tipoOrden,
-  setTipoOrden,
-  direccionGuardada,
-  usarDireccionGuardada,
-  handleLocationSelect,
-  direccion,
-  referencia,
-  setReferencia,
-  guardarDireccion,
-  setGuardarDireccion,
-  subtotal,
-  costoEnvio,
-  calculandoEnvio,
-  totalFinal,
-  handleContinue,
-  handleProcederAlPago,
-  paymentLoading,
-  limpiarPedidoCompleto
-}) => {
-    const { theme } = useTheme();
-    const isDark = theme === 'dark';
-    const listClass = isDark ? 'list-group-item bg-dark text-white border-secondary' : 'list-group-item';
-    const listGroupFlushClass = isDark ? 'list-group-flush border-top border-secondary' : 'list-group-flush';
-    const formCheckInputClass = isDark ? 'form-check-input bg-dark border-secondary' : 'form-check-input';
-    const inputClass = isDark ? 'form-control form-control-dark bg-dark text-white border-secondary' : 'form-control';
-    const cardFooterClass = isModal ? "modal-footer d-grid gap-2" : "card-footer d-grid gap-2 mt-auto";
-
-
-    return (
-        <>
-            <div className={isModal ? "modal-body" : "card-body"}>
-                {!isModal && (
-                    <>
-                        <h3 className="card-title text-center fw-bold">Mi Pedido</h3>
-                        <hr className={isDark ? "border-secondary" : ""}/>
-                    </>
-                )}
+    isModal,
+    pedidoActual,
+    decrementarCantidad,
+    incrementarCantidad,
+    eliminarProducto,
+    tipoOrden,
+    setTipoOrden,
+    direccionGuardada,
+    usarDireccionGuardada,
+    handleLocationSelect,
+    direccion,
+    referencia,
+    setReferencia,
+    guardarDireccion,
+    setGuardarDireccion,
+    subtotal,
+    costoEnvio,
+    calculandoEnvio,
+    totalFinal,
+    handleContinue,
+    handleProcederAlPago,
+    paymentLoading,
+    limpiarPedidoCompleto,
+    isDark, // Prop para el tema
+    inputClass // Prop para los inputs
+}) => (
+    <>
+        <div className={isModal ? "modal-body" : "card-body"}>
+            {!isModal && (
+                <>
+                    <h4 className="card-title fw-bold text-center mb-3 d-flex align-items-center justify-content-center gap-2">
+                        <ShoppingCart size={20} className="text-primary"/> Mi Pedido
+                    </h4>
+                    <hr className={isDark ? 'border-secondary' : ''} />
+                </>
+            )}
+            <ul className="list-group list-group-flush">
+                {pedidoActual.length === 0 && <li className={`list-group-item text-center text-muted ${isDark ? 'bg-dark' : ''}`}>Tu carrito está vacío</li>}
                 
-                {/* Lista de Productos en Carrito */}
-                <ul className={`list-group ${listGroupFlushClass}`}>
-                    {pedidoActual.length === 0 && <li className={`${listClass} text-center text-muted fw-medium`}>🛒 Tu carrito está vacío</li>}
-                    
-                    {pedidoActual.map((item) => (
-                        <li key={item.cartItemId || item.id} className={`${listClass} d-flex align-items-center justify-content-between p-2`}>
-                            
-                            <div className="me-auto" style={{ paddingRight: '10px' }}> 
-                                <span className="fw-bold">{item.nombre}</span>
-                                
-                                {item.opcionesSeleccionadas && item.opcionesSeleccionadas.length > 0 && (
-                                    <ul className="list-unstyled small text-info mb-0" style={{ marginTop: '-3px' }}>
-                                        {item.opcionesSeleccionadas.map(opcion => (
-                                            <li key={opcion.id}>+ {opcion.nombre}</li>
-                                        ))}
-                                    </ul>
-                                )}
-                            </div>
-
-                            <div className="d-flex align-items-center bg-light rounded-pill p-1 shadow-sm" style={{ pointerEvents: 'auto' }}>
-                                <button className="btn btn-sm btn-link text-dark p-0 px-2" onClick={() => decrementarCantidad(item.cartItemId || item.id)}><Minus size={16}/></button>
-                                <span className="mx-1 fw-bold text-dark">{item.cantidad}</span>
-                                <button className="btn btn-sm btn-link text-dark p-0 px-2" onClick={() => incrementarCantidad(item.cartItemId || item.id)}><PlusIcon size={16}/></button>
-                            </div>
-                            
-                            <span className="mx-3 fw-bold text-success" style={{ minWidth: '70px', textAlign: 'right' }}>${(item.cantidad * Number(item.precio)).toFixed(2)}</span>
-                            <button className="btn btn-sm btn-link text-danger p-0" onClick={() => eliminarProducto(item.cartItemId || item.id)}><Trash2 size={18}/></button>
-                        </li>
-                    ))}
-                </ul>
-                <hr className={isDark ? "border-secondary" : ""}/>
-                
-                {/* Opciones de Entrega */}
-                <h5 className="fw-bold mb-3">Elige una opción:</h5>
-                <div className="d-flex flex-column gap-2">
-                    <div className="form-check">
-                        <input className={formCheckInputClass} type="radio" name={isModal ? "tipoOrdenModal" : "tipoOrden"} id={isModal ? "llevarModal" : "llevar"} value="llevar" checked={tipoOrden === 'llevar'} onChange={(e) => setTipoOrden(e.target.value)} />
-                        <label className="form-check-label d-flex align-items-center gap-2" htmlFor={isModal ? "llevarModal" : "llevar"}><CheckCircle size={18}/> Para Recoger</label>
-                    </div>
-                    <div className="form-check">
-                        <input className={formCheckInputClass} type="radio" name={isModal ? "tipoOrdenModal" : "tipoOrden"} id={isModal ? "localModal" : "local"} value="local" checked={tipoOrden === 'local'} onChange={(e) => setTipoOrden(e.target.value)} />
-                        <label className="form-check-label d-flex align-items-center gap-2" htmlFor={isModal ? "localModal" : "local"}><School size={18}/> Para La Escuela</label>
-                    </div>
-                    <div className="form-check">
-                        <input className={formCheckInputClass} type="radio" name={isModal ? "tipoOrdenModal" : "tipoOrden"} id={isModal ? "domicilioModal" : "domicilio"} value="domicilio" checked={tipoOrden === 'domicilio'} onChange={(e) => setTipoOrden(e.target.value)} />
-                        <label className="form-check-label d-flex align-items-center gap-2" htmlFor={isModal ? "domicilioModal" : "domicilio"}><Truck size={18}/> Entrega a Domicilio</label>
-                    </div>
-                </div>
-
-                {/* Selección de Domicilio (solo visible en Domicilio y NO en modal inicial) */}
-                {tipoOrden === 'domicilio' && !isModal && (
-                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-3 p-3 rounded" style={{ backgroundColor: isDark ? '#1e1e1e' : '#eee' }}>
-                        <hr className={isDark ? "border-secondary" : ""}/>
-                        <h6 className="fw-bold mb-3 d-flex align-items-center gap-2 text-info"><MapPin size={18}/> Dirección de Envío</h6>
+                {pedidoActual.map((item) => (
+                    <li key={item.cartItemId || item.id} className={`list-group-item d-flex align-items-center justify-content-between p-2 ${isDark ? 'bg-transparent text-white' : ''}`}>
                         
-                        {direccionGuardada && (
-                            <button className="btn btn-info w-100 mb-3 d-flex align-items-center justify-content-center gap-2 fw-bold rounded-pill" onClick={usarDireccionGuardada}>
-                                <Home size={18}/> Usar mi dirección guardada
-                            </button>
-                        )}
-
-                        <label className="form-label small text-muted">Busca tu dirección:</label>
-                        <MapSelector onLocationSelect={handleLocationSelect} initialAddress={direccion} />
-
-                        <div className="mt-3">
-                            <label htmlFor="referenciaDesktop" className="form-label fw-bold">Referencia:</label>
-                            <input type="text" id="referenciaDesktop" className={inputClass} value={referencia} onChange={(e) => setReferencia(e.target.value)} />
+                        <div className="me-auto" style={{ paddingRight: '10px' }}> 
+                            <span className="fw-semibold">{item.nombre}</span>
+                            
+                            {item.opcionesSeleccionadas && item.opcionesSeleccionadas.length > 0 && (
+                                <ul className="list-unstyled small text-muted mb-0" style={{ marginTop: '-3px' }}>
+                                    {item.opcionesSeleccionadas.map(opcion => (
+                                        <li key={opcion.id} className={isDark ? 'text-secondary' : ''}>+ {opcion.nombre}</li>
+                                    ))}
+                                </ul>
+                            )}
                         </div>
 
-                        <div className="form-check mt-3">
-                            <input className={formCheckInputClass} type="checkbox" id="guardarDireccionDesktop" checked={guardarDireccion} onChange={(e) => setGuardarDireccion(e.target.checked)} />
-                            <label className="form-check-label" htmlFor="guardarDireccionDesktop">Guardar dirección</label>
+                        <div className="d-flex align-items-center">
+                            <button className={`btn btn-sm ${isDark ? 'btn-outline-light' : 'btn-outline-dark'}`} onClick={() => decrementarCantidad(item.cartItemId || item.id)} disabled={paymentLoading}>-</button>
+                            <span className="mx-2 fw-bold">{item.cantidad}</span>
+                            <button className={`btn btn-sm ${isDark ? 'btn-outline-light' : 'btn-outline-dark'}`} onClick={() => incrementarCantidad(item.cartItemId || item.id)} disabled={paymentLoading}>+</button>
                         </div>
-                    </motion.div>
-                )}
-
-                {/* Totales */}
-                <hr className={isDark ? "border-secondary" : ""}/>
-                <p className="d-flex justify-content-between fw-medium">Subtotal: <span>${subtotal.toFixed(2)}</span></p>
-                {tipoOrden === 'domicilio' && (
-                    <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="d-flex justify-content-between fw-medium text-info">
-                        Costo de Envío: {calculandoEnvio ? <span className="spinner-border spinner-border-sm"></span> : <span>${costoEnvio.toFixed(2)}</span>}
-                    </motion.p>
-                )}
-                <h4 className="fw-bold d-flex justify-content-between pt-2 border-top">Total: <span className="text-success">${totalFinal.toFixed(2)}</span></h4>
+                        <span className="mx-3 fw-bold" style={{ minWidth: '70px', textAlign: 'right' }}>${(item.cantidad * Number(item.precio)).toFixed(2)}</span>
+                        <button className="btn btn-sm btn-danger p-1" onClick={() => eliminarProducto(item.cartItemId || item.id)} disabled={paymentLoading}>&times;</button>
+                    </li>
+                ))}
+            </ul>
+            <hr className={isDark ? 'border-secondary' : ''} />
+            <h5 className="fw-bold mb-3">Elige una opción:</h5>
+            <div className="d-flex gap-3 mb-3">
+                <div className="form-check"><input className="form-check-input" type="radio" name={isModal ? "tipoOrdenModal" : "tipoOrden"} id={isModal ? "llevarModal" : "llevar"} value="llevar" checked={tipoOrden === 'llevar'} onChange={(e) => setTipoOrden(e.target.value)} /><label className="form-check-label" htmlFor={isModal ? "llevarModal" : "llevar"}>Para Recoger</label></div>
+                <div className="form-check"><input className="form-check-input" type="radio" name={isModal ? "tipoOrdenModal" : "tipoOrden"} id={isModal ? "localModal" : "local"} value="local" checked={tipoOrden === 'local'} onChange={(e) => setTipoOrden(e.target.value)} /><label className="form-check-label" htmlFor={isModal ? "localModal" : "local"}>Para La Escuela</label></div>
+                <div className="form-check"><input className="form-check-input" type="radio" name={isModal ? "tipoOrdenModal" : "tipoOrden"} id={isModal ? "domicilioModal" : "domicilio"} value="domicilio" checked={tipoOrden === 'domicilio'} onChange={(e) => setTipoOrden(e.target.value)} /><label className="form-check-label" htmlFor={isModal ? "domicilioModal" : "domicilio"}>A Domicilio</label></div>
             </div>
 
-            <div className={cardFooterClass}>
-                {isModal ? (
-                    <button
-                        className="btn btn-primary fw-bold rounded-pill"
-                        onClick={handleContinue}
-                        disabled={pedidoActual.length === 0 || paymentLoading}
-                    >
-                        {tipoOrden === 'domicilio' ? 'Siguiente' : 'Proceder al Pago'}
-                    </button>
-                ) : (
-                    <button
-                        className="btn btn-primary fw-bold rounded-pill"
-                        onClick={handleProcederAlPago}
-                        disabled={pedidoActual.length === 0 || paymentLoading || (tipoOrden === 'domicilio' && !direccion) || calculandoEnvio}
-                    >
-                        {paymentLoading ? 'Iniciando...' : 'Proceder al Pago'}
-                    </button>
-                )}
-                <button className="btn btn-outline-danger fw-bold rounded-pill" onClick={limpiarPedidoCompleto}>Vaciar Carrito</button>
-            </div>
-        </>
-    );
-};
+            {tipoOrden === 'domicilio' && !isModal && (
+                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className={`mt-3 p-3 rounded ${isDark ? 'bg-secondary bg-opacity-10' : 'bg-light'}`}>
+                    <h6 className="fw-bold text-primary mb-3 d-flex align-items-center gap-2"><MapPin size={18}/> Ubicación</h6>
+                    {direccionGuardada && (<button className="btn btn-outline-info w-100 mb-3" onClick={usarDireccionGuardada}>Usar mi dirección guardada</button>)}
+
+                    <label className="form-label fw-bold">Busca tu dirección:</label>
+                    <MapSelector onLocationSelect={handleLocationSelect} initialAddress={direccion} className={inputClass}/>
+
+                    <div className="mt-3">
+                        <label htmlFor="referenciaDesktop" className="form-label fw-bold">Referencia:</label>
+                        <input type="text" id="referenciaDesktop" className={inputClass} value={referencia} onChange={(e) => setReferencia(e.target.value)} />
+                    </div>
+
+                    <div className="form-check mt-3">
+                        <input className="form-check-input" type="checkbox" id="guardarDireccionDesktop" checked={guardarDireccion} onChange={(e) => setGuardarDireccion(e.target.checked)} />
+                        <label className={`form-check-label ${isDark ? 'text-white' : ''}`} htmlFor="guardarDireccionDesktop">Guardar dirección</label>
+                    </div>
+                </motion.div>
+            )}
+
+            <hr className={isDark ? 'border-secondary' : ''} />
+            <p className="d-flex justify-content-between fw-light">Subtotal: <span>${subtotal.toFixed(2)}</span></p>
+            {tipoOrden === 'domicilio' && (<motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="d-flex justify-content-between fw-light">Costo de Envío: {calculandoEnvio ? <span className="spinner-border spinner-border-sm text-primary"></span> : <span>${costoEnvio.toFixed(2)}</span>}</motion.p>)}
+            <h4 className="d-flex justify-content-between fw-bold mt-2">Total: <span className="text-success">${totalFinal.toFixed(2)}</span></h4>
+        </div>
+
+        <div className={isModal ? "modal-footer d-grid gap-2" : "card-footer d-grid gap-2 mt-auto"}>
+            {isModal ? (
+                <button
+                    className="btn btn-lg btn-primary fw-bold"
+                    onClick={handleContinue}
+                    disabled={pedidoActual.length === 0 || paymentLoading}
+                >
+                    {tipoOrden === 'domicilio' ? 'Siguiente' : 'Proceder al Pago'}
+                </button>
+            ) : (
+                <button
+                    className="btn btn-lg btn-primary fw-bold"
+                    onClick={handleProcederAlPago}
+                    disabled={pedidoActual.length === 0 || paymentLoading || (tipoOrden === 'domicilio' && !direccion) || calculandoEnvio}
+                >
+                    {paymentLoading ? 'Iniciando Pago...' : 'Proceder al Pago'}
+                </button>
+            )}
+            <button className="btn btn-outline-danger fw-bold" onClick={limpiarPedidoCompleto} disabled={paymentLoading}>Vaciar Carrito</button>
+        </div>
+    </>
+);
 
 
-// --- ClientePage (Componente Principal - Mejorado Visualmente) ---
 function ClientePage() {
-    const { theme } = useTheme();
+    // 1. Obtener tema
+    const { theme } = useTheme(); 
     const isDark = theme === 'dark';
-    const inputClass = isDark ? 'form-control form-control-dark bg-dark text-white border-secondary' : 'form-control';
 
+    // 2. Definir clases dinámicas
+    const cardClass = `card shadow-lg border-0 ${isDark ? 'bg-dark text-white' : ''}`;
+    const inputClass = `form-control ${isDark ? 'form-control-dark bg-dark text-white border-secondary' : 'form-control'}`;
+    const lightBgClass = isDark ? 'bg-secondary bg-opacity-10 text-white' : 'bg-light';
+    const darkBgClass = isDark ? 'bg-dark text-white' : '';
+    const spinnerColor = isDark ? 'text-primary' : 'text-dark';
 
+    // ... (Estados y Hooks, sin cambios)
     const {
-        pedidoActual, subtotal, incrementarCantidad, decrementarCantidad, eliminarProducto, limpiarPedido, agregarProductoAPedido
+        pedidoActual,
+        subtotal,
+        incrementarCantidad,
+        decrementarCantidad,
+        eliminarProducto,
+        limpiarPedido,
+        agregarProductoAPedido
     } = useCart();
 
     const [activeTab, setActiveTab] = useState('crear');
@@ -226,106 +221,74 @@ function ClientePage() {
 
     const totalFinal = subtotal + costoEnvio;
 
-    // --- FUNCIÓN DE RENDERIZADO DE TABS (ESTILO CÁPSULA) ---
-    const renderTabs = () => {
-        const tabs = [
-            { id: 'crear', label: 'Hacer un Pedido', icon: <ShoppingBag size={18} /> },
-            { id: 'ver', label: 'Mis Pedidos', icon: <Package size={18} /> },
-            { id: 'recompensas', label: 'Mis Recompensas', icon: <Star size={18} /> },
-        ];
-        const tabBg = isDark ? '#1e1e1e' : '#f8f9fa';
-
-        return (
-            <div className={`d-flex gap-2 mb-5 p-2 rounded-3 shadow-sm ${isDark ? 'bg-secondary' : 'bg-light'}`} style={{ maxWidth: 'fit-content' }}>
-                {tabs.map(tab => (
-                    <button
-                        key={tab.id}
-                        onClick={() => setActiveTab(tab.id)}
-                        className={`btn d-flex align-items-center gap-2 px-4 py-2 rounded-pill fw-bold transition-all shadow-sm`}
-                        style={{
-                            backgroundColor: activeTab === tab.id ? '#0d6efd' : 'transparent',
-                            color: activeTab === tab.id ? '#fff' : (isDark ? '#ccc' : '#555'),
-                            border: activeTab === tab.id ? 'none' : `1px solid ${isDark ? '#444' : '#ccc'}`,
-                            transition: 'all 0.2s',
-                        }}
-                    >
-                        {tab.icon} {tab.label}
-                    </button>
-                ))}
-            </div>
-        );
-    };
-    // --- FIN RENDER TABS ---
-
-    // --- Efectos y Manejadores ---
     useEffect(() => {
         const fetchInitialData = async () => {
-          if (activeTab !== 'crear') return;
-          setLoading(true);
-          setError('');
-          try {
-            const [productosRes, combosRes, direccionRes] = await Promise.all([
-              apiClient.get('/productos'),
-              apiClient.get('/combos'),
-              apiClient.get('/usuarios/mi-direccion')
-            ]);
-            
-            const estandarizarItem = (item) => {
-              const precioFinal = Number(item.precio);
-              let precioOriginal = precioFinal;
-              if (item.en_oferta && item.descuento_porcentaje > 0) {
-                precioOriginal = precioFinal / (1 - item.descuento_porcentaje / 100);
-              }
-              return {
-                ...item, 
-                precio: precioFinal,
-                precio_original: precioOriginal,
-                nombre: item.nombre || item.titulo,
-              };
-            };
-            const productosEstandarizados = productosRes.data.map(estandarizarItem);
-            const combosEstandarizados = combosRes.data.map(estandarizarItem);
-            setMenuItems([...productosEstandarizados, ...combosEstandarizados]);
-            if (direccionRes.data) {
-              setDireccionGuardada(direccionRes.data);
+            if (activeTab !== 'crear') return;
+            setLoading(true);
+            setError('');
+            try {
+                const [productosRes, combosRes, direccionRes] = await Promise.all([
+                    apiClient.get('/productos'),
+                    apiClient.get('/combos'),
+                    apiClient.get('/usuarios/mi-direccion')
+                ]);
+                
+                const estandarizarItem = (item) => {
+                    const precioFinal = Number(item.precio);
+                    let precioOriginal = precioFinal;
+                    if (item.en_oferta && item.descuento_porcentaje > 0) {
+                        precioOriginal = precioFinal / (1 - item.descuento_porcentaje / 100);
+                    }
+                    return {
+                        ...item, 
+                        precio: precioFinal,
+                        precio_original: precioOriginal,
+                        nombre: item.nombre || item.titulo,
+                    };
+                };
+                const productosEstandarizados = productosRes.data.map(estandarizarItem);
+                const combosEstandarizados = combosRes.data.map(estandarizarItem);
+                setMenuItems([...productosEstandarizados, ...combosEstandarizados]);
+                if (direccionRes.data) {
+                    setDireccionGuardada(direccionRes.data);
+                }
+            } catch (err) {
+                console.error("Error cargando datos iniciales:", err);
+                setError('No se pudieron cargar los productos en este momento.');
+            } finally {
+                setLoading(false);
             }
-          } catch (err) {
-            console.error("Error cargando datos iniciales:", err);
-            setError('No se pudieron cargar los productos en este momento.');
-          } finally {
-            setLoading(false);
-          }
         };
         fetchInitialData();
     }, [activeTab]);
 
     useEffect(() => {
         const fetchTabData = async () => {
-          if (activeTab === 'crear') return;
-          setLoading(true);
-          setError('');
-          try {
-            if (activeTab === 'ver') {
-              const res = await apiClient.get('/pedidos/mis-pedidos');
-              setMisPedidos(Array.isArray(res.data) ? res.data : []);
-            } else if (activeTab === 'recompensas') {
-              const res = await apiClient.get('/recompensas/mis-recompensas');
-              setMisRecompensas(Array.isArray(res.data) ? res.data : []);
+            if (activeTab === 'crear') return;
+            setLoading(true);
+            setError('');
+            try {
+                if (activeTab === 'ver') {
+                    const res = await apiClient.get('/pedidos/mis-pedidos');
+                    setMisPedidos(Array.isArray(res.data) ? res.data : []);
+                } else if (activeTab === 'recompensas') {
+                    const res = await apiClient.get('/recompensas/mis-recompensas');
+                    setMisRecompensas(Array.isArray(res.data) ? res.data : []);
+                }
+            } catch (err) {
+                setError('No se pudieron cargar los datos de la pestaña.');
+                console.error("Error en fetchTabData:", err);
+            } finally {
+                setLoading(false);
             }
-          } catch (err) {
-            setError('No se pudieron cargar los datos de la pestaña.');
-            console.error("Error en fetchTabData:", err);
-          } finally {
-            setLoading(false);
-          }
         };
         fetchTabData();
     }, [activeTab]);
 
     useEffect(() => {
         if (tipoOrden !== 'domicilio') {
-          setCostoEnvio(0);
-          setDireccion(null);
+            setCostoEnvio(0);
+            setDireccion(null);
         }
     }, [tipoOrden]);
 
@@ -343,24 +306,24 @@ function ClientePage() {
         setCalculandoEnvio(true);
         setCostoEnvio(0);
         try {
-          const res = await apiClient.post('/pedidos/calcular-envio', { lat: location.lat, lng: location.lng });
-          setCostoEnvio(res.data.deliveryCost);
-          notify('success', `Costo de envío: $${res.data.deliveryCost.toFixed(2)}`);
+            const res = await apiClient.post('/pedidos/calcular-envio', { lat: location.lat, lng: location.lng });
+            setCostoEnvio(res.data.deliveryCost);
+            notify('success', `Costo de envío: $${res.data.deliveryCost.toFixed(2)}`);
         } catch (err) {
-          notify('error', err.response?.data?.msg || 'No se pudo calcular el costo de envío.');
-          setDireccion(null);
+            notify('error', err.response?.data?.msg || 'No se pudo calcular el costo de envío.');
+            setDireccion(null);
         } finally {
-          setCalculandoEnvio(false);
+            setCalculandoEnvio(false);
         }
     };
 
     const usarDireccionGuardada = () => {
         if (direccionGuardada) {
-          handleLocationSelect(direccionGuardada);
-          if (direccionGuardada.referencia) {
-            setReferencia(direccionGuardada.referencia);
-          }
-          notify('success', 'Usando dirección guardada.');
+            handleLocationSelect(direccionGuardada);
+            if (direccionGuardada.referencia) {
+                setReferencia(direccionGuardada.referencia);
+            }
+            notify('success', 'Usando dirección guardada.');
         }
     };
 
@@ -370,73 +333,83 @@ function ClientePage() {
         if (calculandoEnvio) { return notify('error', 'Espera a que termine el cálculo del envío.'); }
         setPaymentLoading(true);
         try {
-          
-          const productosParaEnviar = pedidoActual.map(item => ({ 
-            id: item.id, 
-            cantidad: item.cantidad, 
-            precio: Number(item.precio), 
-            nombre: item.nombre,
-            opciones: item.opcionesSeleccionadas 
-              ? item.opcionesSeleccionadas.map(op => op.nombre).join(', ') 
-              : null
-          }));
+            
+            const productosParaEnviar = pedidoActual.map(item => ({ 
+                id: item.id, 
+                cantidad: item.cantidad, 
+                precio: Number(item.precio), 
+                nombre: item.nombre,
+                opciones: item.opcionesSeleccionadas 
+                    ? item.opcionesSeleccionadas.map(op => op.nombre).join(', ') 
+                    : null
+            }));
 
-          const pedidoData = {
-            total: totalFinal,
-            productos: productosParaEnviar,
-            tipo_orden: tipoOrden,
-            costo_envio: costoEnvio,
-            direccion_entrega: tipoOrden === 'domicilio' ? direccion?.description : null,
-            latitude: tipoOrden === 'domicilio' ? direccion?.lat : null,
-            longitude: tipoOrden === 'domicilio' ? direccion?.lng : null,
-            referencia: tipoOrden === 'domicilio' ? referencia : null
-          };
-          
-          setDatosParaCheckout(pedidoData);
-          const res = await apiClient.post('/payments/create-payment-intent', { amount: totalFinal });
-          setShowCartModal(false);
-          setModalView('cart');
-          setClientSecret(res.data.clientSecret);
-          setShowPaymentModal(true);
+            const pedidoData = {
+                total: totalFinal,
+                productos: productosParaEnviar,
+                tipo_orden: tipoOrden,
+                costo_envio: costoEnvio,
+                direccion_entrega: tipoOrden === 'domicilio' ? direccion?.description : null,
+                latitude: tipoOrden === 'domicilio' ? direccion?.lat : null,
+                longitude: tipoOrden === 'domicilio' ? direccion?.lng : null,
+                referencia: tipoOrden === 'domicilio' ? referencia : null
+            };
+            
+            setDatosParaCheckout(pedidoData);
+            const res = await apiClient.post('/payments/create-payment-intent', { amount: totalFinal });
+            setShowCartModal(false);
+            setModalView('cart');
+            setClientSecret(res.data.clientSecret);
+            setShowPaymentModal(true);
         } catch (err) {
-          notify('error', 'No se pudo iniciar el proceso de pago.');
+            notify('error', 'No se pudo iniciar el proceso de pago.');
         } finally {
-          setPaymentLoading(false);
+            setPaymentLoading(false);
         }
     };
 
     const handleContinue = () => {
         if (tipoOrden !== 'domicilio') {
-          handleProcederAlPago();
+            handleProcederAlPago();
         } else {
-          setModalView('address');
+            setModalView('address');
         }
     };
 
     const handleSuccessfulPayment = async () => {
         if (guardarDireccion && direccion) {
-          try {
-            const datosParaGuardar = { ...direccion, referencia };
-            await apiClient.put('/usuarios/mi-direccion', datosParaGuardar);
-            notify('success', 'Dirección y referencia guardadas.');
-            setDireccionGuardada(datosParaGuardar);
-          } catch (err) {
-            notify('error', 'No se pudo guardar la dirección y referencia.');
-          }
+            try {
+                const datosParaGuardar = { ...direccion, referencia };
+                await apiClient.put('/usuarios/mi-direccion', datosParaGuardar);
+                notify('success', 'Dirección y referencia guardadas.');
+                setDireccionGuardada(datosParaGuardar);
+            } catch (err) {
+                notify('error', 'No se pudo guardar la dirección y referencia.');
+            }
         }
-        notify('success', '¡Pedido realizado y pagado con éxito!');
+        notify('success', '¡Pedido realizado y pagado con éxito! 🎉');
         limpiarPedidoCompleto();
         setShowPaymentModal(false);
         setClientSecret('');
         setActiveTab('ver');
     };
 
-    
     const handleProductClick = (item) => {
         setProductoSeleccionadoParaModal(item);
     };
+
+    const getStatusBadge = (estado) => { 
+        const base = 'badge fw-bold p-2';
+        switch (estado) { 
+            case 'Pendiente': return `${base} bg-warning text-dark`; 
+            case 'En Preparacion': return `${base} bg-info text-dark`; 
+            case 'Listo para Recoger': return `${base} bg-success text-white`; 
+            case 'Completado': return `${base} bg-secondary text-white`; 
+            case 'En Camino': return `${base} bg-primary text-white`; 
+            default: return `${base} bg-light text-dark`; 
+        } 
+    };
     
-    const getStatusBadge = (estado) => { switch (estado) { case 'Pendiente': return 'bg-warning text-dark'; case 'En Preparacion': return 'bg-info text-dark'; case 'Listo para Recoger': return 'bg-success text-white'; case 'Completado': return 'bg-secondary text-white'; case 'En Camino': return 'bg-primary text-white'; default: return 'bg-light text-dark'; } };
     const handleToggleDetalle = (pedidoId) => { setOrdenExpandida(ordenExpandida === pedidoId ? null : pedidoId); };
     const totalItemsEnCarrito = pedidoActual.reduce((sum, item) => sum + item.cantidad, 0);
 
@@ -446,43 +419,56 @@ function ClientePage() {
 
 
     return (
-        <div className="container mt-4" style={pageStyle}> 
+        <div className={darkBgClass} style={pageStyle}> 
+            <ul className={`nav nav-tabs mb-4 ${isDark ? 'nav-tabs-dark' : ''}`}>
+                <li className="nav-item">
+                    <button className={`nav-link fw-bold d-flex align-items-center gap-2 ${activeTab === 'crear' ? 'active text-primary' : (isDark ? 'text-white' : 'text-dark')}`} onClick={() => setActiveTab('crear')}>
+                        <Edit3 size={18} /> Crear un Pedido
+                    </button>
+                </li>
+                <li className="nav-item">
+                    <button className={`nav-link fw-bold d-flex align-items-center gap-2 ${activeTab === 'ver' ? 'active text-primary' : (isDark ? 'text-white' : 'text-dark')}`} onClick={() => setActiveTab('ver')}>
+                        <ListChecks size={18} /> Mis Pedidos
+                    </button>
+                </li>
+                <li className="nav-item">
+                    <button className={`nav-link fw-bold d-flex align-items-center gap-2 ${activeTab === 'recompensas' ? 'active text-primary' : (isDark ? 'text-white' : 'text-dark')}`} onClick={() => setActiveTab('recompensas')}>
+                        <Award size={18} /> Mis Recompensas
+                    </button>
+                </li>
+            </ul>
+
+            {/* --- CONTENIDO DE PESTAÑAS --- */}
             
-            {/* PESTAÑAS ESTILO CÁPSULA */}
-            {renderTabs()}
+            {loading && <div className="text-center p-5"><div className={`spinner-border ${spinnerColor}`} role="status"></div><p className="mt-2 text-muted">Cargando...</p></div>}
+            {error && <div className="alert alert-danger p-3 rounded-3">{error}</div>}
 
-            {loading && <div className="text-center"><div className="spinner-border text-primary" role="status"></div></div>}
-            {error && <div className="alert alert-danger">{error}</div>}
-
-            {/* PESTAÑA: HACER UN PEDIDO */}
+            {/* PESTAÑA 1: CREAR PEDIDO */}
             {!loading && activeTab === 'crear' && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="row">
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="row">
                     <div className="col-md-8">
-                        <h2 className={`fw-bold mb-4 ${isDark ? 'text-white' : 'text-dark'}`}>Elige tus Productos</h2>
-                        <div className="row g-3">
+                        <h2 className={`fw-bold mb-4 ${isDark ? 'text-primary' : 'text-dark'}`}>Menú Disponible</h2>
+                        <div className="row g-4">
                             {menuItems?.map(item => (
                                 <div key={item.id} className="col-6 col-md-4 col-lg-3">
                                     
                                     <div 
-                                        className={`card h-100 text-center shadow-sm ${isDark ? 'bg-secondary text-white border-secondary' : ''}`} 
+                                        className={`${cardClass} h-100 text-center cursor-pointer transition-shadow hover-shadow-lg`} 
                                         onClick={() => handleProductClick(item)} 
-                                        style={{ cursor: 'pointer', overflow: 'hidden' }}
+                                        style={{ cursor: 'pointer', borderRadius: '10px' }}
                                     >
-                                        {item.en_oferta && (
-                                            <span className="badge bg-danger position-absolute top-0 start-0 m-2 rounded-pill shadow-sm">
-                                                -{item.descuento_porcentaje}%
-                                            </span>
-                                        )}
-                                        <div className="card-body d-flex flex-column justify-content-center pt-4">
-                                            <h5 className="card-title fw-bold mt-2 text-truncate">{item.nombre}</h5>
-                                            {item.en_oferta ? (
-                                                <div>
-                                                    <span className="text-muted text-decoration-line-through me-2 small">${Number(item.precio_original).toFixed(2)}</span>
-                                                    <span className="card-text fw-bold fs-5 text-success">${Number(item.precio).toFixed(2)}</span>
-                                                </div>
-                                            ) : (
-                                                <p className="card-text fw-bold fs-5">${Number(item.precio).toFixed(2)}</p>
-                                            )}
+                                        <div className="card-body d-flex flex-column justify-content-between p-3">
+                                            <h6 className="card-title fw-bold mb-3">{item.nombre}</h6>
+                                            <div className="mt-auto">
+                                                {item.en_oferta ? (
+                                                    <div>
+                                                        <span className="text-muted text-decoration-line-through me-2 small">${Number(item.precio_original).toFixed(2)}</span>
+                                                        <span className="card-text fw-bolder fs-5 text-success">${Number(item.precio).toFixed(2)}</span>
+                                                    </div>
+                                                ) : (
+                                                    <p className="card-text fw-bolder fs-5 text-primary">${Number(item.precio).toFixed(2)}</p>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -490,8 +476,9 @@ function ClientePage() {
                         </div>
                     </div>
 
+                    {/* CARRITO (Desktop) */}
                     <div className="col-md-4 d-none d-md-block">
-                        <div className={`card shadow-lg position-sticky ${isDark ? 'bg-dark text-white border-secondary' : ''}`} style={{ top: '20px' }}>
+                        <div className={`${cardClass} position-sticky`} style={{ top: '20px', borderRadius: '15px' }}>
                             <CarritoContent
                                 isModal={false}
                                 pedidoActual={pedidoActual}
@@ -516,58 +503,69 @@ function ClientePage() {
                                 handleProcederAlPago={handleProcederAlPago}
                                 paymentLoading={paymentLoading}
                                 limpiarPedidoCompleto={limpiarPedidoCompleto}
+                                isDark={isDark} // Pasar tema
+                                inputClass={inputClass} // Pasar clase de input
                             />
                         </div>
                     </div>
                 </motion.div>
             )}
 
-            {/* PESTAÑA: MIS PEDIDOS */}
+            <hr className={isDark ? 'border-secondary mt-5' : 'mt-5'} />
+
+            {/* PESTAÑA 2: MIS PEDIDOS */}
             {!loading && activeTab === 'ver' && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                    <h2 className={`fw-bold mb-4 ${isDark ? 'text-white' : 'text-dark'}`}>Mis Pedidos</h2>
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                    <h2 className={`fw-bold mb-4 ${isDark ? 'text-primary' : 'text-dark'}`}>Historial de Pedidos</h2>
                     {(!Array.isArray(misPedidos) || misPedidos.length === 0) ? (
-                        <p className="text-center text-muted">No has realizado ningún pedido.</p>
+                        <div className={`p-4 text-center rounded-3 ${lightBgClass}`}><p className="mb-0">No has realizado ningún pedido aún. ¡Comienza uno!</p></div>
                     ) : (
-                        <div className={`table-responsive card p-3 shadow-sm ${isDark ? 'bg-dark text-white border-secondary' : ''}`}>
-                            <table className={`table table-hover ${isDark ? 'table-dark' : ''}`}>
-                                <thead>
+                        <div className="table-responsive">
+                            <table className={`table table-hover ${isDark ? 'table-dark' : ''} align-middle`}>
+                                <thead className={isDark ? 'border-secondary' : 'table-light'}>
                                     <tr>
-                                        <th>ID</th>
-                                        <th>Fecha</th>
-                                        <th>Tipo</th>
-                                        <th>Estado</th>
-                                        <th className="text-end">Total</th>
+                                        <th className="fw-bold">ID</th>
+                                        <th className="fw-bold">Fecha</th>
+                                        <th className="fw-bold">Tipo</th>
+                                        <th className="fw-bold">Estado</th>
+                                        <th className="text-end fw-bold">Total</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {misPedidos?.map(p => (
                                         <React.Fragment key={p.id}>
-                                            <tr style={{ cursor: 'pointer' }} onClick={() => handleToggleDetalle(p.id)}>
-                                                <td><span className="fw-bold text-primary">#{p.id}</span></td>
-                                                <td>{new Date(p.fecha).toLocaleString('es-MX')}</td>
-                                                <td><span className={`badge ${p.tipo_orden === 'domicilio' ? 'bg-info text-dark' : 'bg-secondary'}`}>{p.tipo_orden}</span></td>
-                                                <td><span className={`badge ${getStatusBadge(p.estado)}`}>{p.estado}</span></td>
+                                            <tr style={{ cursor: 'pointer' }} onClick={() => handleToggleDetalle(p.id)} className={isDark ? 'text-white' : ''}>
+                                                <td>#{p.id}</td>
+                                                <td>{new Date(p.fecha).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
+                                                <td><span className={`badge ${isDark ? 'bg-info bg-opacity-10 text-info' : 'bg-secondary bg-opacity-10 text-secondary'} fw-normal`}>{p.tipo_orden}</span></td>
+                                                <td><span className={getStatusBadge(p.estado)}>{p.estado}</span></td>
                                                 <td className="text-end fw-bold text-success">${Number(p.total).toFixed(2)}</td>
                                             </tr>
                                             {ordenExpandida === p.id && (
                                                 <tr>
-                                                    <td colSpan="5" className={isDark ? 'bg-dark' : 'bg-light'}>
-                                                        <motion.div className="p-3 border rounded" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} transition={{ duration: 0.3 }}>
-                                                            <h5 className="mb-3 fw-bold">Detalle del Pedido</h5>
+                                                    <td colSpan="5" className={`p-0 border-0 ${isDark ? 'bg-secondary bg-opacity-10' : 'bg-light'}`}>
+                                                        <motion.div 
+                                                            className="p-4" 
+                                                            initial={{ opacity: 0, height: 0 }} 
+                                                            animate={{ opacity: 1, height: 'auto' }} 
+                                                            transition={{ duration: 0.3 }}
+                                                        >
+                                                            <h6 className="mb-3 fw-bold text-primary">Detalle de Productos</h6>
+                                                            <ul className="list-unstyled">
                                                             {p.productos?.map(producto => (
-                                                                <div key={`${p.id}-${producto.nombre}`} className="d-flex justify-content-between py-1">
+                                                                <li key={`${p.id}-${producto.nombre}`} className="d-flex justify-content-between py-1 border-bottom">
                                                                     <div>
-                                                                        <span>{producto.cantidad}x <span className="fw-medium">{producto.nombre}</span></span>
-                                                                        {producto.opciones && <small className="text-info d-block" style={{marginTop: '-5px'}}>+ {producto.opciones}</small>}
+                                                                        <span className="fw-semibold me-2">{producto.cantidad}x {producto.nombre}</span>
+                                                                        {producto.opciones && <small className={`text-muted d-block ${isDark ? 'text-secondary' : ''}`}>+ {producto.opciones}</small>}
                                                                     </div>
-                                                                    <span>${(producto.cantidad * Number(producto.precio)).toFixed(2)}</span>
-                                                                </div>
+                                                                    <span className="fw-semibold">${(producto.cantidad * Number(producto.precio)).toFixed(2)}</span>
+                                                                </li>
                                                             ))}
+                                                            </ul>
                                                             {p.costo_envio > 0 && (
-                                                                <div className="d-flex justify-content-between py-1 mt-2 pt-2 border-top">
-                                                                    <span className="fw-bold">Costo de Envío</span>
-                                                                    <span className="fw-bold">${Number(p.costo_envio).toFixed(2)}</span>
+                                                                <div className="d-flex justify-content-between mt-2 pt-2 fw-bold text-info border-top border-info border-opacity-50">
+                                                                    <span>Costo de Envío</span>
+                                                                    <span>${Number(p.costo_envio).toFixed(2)}</span>
                                                                 </div>
                                                             )}
                                                         </motion.div>
@@ -583,23 +581,34 @@ function ClientePage() {
                 </motion.div>
             )}
 
-            {/* PESTAÑA: MIS RECOMPENSAS */}
+            <hr className={isDark ? 'border-secondary mt-5' : 'mt-5'} />
+
+            {/* PESTAÑA 3: MIS RECOMPENSAS */}
             {!loading && activeTab === 'recompensas' && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                    <h2 className={`fw-bold mb-4 ${isDark ? 'text-white' : 'text-dark'}`}>Mis Recompensas</h2>
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                    <h2 className={`fw-bold mb-4 ${isDark ? 'text-primary' : 'text-dark'}`}>Mis Recompensas</h2>
                     {(!misRecompensas || misRecompensas.length === 0) ? (
-                        <p className="text-center text-muted">Aún no tienes recompensas. ¡Sigue comprando!</p>
+                        <div className={`${lightBgClass} p-5 text-center rounded-3`}>
+                            <img
+                                src="/tito-icon.png" 
+                                alt="Icono de Tito Cafe"
+                                className="mb-3"
+                                style={{ width: '80px', height: '80px', filter: isDark ? 'invert(1)' : 'none' }}
+                            />
+                            <h3 className="fw-bold">Aún no tienes recompensas</h3>
+                            <p className={isDark ? 'text-secondary' : 'text-muted'}>¡Sigue comprando! Ganas una recompensa por cada 20 compras. 🎁</p>
+                        </div>
                     ) : (
                         <div className="row g-4">
                             {misRecompensas.map(recompensa => (
                                 <div key={recompensa.id} className="col-12">
-                                    <div className={`d-flex align-items-center p-4 rounded-3 shadow-sm ${isDark ? 'bg-info text-dark' : 'bg-success text-white'}`} style={{ borderLeft: '8px solid var(--bs-warning)' }}>
-                                        <div className="fs-1 me-4">🎁</div>
-                                        <div className="flex-grow-1">
-                                            <h4 className="fw-bold m-0">{recompensa.nombre}</h4>
-                                            <p className="m-0 small">¡Usalo en tu próxima compra!</p>
+                                    <motion.div whileHover={{ scale: 1.02 }} style={styles.cupon}>
+                                        <div style={styles.cuponIcon}>⭐</div>
+                                        <div style={styles.cuponBody}>
+                                            <h4 style={styles.cuponTitle}>{recompensa.nombre}</h4>
+                                            <p style={styles.cuponDescription}>Canjeable por un producto seleccionado. ¡Felicidades!</p>
                                         </div>
-                                    </div>
+                                    </motion.div>
                                 </div>
                             ))}
                         </div>
@@ -610,24 +619,38 @@ function ClientePage() {
 
             {/* --- SECCIÓN DE MODALES --- */}
 
+            {/* Botón Carrito Flotante (Móvil) */}
             {activeTab === 'crear' && pedidoActual.length > 0 && (
                 <button 
-                    className="boton-carrito-flotante d-md-none" 
+                    className="btn btn-primary btn-lg rounded-pill shadow-lg d-md-none" 
                     onClick={() => setShowCartModal(true)}
-                    style={{ pointerEvents: 'auto' }}
+                    style={{ 
+                        pointerEvents: 'auto', 
+                        position: 'fixed', 
+                        bottom: '20px', 
+                        right: '20px',
+                        zIndex: 1050,
+                        padding: '10px 20px'
+                    }} 
                 >
-                    🛒 <span className="badge-carrito">{totalItemsEnCarrito}</span>
+                    <ShoppingCart size={20} className="me-2"/> <span className="fw-bold">Ver Carrito</span>
+                    <span className="ms-2 badge bg-white text-primary rounded-pill">{totalItemsEnCarrito}</span>
                 </button>
             )}
 
-            {/* Modal de Carrito/Dirección (para móviles) */}
+            {/* Modal de Carrito/Dirección (Móvil) */}
             {showCartModal && (
                 <div 
-                    className="modal show fade d-block" 
-                    style={{ backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(3px)' }}
+                    className="modal show fade" 
+                    style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(3px)' }}
                 >
-                    <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="modal-dialog modal-dialog-scrollable">
-                        <div className={`modal-content shadow-lg ${isDark ? 'bg-dark text-white border-secondary' : ''}`}>
+                    <motion.div 
+                        initial={{ y: '100%', opacity: 0 }} 
+                        animate={{ y: 0, opacity: 1 }} 
+                        transition={{ type: "spring", stiffness: 100, damping: 20 }}
+                        className="modal-dialog modal-dialog-centered modal-dialog-scrollable"
+                    >
+                        <div className={`${cardClass} modal-content border-0`} style={{ borderRadius: '12px' }}>
                             <div className="modal-header border-0 pb-0">
                                 <h5 className="modal-title fw-bold">{modalView === 'cart' ? 'Mi Pedido' : 'Dirección de Entrega'}</h5>
                                 <button type="button" className={`btn-close ${isDark ? 'btn-close-white' : ''}`} onClick={() => { setShowCartModal(false); setModalView('cart'); }}></button>
@@ -657,28 +680,33 @@ function ClientePage() {
                                     handleProcederAlPago={handleProcederAlPago}
                                     paymentLoading={paymentLoading}
                                     limpiarPedidoCompleto={limpiarPedidoCompleto}
+                                    isDark={isDark} // Pasar tema
+                                    inputClass={inputClass} // Pasar clase de input
                                 />
                             ) : (
                                 <>
-                                    <div className="modal-body">
-                                        <h6 className="fw-bold mb-3 d-flex align-items-center gap-2 text-info"><MapPin size={18}/> Domicilio de Entrega</h6>
-                                        {direccionGuardada && (<button className="btn btn-info w-100 mb-3 d-flex align-items-center justify-content-center gap-2 fw-bold rounded-pill" onClick={usarDireccionGuardada}><Home size={18}/> Usar mi dirección guardada</button>)}
-                                        
-                                        <label className="form-label small text-muted">Busca tu dirección:</label>
-                                        <MapSelector onLocationSelect={handleLocationSelect} initialAddress={direccion} apiKey={apiKey}/>
-                                        
-                                        <div className="mt-3">
-                                            <label htmlFor="referenciaModal" className="form-label fw-bold">Referencia:</label>
-                                            <input type="text" id="referenciaModal" className={inputClass} value={referencia} onChange={(e) => setReferencia(e.target.value)} />
-                                        </div>
-                                        <div className="form-check mt-3">
-                                            <input className="form-check-input" type="checkbox" id="guardarDireccionModal" checked={guardarDireccion} onChange={(e) => setGuardarDireccion(e.target.checked)} />
-                                            <label className="form-check-label" htmlFor="guardarDireccionModal">Guardar dirección</label>
+                                    <div className="modal-body p-4">
+                                        <div className={`p-3 rounded-3 ${lightBgClass}`}>
+                                            {direccionGuardada && (<button className="btn btn-outline-info w-100 mb-3 fw-bold" onClick={usarDireccionGuardada}>Usar mi dirección guardada</button>)}
+                                            <label className="form-label fw-bold">Busca tu dirección:</label>
+                                            <MapSelector onLocationSelect={handleLocationSelect} initialAddress={direccion} className={inputClass} />
+                                            <div className="mt-3">
+                                                <label htmlFor="referenciaModal" className="form-label fw-bold">Referencia:</label>
+                                                <input type="text" id="referenciaModal" className={inputClass} value={referencia} onChange={(e) => setReferencia(e.target.value)} />
+                                            </div>
+                                            <div className="form-check mt-3">
+                                                <input className="form-check-input" type="checkbox" id="guardarDireccionModal" checked={guardarDireccion} onChange={(e) => setGuardarDireccion(e.target.checked)} />
+                                                <label className={`form-check-label ${isDark ? 'text-white' : ''}`} htmlFor="guardarDireccionModal">Guardar dirección</label>
+                                            </div>
+                                            <hr className={isDark ? 'border-secondary' : ''} />
+                                            <p className="d-flex justify-content-between fw-light">Subtotal: <span>${subtotal.toFixed(2)}</span></p>
+                                            <p className="d-flex justify-content-between fw-light">Costo de Envío: {calculandoEnvio ? <span className={`spinner-border spinner-border-sm ${spinnerColor}`}></span> : <span>${costoEnvio.toFixed(2)}</span>}</p>
+                                            <h4 className="d-flex justify-content-between fw-bold mt-2">Total: <span className="text-success">${totalFinal.toFixed(2)}</span></h4>
                                         </div>
                                     </div>
-                                    <div className="modal-footer d-flex justify-content-between">
-                                        <button className="btn btn-secondary fw-bold rounded-pill" onClick={() => setModalView('cart')}>Volver</button>
-                                        <button className="btn btn-primary fw-bold rounded-pill" onClick={handleProcederAlPago} disabled={!direccion || paymentLoading || calculandoEnvio}>{paymentLoading ? 'Iniciando...' : 'Confirmar y Pagar'}</button>
+                                    <div className="modal-footer d-flex justify-content-between border-0 p-4">
+                                        <button className="btn btn-secondary fw-bold rounded-pill px-4" onClick={() => setModalView('cart')}>Volver</button>
+                                        <button className="btn btn-primary fw-bold rounded-pill px-4" onClick={handleProcederAlPago} disabled={!direccion || paymentLoading || calculandoEnvio}>{paymentLoading ? 'Iniciando...' : 'Confirmar y Pagar'}</button>
                                     </div>
                                 </>
                             )}
@@ -688,12 +716,15 @@ function ClientePage() {
             )}
 
 
+            {/* Modal de Detalle de Producto */}
             {productoSeleccionadoParaModal && (
                 <div style={{ pointerEvents: 'auto' }}>
                     <ProductDetailModal
                         product={productoSeleccionadoParaModal}
                         onClose={() => setProductoSeleccionadoParaModal(null)}
                         onAddToCart={agregarProductoAPedido}
+                        // 🚨 Asumo que el modal de detalle de producto también acepta isDark
+                        isDark={isDark} 
                     />
                 </div>
             )}
@@ -702,21 +733,27 @@ function ClientePage() {
             {/* Modal de Pago (Stripe) */}
             {showPaymentModal && clientSecret && (
                 <div 
-                    className="modal show fade d-block" 
-                    style={{ backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(3px)' }}
+                    className="modal show fade" 
+                    style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(3px)' }}
                 >
-                    <motion.div initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="modal-dialog">
-                        <div className={`modal-content shadow-lg ${isDark ? 'bg-dark text-white border-secondary' : ''}`}>
-                            <div className="modal-header border-0">
-                                <h5 className="modal-title fw-bold">Finalizar Compra</h5>
+                    <motion.div 
+                        initial={{ y: -50, opacity: 0 }} 
+                        animate={{ y: 0, opacity: 1 }} 
+                        transition={{ type: "spring", stiffness: 100, damping: 20 }}
+                        className="modal-dialog modal-md modal-dialog-centered"
+                    >
+                        <div className={`${cardClass} modal-content border-0`} style={{ borderRadius: '12px' }}>
+                            <div className="modal-header border-0 pb-0">
+                                <h5 className="modal-title fw-bold text-success d-flex align-items-center gap-2"><DollarSign size={20}/> Finalizar Compra</h5>
                                 <button type="button" className={`btn-close ${isDark ? 'btn-close-white' : ''}`} onClick={() => setShowPaymentModal(false)}></button>
                             </div>
-                            <div className="modal-body">
+                            <div className="modal-body p-4">
                                 <Elements stripe={stripePromise} options={{ clientSecret }}>
                                     <CheckoutForm
                                         handleSuccess={handleSuccessfulPayment}
                                         total={totalFinal}
                                         datosPedido={datosParaCheckout}
+                                        isDark={isDark} // Pasar tema
                                     />
                                 </Elements>
                             </div>
@@ -724,6 +761,7 @@ function ClientePage() {
                     </motion.div>
                 </div>
             )}
+            
         </div> 
     );
 }
