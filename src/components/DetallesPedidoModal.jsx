@@ -34,15 +34,15 @@ function DetallesPedidoModal({ pedido, onClose }) {
   const parseOpciones = (raw) => {
     if (!raw) return [];
     
-    // 1. Si ya es un arreglo (Array), solo sacamos los nombres
+    // 1. Si ya es una lista correcta, solo sacamos los nombres
     if (Array.isArray(raw)) {
         return raw.map(op => (typeof op === 'string' ? op : op.nombre));
     }
 
-    // 2. Si es texto (String), intentamos descifrarlo
+    // 2. Si es texto con código, intentamos descifrarlo
     if (typeof raw === 'string') {
-        // A. Intentamos leerlo como JSON primero (esto arregla lo de las llaves {})
         try {
+            // Intentamos convertir el texto JSON a objetos reales
             const parsed = JSON.parse(raw);
             if (Array.isArray(parsed)) {
                 return parsed.map(op => (typeof op === 'string' ? op : op.nombre));
@@ -50,13 +50,10 @@ function DetallesPedidoModal({ pedido, onClose }) {
                  return [parsed.nombre || JSON.stringify(parsed)];
             }
         } catch (e) {
-            // No era JSON válido, continuamos...
+            // Si no es JSON, limpiamos símbolos feos manualmente
+            const limpio = raw.replace(/[\[\]"{}]/g, '').replace(/nombre:/g, ''); 
+            return limpio.split(',').map(s => s.trim()).filter(s => s !== '' && !s.includes('id:'));
         }
-
-        // B. Si falló el JSON, asumimos que es texto separado por comas
-        // Limpiamos corchetes y comillas extra por si acaso
-        const limpio = raw.replace(/[\[\]"{}]/g, ''); 
-        return limpio.split(',').map(s => s.trim()).filter(s => s !== '' && !s.includes('id:'));
     }
     
     return [];
@@ -76,7 +73,7 @@ function DetallesPedidoModal({ pedido, onClose }) {
             {/* --- INFO GENERAL --- */}
             <div className="d-flex justify-content-between mb-2">
               <span className={mutedTextColor}>Cliente:</span>
-              <span className="fw-bold text-end">{pedido.nombre_cliente}</span>
+              <span className="fw-bold text-end">{pedido.nombre_cliente || 'Mostrador'}</span>
             </div>
             <div className="d-flex justify-content-between mb-2">
               <span className={mutedTextColor}>Fecha:</span>
@@ -84,7 +81,7 @@ function DetallesPedidoModal({ pedido, onClose }) {
             </div>
             <div className="d-flex justify-content-between mb-2">
               <span className={mutedTextColor}>Tipo:</span>
-              <span className="text-end">{pedido.tipo_orden}</span>
+              <span className="text-end">{pedido.tipo_orden || 'Presencial'}</span>
             </div>
             <div className="d-flex justify-content-between mb-3">
               <span className={mutedTextColor}>Estado:</span>
@@ -99,7 +96,7 @@ function DetallesPedidoModal({ pedido, onClose }) {
             <ul className="list-unstyled mb-3">
               {productos.map((producto, index) => {
                 
-                // Usamos nuestra nueva función de limpieza
+                // Usamos la función de limpieza aquí
                 const opcionesLimpias = parseOpciones(producto.opciones || producto.selectedOptions);
 
                 return (
@@ -109,7 +106,7 @@ function DetallesPedidoModal({ pedido, onClose }) {
                       <span className="text-end">${(producto.cantidad * Number(producto.precio || producto.precio_unitario || 0)).toFixed(2)}</span>
                     </div>
 
-                    {/* Renderizado de Opciones YA LIMPIAS */}
+                    {/* Mostramos las opciones limpias */}
                     {opcionesLimpias.length > 0 && (
                       <ul className="list-unstyled small ps-3 mb-0" style={{ opacity: 0.8 }}>
                         {opcionesLimpias.map((textoOpcion, opIndex) => (
