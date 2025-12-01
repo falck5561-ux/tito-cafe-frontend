@@ -200,15 +200,20 @@ function PosPage() {
   const handleFinalizarVenta = async (metodoDePago) => {
     if (ventaActual.length === 0) return toast.error('El ticket está vacío.');
 
-    const itemsParaEnviar = ventaActual.map(({ id, cantidad, precioFinal, opcionesSeleccionadas, nombre }) => ({
-        id,
-        cantidad,
-        precio: Number(precioFinal),
-        nombre: nombre, 
-        opciones: opcionesSeleccionadas 
-            ? opcionesSeleccionadas.map(op => op.nombre).join(', ') 
-            : null
-    }));
+    // CÓDIGO CORREGIDO (Lo que debes poner en su lugar)
+const itemsParaEnviar = ventaActual.map(({ id, cantidad, precioFinal, opcionesSeleccionadas, nombre }) => ({
+    id,
+    cantidad,
+    precio: Number(precioFinal),
+    nombre: nombre, 
+    // 🚨 CAMBIO AQUÍ: Enviamos un array de objetos { id, nombre } en lugar de un string
+    opciones: opcionesSeleccionadas 
+        ? opcionesSeleccionadas.map(op => ({
+              id: op.id,
+              nombre: op.nombre,
+          })) 
+        : [] // Si no hay opciones, enviamos un array vacío
+}));
 
     const ventaData = {
       total: totalVenta,
