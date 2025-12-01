@@ -1,56 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
-// 🚨 Asumo la existencia de useTheme para manejar el tema como en el ejemplo anterior
 import { useTheme } from '../context/ThemeContext'; 
 import CheckoutForm from '../components/CheckoutForm';
 import MapSelector from '../components/MapSelector';
 import apiClient from '../services/api';
 import { useCart } from '../context/CartContext';
 import ProductDetailModal from '../components/ProductDetailModal';
-import { ShoppingCart, ListChecks, Award, Edit3, MapPin } from 'lucide-react'; // Importamos íconos para las pestañas y títulos
+// CORRECCIÓN: Se añadieron DollarSign, Clock, Package, CheckCircle, etc.
+import { 
+    ShoppingCart, ListChecks, Award, Edit3, MapPin, DollarSign, 
+    Clock, Package, CheckCircle, AlertCircle, ChefHat, Truck 
+} from 'lucide-react'; 
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
-const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
-// Estilos de cupón/recompensa (Ajustados para alto contraste)
-const styles = {
-    cupon: {
-        backgroundColor: '#2a9d8f', // Color primario fuerte
-        color: 'white',
-        borderRadius: '12px', // Más acorde al estilo moderno
-        padding: '1.5rem 2rem',
-        display: 'flex',
-        alignItems: 'center',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.3)', // Sombra definida
-        borderLeft: '8px solid #264653', // Borde sólido mejor que dashed
-        position: 'relative',
-        marginBottom: '1rem',
-        transition: 'all 0.2s',
-    },
-    cuponIcon: { fontSize: '2.5rem', marginRight: '1.5rem' },
-    cuponBody: { flexGrow: 1 },
-    cuponTitle: { margin: '0', fontSize: '1.4rem', fontWeight: 'bold' },
-};
-
+// Configuración de notificaciones
 const notify = (type, message) => {
-    // ... (función notify queda igual)
     switch (type) {
-        case 'success':
-            toast.success(message);
-            break;
-        case 'error':
-            toast.error(message);
-            break;
-        default:
-            toast(message);
-            break;
+        case 'success': toast.success(message); break;
+        case 'error': toast.error(message); break;
+        default: toast(message); break;
     }
 };
 
-// Componente CartContent actualizado con estilos dinámicos
+// --- COMPONENTE CARRITO (Reutilizable) ---
 const CarritoContent = ({
     isModal,
     pedidoActual,
@@ -75,126 +51,182 @@ const CarritoContent = ({
     handleProcederAlPago,
     paymentLoading,
     limpiarPedidoCompleto,
-    isDark, // Prop para el tema
-    inputClass // Prop para los inputs
+    isDark,
+    inputClass
 }) => (
     <>
-        <div className={isModal ? "modal-body" : "card-body"}>
+        <div className={isModal ? "modal-body p-4" : "card-body p-4"}>
             {!isModal && (
                 <>
-                    <h4 className="card-title fw-bold text-center mb-3 d-flex align-items-center justify-content-center gap-2">
-                        <ShoppingCart size={20} className="text-primary"/> Mi Pedido
+                    <h4 className={`card-title fw-bold text-center mb-4 d-flex align-items-center justify-content-center gap-2 ${isDark ? 'text-primary' : 'text-dark'}`}>
+                        <ShoppingCart size={24} /> Mi Pedido
                     </h4>
-                    <hr className={isDark ? 'border-secondary' : ''} />
+                    <hr className={isDark ? 'border-secondary opacity-50' : ''} />
                 </>
             )}
-            <ul className="list-group list-group-flush">
-                {pedidoActual.length === 0 && <li className={`list-group-item text-center text-muted ${isDark ? 'bg-dark' : ''}`}>Tu carrito está vacío</li>}
+
+            {/* Lista de productos con scroll si es muy larga */}
+            <ul className="list-group list-group-flush mb-3 custom-scrollbar" style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                {pedidoActual.length === 0 && (
+                    <div className={`text-center py-5 ${isDark ? 'text-muted' : 'text-secondary'}`}>
+                        <ShoppingCart size={40} className="mb-2 opacity-50"/>
+                        <p className="mb-0">Tu carrito está vacío</p>
+                    </div>
+                )}
                 
                 {pedidoActual.map((item) => (
-                    <li key={item.cartItemId || item.id} className={`list-group-item d-flex align-items-center justify-content-between p-2 ${isDark ? 'bg-transparent text-white' : ''}`}>
-                        
-                        <div className="me-auto" style={{ paddingRight: '10px' }}> 
-                            <span className="fw-semibold">{item.nombre}</span>
-                            
-                            {item.opcionesSeleccionadas && item.opcionesSeleccionadas.length > 0 && (
-                                <ul className="list-unstyled small text-muted mb-0" style={{ marginTop: '-3px' }}>
-                                    {item.opcionesSeleccionadas.map(opcion => (
-                                        <li key={opcion.id} className={isDark ? 'text-secondary' : ''}>+ {opcion.nombre}</li>
-                                    ))}
-                                </ul>
+                    <li key={item.cartItemId || item.id} className={`list-group-item border-0 border-bottom d-flex align-items-center justify-content-between py-3 px-0 ${isDark ? 'bg-transparent text-white border-secondary' : ''}`}>
+                        <div className="me-auto pe-2"> 
+                            <span className="fw-bold d-block">{item.nombre}</span>
+                            {item.opcionesSeleccionadas?.length > 0 && (
+                                <small className={`d-block ${isDark ? 'text-info' : 'text-muted'}`} style={{ fontSize: '0.85em' }}>
+                                    {item.opcionesSeleccionadas.map(op => op.nombre).join(', ')}
+                                </small>
                             )}
                         </div>
 
-                        <div className="d-flex align-items-center">
-                            <button className={`btn btn-sm ${isDark ? 'btn-outline-light' : 'btn-outline-dark'}`} onClick={() => decrementarCantidad(item.cartItemId || item.id)} disabled={paymentLoading}>-</button>
-                            <span className="mx-2 fw-bold">{item.cantidad}</span>
-                            <button className={`btn btn-sm ${isDark ? 'btn-outline-light' : 'btn-outline-dark'}`} onClick={() => incrementarCantidad(item.cartItemId || item.id)} disabled={paymentLoading}>+</button>
+                        <div className="d-flex align-items-center bg-opacity-10 rounded-pill border px-1 py-1" style={{ borderColor: isDark ? '#444' : '#ddd' }}>
+                            <button className="btn btn-sm btn-link text-decoration-none p-0 px-2 text-reset" onClick={() => decrementarCantidad(item.cartItemId || item.id)} disabled={paymentLoading}>-</button>
+                            <span className="fw-bold px-1" style={{minWidth: '20px', textAlign: 'center'}}>{item.cantidad}</span>
+                            <button className="btn btn-sm btn-link text-decoration-none p-0 px-2 text-reset" onClick={() => incrementarCantidad(item.cartItemId || item.id)} disabled={paymentLoading}>+</button>
                         </div>
-                        <span className="mx-3 fw-bold" style={{ minWidth: '70px', textAlign: 'right' }}>${(item.cantidad * Number(item.precio)).toFixed(2)}</span>
-                        <button className="btn btn-sm btn-danger p-1" onClick={() => eliminarProducto(item.cartItemId || item.id)} disabled={paymentLoading}>&times;</button>
+                        
+                        <div className="text-end ps-3">
+                            <div className="fw-bold">${(item.cantidad * Number(item.precio)).toFixed(2)}</div>
+                            <button className="btn btn-link text-danger p-0 text-decoration-none" style={{ fontSize: '0.8em' }} onClick={() => eliminarProducto(item.cartItemId || item.id)}>Eliminar</button>
+                        </div>
                     </li>
                 ))}
             </ul>
-            <hr className={isDark ? 'border-secondary' : ''} />
-            <h5 className="fw-bold mb-3">Elige una opción:</h5>
-            <div className="d-flex gap-3 mb-3">
-                <div className="form-check"><input className="form-check-input" type="radio" name={isModal ? "tipoOrdenModal" : "tipoOrden"} id={isModal ? "llevarModal" : "llevar"} value="llevar" checked={tipoOrden === 'llevar'} onChange={(e) => setTipoOrden(e.target.value)} /><label className="form-check-label" htmlFor={isModal ? "llevarModal" : "llevar"}>Para Recoger</label></div>
-                <div className="form-check"><input className="form-check-input" type="radio" name={isModal ? "tipoOrdenModal" : "tipoOrden"} id={isModal ? "localModal" : "local"} value="local" checked={tipoOrden === 'local'} onChange={(e) => setTipoOrden(e.target.value)} /><label className="form-check-label" htmlFor={isModal ? "localModal" : "local"}>Para La Escuela</label></div>
-                <div className="form-check"><input className="form-check-input" type="radio" name={isModal ? "tipoOrdenModal" : "tipoOrden"} id={isModal ? "domicilioModal" : "domicilio"} value="domicilio" checked={tipoOrden === 'domicilio'} onChange={(e) => setTipoOrden(e.target.value)} /><label className="form-check-label" htmlFor={isModal ? "domicilioModal" : "domicilio"}>A Domicilio</label></div>
+
+            {/* Selector de Tipo de Entrega */}
+            <div className={`p-3 rounded-3 mb-3 ${isDark ? 'bg-secondary bg-opacity-10' : 'bg-light'}`}>
+                <h6 className="fw-bold mb-3" style={{ fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Método de Entrega</h6>
+                <div className="d-flex flex-column gap-2">
+                    {[
+                        { id: 'llevar', label: 'Para Recoger', icon: <Package size={16}/> },
+                        { id: 'local', label: 'Para La Escuela (Mesa)', icon: <ChefHat size={16}/> },
+                        { id: 'domicilio', label: 'A Domicilio', icon: <Truck size={16}/> }
+                    ].map(opt => (
+                        <div key={opt.id} className="form-check custom-radio-card">
+                            <input 
+                                className="form-check-input" 
+                                type="radio" 
+                                name={isModal ? "tipoOrdenModal" : "tipoOrden"} 
+                                id={isModal ? `${opt.id}Modal` : opt.id} 
+                                value={opt.id} 
+                                checked={tipoOrden === opt.id} 
+                                onChange={(e) => setTipoOrden(e.target.value)} 
+                            />
+                            <label className={`form-check-label d-flex align-items-center gap-2 ${isDark ? 'text-white' : ''}`} htmlFor={isModal ? `${opt.id}Modal` : opt.id}>
+                                {opt.icon} {opt.label}
+                            </label>
+                        </div>
+                    ))}
+                </div>
             </div>
 
-            {tipoOrden === 'domicilio' && !isModal && (
-                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className={`mt-3 p-3 rounded ${isDark ? 'bg-secondary bg-opacity-10' : 'bg-light'}`}>
-                    <h6 className="fw-bold text-primary mb-3 d-flex align-items-center gap-2"><MapPin size={18}/> Ubicación</h6>
-                    {direccionGuardada && (<button className="btn btn-outline-info w-100 mb-3" onClick={usarDireccionGuardada}>Usar mi dirección guardada</button>)}
+            {/* Formulario de Dirección (Condicional) */}
+            <AnimatePresence>
+                {tipoOrden === 'domicilio' && !isModal && (
+                    <motion.div 
+                        initial={{ opacity: 0, height: 0 }} 
+                        animate={{ opacity: 1, height: 'auto' }} 
+                        exit={{ opacity: 0, height: 0 }}
+                        className="mb-3 overflow-hidden"
+                    >
+                        <div className={`p-3 rounded border ${isDark ? 'border-secondary' : 'border-light'}`}>
+                            <h6 className="fw-bold text-primary mb-3 d-flex align-items-center gap-2"><MapPin size={18}/> Ubicación</h6>
+                            
+                            {direccionGuardada && (
+                                <button className="btn btn-outline-primary btn-sm w-100 mb-3 d-flex align-items-center justify-content-center gap-2" onClick={usarDireccionGuardada}>
+                                    <MapPin size={14}/> Usar dirección guardada
+                                </button>
+                            )}
 
-                    <label className="form-label fw-bold">Busca tu dirección:</label>
-                    <MapSelector onLocationSelect={handleLocationSelect} initialAddress={direccion} className={inputClass}/>
+                            <label className="form-label small fw-bold">Buscar dirección:</label>
+                            <div className="mb-2">
+                                <MapSelector onLocationSelect={handleLocationSelect} initialAddress={direccion} className={inputClass}/>
+                            </div>
 
-                    <div className="mt-3">
-                        <label htmlFor="referenciaDesktop" className="form-label fw-bold">Referencia:</label>
-                        <input type="text" id="referenciaDesktop" className={inputClass} value={referencia} onChange={(e) => setReferencia(e.target.value)} />
-                    </div>
+                            <label className="form-label small fw-bold mt-2">Referencia / Color de casa:</label>
+                            <input type="text" className={inputClass} placeholder="Ej: Portón negro, al lado de..." value={referencia} onChange={(e) => setReferencia(e.target.value)} />
 
-                    <div className="form-check mt-3">
-                        <input className="form-check-input" type="checkbox" id="guardarDireccionDesktop" checked={guardarDireccion} onChange={(e) => setGuardarDireccion(e.target.checked)} />
-                        <label className={`form-check-label ${isDark ? 'text-white' : ''}`} htmlFor="guardarDireccionDesktop">Guardar dirección</label>
-                    </div>
-                </motion.div>
+                            <div className="form-check mt-2">
+                                <input className="form-check-input" type="checkbox" id="guardarDireccionDesktop" checked={guardarDireccion} onChange={(e) => setGuardarDireccion(e.target.checked)} />
+                                <label className={`form-check-label small ${isDark ? 'text-secondary' : 'text-muted'}`} htmlFor="guardarDireccionDesktop">Guardar esta dirección para futuros pedidos</label>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Resumen de Costos */}
+            <hr className={isDark ? 'border-secondary opacity-50' : ''} />
+            <div className="d-flex justify-content-between mb-1 text-muted"><span>Subtotal</span> <span>${subtotal.toFixed(2)}</span></div>
+            {tipoOrden === 'domicilio' && (
+                <div className="d-flex justify-content-between mb-1 text-muted">
+                    <span>Envío</span> 
+                    {calculandoEnvio ? <span className="spinner-border spinner-border-sm text-primary"></span> : <span>${costoEnvio.toFixed(2)}</span>}
+                </div>
             )}
-
-            <hr className={isDark ? 'border-secondary' : ''} />
-            <p className="d-flex justify-content-between fw-light">Subtotal: <span>${subtotal.toFixed(2)}</span></p>
-            {tipoOrden === 'domicilio' && (<motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="d-flex justify-content-between fw-light">Costo de Envío: {calculandoEnvio ? <span className="spinner-border spinner-border-sm text-primary"></span> : <span>${costoEnvio.toFixed(2)}</span>}</motion.p>)}
-            <h4 className="d-flex justify-content-between fw-bold mt-2">Total: <span className="text-success">${totalFinal.toFixed(2)}</span></h4>
+            <div className="d-flex justify-content-between mt-3">
+                <span className="h4 fw-bold">Total</span>
+                <span className="h4 fw-bold text-success">${totalFinal.toFixed(2)}</span>
+            </div>
         </div>
 
-        <div className={isModal ? "modal-footer d-grid gap-2" : "card-footer d-grid gap-2 mt-auto"}>
-            {isModal ? (
-                <button
-                    className="btn btn-lg btn-primary fw-bold"
-                    onClick={handleContinue}
-                    disabled={pedidoActual.length === 0 || paymentLoading}
+        <div className={isModal ? "modal-footer border-0 pt-0" : "card-footer border-0 pt-0 bg-transparent"}>
+            <div className="d-grid gap-2">
+                {isModal ? (
+                    <button
+                        className="btn btn-primary btn-lg fw-bold rounded-pill"
+                        onClick={handleContinue}
+                        disabled={pedidoActual.length === 0 || paymentLoading}
+                    >
+                        {tipoOrden === 'domicilio' ? 'Siguiente: Dirección' : 'Ir a Pagar'}
+                    </button>
+                ) : (
+                    <button
+                        className="btn btn-primary btn-lg fw-bold rounded-pill shadow-sm"
+                        onClick={handleProcederAlPago}
+                        disabled={pedidoActual.length === 0 || paymentLoading || (tipoOrden === 'domicilio' && !direccion) || calculandoEnvio}
+                    >
+                        {paymentLoading ? (
+                            <><span className="spinner-border spinner-border-sm me-2"/> Procesando...</>
+                        ) : (
+                            <><DollarSign size={18} className="me-1"/> Proceder al Pago</>
+                        )}
+                    </button>
+                )}
+                <button 
+                    className={`btn btn-sm ${isDark ? 'btn-outline-secondary text-light' : 'btn-outline-danger'} border-0`} 
+                    onClick={limpiarPedidoCompleto} 
+                    disabled={paymentLoading}
                 >
-                    {tipoOrden === 'domicilio' ? 'Siguiente' : 'Proceder al Pago'}
+                    Vaciar Carrito
                 </button>
-            ) : (
-                <button
-                    className="btn btn-lg btn-primary fw-bold"
-                    onClick={handleProcederAlPago}
-                    disabled={pedidoActual.length === 0 || paymentLoading || (tipoOrden === 'domicilio' && !direccion) || calculandoEnvio}
-                >
-                    {paymentLoading ? 'Iniciando Pago...' : 'Proceder al Pago'}
-                </button>
-            )}
-            <button className="btn btn-outline-danger fw-bold" onClick={limpiarPedidoCompleto} disabled={paymentLoading}>Vaciar Carrito</button>
+            </div>
         </div>
     </>
 );
 
-
 function ClientePage() {
-    // 1. Obtener tema
+    // 1. TEMA Y ESTILOS
     const { theme } = useTheme(); 
     const isDark = theme === 'dark';
 
-    // 2. Definir clases dinámicas
-    const cardClass = `card shadow-lg border-0 ${isDark ? 'bg-dark text-white' : ''}`;
-    const inputClass = `form-control ${isDark ? 'form-control-dark bg-dark text-white border-secondary' : 'form-control'}`;
-    const lightBgClass = isDark ? 'bg-secondary bg-opacity-10 text-white' : 'bg-light';
-    const darkBgClass = isDark ? 'bg-dark text-white' : '';
-    const spinnerColor = isDark ? 'text-primary' : 'text-dark';
-
-    // ... (Estados y Hooks, sin cambios)
+    // Definición de colores y clases base
+    const bgBase = isDark ? '#121212' : '#f8f9fa';
+    const cardBg = isDark ? '#1e1e1e' : '#ffffff';
+    const textMain = isDark ? '#ffffff' : '#212529';
+    const textMuted = isDark ? '#b0b3b8' : '#6c757d';
+    const inputClass = `form-control ${isDark ? 'bg-dark text-white border-secondary' : ''}`;
+    
+    // Hooks y Estados
     const {
-        pedidoActual,
-        subtotal,
-        incrementarCantidad,
-        decrementarCantidad,
-        eliminarProducto,
-        limpiarPedido,
-        agregarProductoAPedido
+        pedidoActual, subtotal, incrementarCantidad, decrementarCantidad, 
+        eliminarProducto, limpiarPedido, agregarProductoAPedido
     } = useCart();
 
     const [activeTab, setActiveTab] = useState('crear');
@@ -221,11 +253,11 @@ function ClientePage() {
 
     const totalFinal = subtotal + costoEnvio;
 
+    // --- EFECTOS (Data Fetching) ---
     useEffect(() => {
         const fetchInitialData = async () => {
             if (activeTab !== 'crear') return;
             setLoading(true);
-            setError('');
             try {
                 const [productosRes, combosRes, direccionRes] = await Promise.all([
                     apiClient.get('/productos'),
@@ -233,31 +265,21 @@ function ClientePage() {
                     apiClient.get('/usuarios/mi-direccion')
                 ]);
                 
-                const estandarizarItem = (item) => {
+                const estandarizar = (item) => {
                     const precioFinal = Number(item.precio);
                     let precioOriginal = precioFinal;
                     if (item.en_oferta && item.descuento_porcentaje > 0) {
                         precioOriginal = precioFinal / (1 - item.descuento_porcentaje / 100);
                     }
-                    return {
-                        ...item, 
-                        precio: precioFinal,
-                        precio_original: precioOriginal,
-                        nombre: item.nombre || item.titulo,
-                    };
+                    return { ...item, precio: precioFinal, precio_original: precioOriginal, nombre: item.nombre || item.titulo };
                 };
-                const productosEstandarizados = productosRes.data.map(estandarizarItem);
-                const combosEstandarizados = combosRes.data.map(estandarizarItem);
-                setMenuItems([...productosEstandarizados, ...combosEstandarizados]);
-                if (direccionRes.data) {
-                    setDireccionGuardada(direccionRes.data);
-                }
+                
+                setMenuItems([...productosRes.data.map(estandarizar), ...combosRes.data.map(estandarizar)]);
+                if (direccionRes.data) setDireccionGuardada(direccionRes.data);
             } catch (err) {
-                console.error("Error cargando datos iniciales:", err);
-                setError('No se pudieron cargar los productos en este momento.');
-            } finally {
-                setLoading(false);
-            }
+                console.error(err);
+                setError('Error al cargar menú.');
+            } finally { setLoading(false); }
         };
         fetchInitialData();
     }, [activeTab]);
@@ -266,93 +288,63 @@ function ClientePage() {
         const fetchTabData = async () => {
             if (activeTab === 'crear') return;
             setLoading(true);
-            setError('');
             try {
-                if (activeTab === 'ver') {
-                    const res = await apiClient.get('/pedidos/mis-pedidos');
-                    setMisPedidos(Array.isArray(res.data) ? res.data : []);
-                } else if (activeTab === 'recompensas') {
-                    const res = await apiClient.get('/recompensas/mis-recompensas');
-                    setMisRecompensas(Array.isArray(res.data) ? res.data : []);
-                }
-            } catch (err) {
-                setError('No se pudieron cargar los datos de la pestaña.');
-                console.error("Error en fetchTabData:", err);
-            } finally {
-                setLoading(false);
-            }
+                const endpoint = activeTab === 'ver' ? '/pedidos/mis-pedidos' : '/recompensas/mis-recompensas';
+                const res = await apiClient.get(endpoint);
+                if (activeTab === 'ver') setMisPedidos(res.data || []);
+                else setMisRecompensas(res.data || []);
+            } catch (err) { setError('Error al cargar datos.'); } 
+            finally { setLoading(false); }
         };
         fetchTabData();
     }, [activeTab]);
 
     useEffect(() => {
         if (tipoOrden !== 'domicilio') {
-            setCostoEnvio(0);
-            setDireccion(null);
+            setCostoEnvio(0); setDireccion(null);
         }
     }, [tipoOrden]);
 
+    // --- HANDLERS ---
     const limpiarPedidoCompleto = () => {
         limpiarPedido();
-        setCostoEnvio(0);
-        setDireccion(null);
-        setGuardarDireccion(false);
-        setReferencia('');
-        setShowCartModal(false);
+        setCostoEnvio(0); setDireccion(null); setReferencia(''); setShowCartModal(false);
     };
 
     const handleLocationSelect = async (location) => {
         setDireccion(location);
         setCalculandoEnvio(true);
-        setCostoEnvio(0);
         try {
             const res = await apiClient.post('/pedidos/calcular-envio', { lat: location.lat, lng: location.lng });
             setCostoEnvio(res.data.deliveryCost);
-            notify('success', `Costo de envío: $${res.data.deliveryCost.toFixed(2)}`);
+            notify('success', `Envío calculado: $${res.data.deliveryCost}`);
         } catch (err) {
-            notify('error', err.response?.data?.msg || 'No se pudo calcular el costo de envío.');
-            setDireccion(null);
-        } finally {
-            setCalculandoEnvio(false);
-        }
+            notify('error', 'Error calculando envío.');
+            setDireccion(null); setCostoEnvio(0);
+        } finally { setCalculandoEnvio(false); }
     };
 
     const usarDireccionGuardada = () => {
         if (direccionGuardada) {
             handleLocationSelect(direccionGuardada);
-            if (direccionGuardada.referencia) {
-                setReferencia(direccionGuardada.referencia);
-            }
-            notify('success', 'Usando dirección guardada.');
+            if (direccionGuardada.referencia) setReferencia(direccionGuardada.referencia);
         }
     };
 
     const handleProcederAlPago = async () => {
         if (totalFinal <= 0) return;
-        if (tipoOrden === 'domicilio' && !direccion) { return notify('error', 'Por favor, selecciona o escribe tu ubicación.'); }
-        if (calculandoEnvio) { return notify('error', 'Espera a que termine el cálculo del envío.'); }
+        if (tipoOrden === 'domicilio' && !direccion) return notify('error', 'Falta la dirección de entrega.');
+        
         setPaymentLoading(true);
         try {
-            
-            const productosParaEnviar = pedidoActual.map(item => ({ 
-                id: item.id, 
-                cantidad: item.cantidad, 
-                precio: Number(item.precio), 
-                nombre: item.nombre,
-                opciones: item.opcionesSeleccionadas 
-                    ? item.opcionesSeleccionadas.map(op => op.nombre).join(', ') 
-                    : null
+            const productosData = pedidoActual.map(item => ({ 
+                id: item.id, cantidad: item.cantidad, precio: Number(item.precio), nombre: item.nombre,
+                opciones: item.opcionesSeleccionadas ? item.opcionesSeleccionadas.map(op => op.nombre).join(', ') : null
             }));
 
             const pedidoData = {
-                total: totalFinal,
-                productos: productosParaEnviar,
-                tipo_orden: tipoOrden,
-                costo_envio: costoEnvio,
-                direccion_entrega: tipoOrden === 'domicilio' ? direccion?.description : null,
-                latitude: tipoOrden === 'domicilio' ? direccion?.lat : null,
-                longitude: tipoOrden === 'domicilio' ? direccion?.lng : null,
-                referencia: tipoOrden === 'domicilio' ? referencia : null
+                total: totalFinal, productos: productosData, tipo_orden: tipoOrden, costo_envio: costoEnvio,
+                direccion_entrega: direccion?.description, latitude: direccion?.lat, longitude: direccion?.lng, referencia
             };
             
             setDatosParaCheckout(pedidoData);
@@ -362,299 +354,268 @@ function ClientePage() {
             setClientSecret(res.data.clientSecret);
             setShowPaymentModal(true);
         } catch (err) {
-            notify('error', 'No se pudo iniciar el proceso de pago.');
-        } finally {
-            setPaymentLoading(false);
-        }
+            notify('error', 'Error al iniciar pago.');
+        } finally { setPaymentLoading(false); }
     };
 
     const handleContinue = () => {
-        if (tipoOrden !== 'domicilio') {
-            handleProcederAlPago();
-        } else {
-            setModalView('address');
-        }
+        if (tipoOrden !== 'domicilio') handleProcederAlPago();
+        else setModalView('address');
     };
 
     const handleSuccessfulPayment = async () => {
         if (guardarDireccion && direccion) {
             try {
-                const datosParaGuardar = { ...direccion, referencia };
-                await apiClient.put('/usuarios/mi-direccion', datosParaGuardar);
-                notify('success', 'Dirección y referencia guardadas.');
-                setDireccionGuardada(datosParaGuardar);
-            } catch (err) {
-                notify('error', 'No se pudo guardar la dirección y referencia.');
-            }
+                const data = { ...direccion, referencia };
+                await apiClient.put('/usuarios/mi-direccion', data);
+                setDireccionGuardada(data);
+            } catch (e) { console.error(e); }
         }
-        notify('success', '¡Pedido realizado y pagado con éxito! 🎉');
+        notify('success', '¡Pedido Éxitoso!');
         limpiarPedidoCompleto();
         setShowPaymentModal(false);
-        setClientSecret('');
         setActiveTab('ver');
     };
 
-    const handleProductClick = (item) => {
-        setProductoSeleccionadoParaModal(item);
-    };
-
-    const getStatusBadge = (estado) => { 
-        const base = 'badge fw-bold p-2';
+    // --- HELPER UI ---
+    const getStatusBadge = (estado) => {
+        const style = "badge rounded-pill d-inline-flex align-items-center gap-1 px-3 py-2";
         switch (estado) { 
-            case 'Pendiente': return `${base} bg-warning text-dark`; 
-            case 'En Preparacion': return `${base} bg-info text-dark`; 
-            case 'Listo para Recoger': return `${base} bg-success text-white`; 
-            case 'Completado': return `${base} bg-secondary text-white`; 
-            case 'En Camino': return `${base} bg-primary text-white`; 
-            default: return `${base} bg-light text-dark`; 
+            case 'Pendiente': return <span className={`${style} bg-warning text-dark`}><Clock size={14}/> Pendiente</span>;
+            case 'En Preparacion': return <span className={`${style} bg-info text-dark`}><ChefHat size={14}/> Preparando</span>;
+            case 'En Camino': return <span className={`${style} bg-primary text-white`}><Truck size={14}/> En Camino</span>;
+            case 'Listo para Recoger': return <span className={`${style} bg-success text-white`}><Package size={14}/> Listo</span>;
+            case 'Completado': return <span className={`${style} bg-secondary text-white`}><CheckCircle size={14}/> Entregado</span>;
+            default: return <span className={`${style} bg-light text-dark`}>{estado}</span>;
         } 
     };
-    
-    const handleToggleDetalle = (pedidoId) => { setOrdenExpandida(ordenExpandida === pedidoId ? null : pedidoId); };
-    const totalItemsEnCarrito = pedidoActual.reduce((sum, item) => sum + item.cantidad, 0);
-
-    const pageStyle = {
-        pointerEvents: (productoSeleccionadoParaModal || showPaymentModal || showCartModal) ? 'none' : 'auto'
-    };
-
 
     return (
-        <div className={darkBgClass} style={pageStyle}> 
-            <ul className={`nav nav-tabs mb-4 ${isDark ? 'nav-tabs-dark' : ''}`}>
-                <li className="nav-item">
-                    <button className={`nav-link fw-bold d-flex align-items-center gap-2 ${activeTab === 'crear' ? 'active text-primary' : (isDark ? 'text-white' : 'text-dark')}`} onClick={() => setActiveTab('crear')}>
-                        <Edit3 size={18} /> Crear un Pedido
-                    </button>
-                </li>
-                <li className="nav-item">
-                    <button className={`nav-link fw-bold d-flex align-items-center gap-2 ${activeTab === 'ver' ? 'active text-primary' : (isDark ? 'text-white' : 'text-dark')}`} onClick={() => setActiveTab('ver')}>
-                        <ListChecks size={18} /> Mis Pedidos
-                    </button>
-                </li>
-                <li className="nav-item">
-                    <button className={`nav-link fw-bold d-flex align-items-center gap-2 ${activeTab === 'recompensas' ? 'active text-primary' : (isDark ? 'text-white' : 'text-dark')}`} onClick={() => setActiveTab('recompensas')}>
-                        <Award size={18} /> Mis Recompensas
-                    </button>
-                </li>
-            </ul>
-
-            {/* --- CONTENIDO DE PESTAÑAS --- */}
+        <div style={{ backgroundColor: bgBase, minHeight: '100vh', color: textMain, pointerEvents: (productoSeleccionadoParaModal || showPaymentModal || showCartModal) ? 'none' : 'auto' }}> 
             
-            {loading && <div className="text-center p-5"><div className={`spinner-border ${spinnerColor}`} role="status"></div><p className="mt-2 text-muted">Cargando...</p></div>}
-            {error && <div className="alert alert-danger p-3 rounded-3">{error}</div>}
+            {/* Navegación Tabs */}
+            <div className={`sticky-top pt-3 pb-2 px-3 mb-4 shadow-sm ${isDark ? 'bg-dark border-bottom border-secondary' : 'bg-white'}`} style={{ zIndex: 100 }}>
+                <ul className="nav nav-pills nav-fill gap-2 container" style={{ maxWidth: '800px' }}>
+                    {[
+                        { id: 'crear', label: 'Menú', icon: <Edit3 size={18}/> },
+                        { id: 'ver', label: 'Mis Pedidos', icon: <ListChecks size={18}/> },
+                        { id: 'recompensas', label: 'Premios', icon: <Award size={18}/> },
+                    ].map(tab => (
+                        <li className="nav-item" key={tab.id}>
+                            <button 
+                                className={`nav-link d-flex align-items-center justify-content-center gap-2 ${activeTab === tab.id ? 'active fw-bold shadow' : ''} ${isDark && activeTab !== tab.id ? 'text-secondary hover-text-white' : ''}`}
+                                onClick={() => setActiveTab(tab.id)}
+                                style={{ borderRadius: '12px', transition: 'all 0.2s' }}
+                            >
+                                {tab.icon} {tab.label}
+                            </button>
+                        </li>
+                    ))}
+                </ul>
+            </div>
 
-            {/* PESTAÑA 1: CREAR PEDIDO */}
-            {!loading && activeTab === 'crear' && (
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="row">
-                    <div className="col-md-8">
-                        <h2 className={`fw-bold mb-4 ${isDark ? 'text-primary' : 'text-dark'}`}>Menú Disponible</h2>
-                        <div className="row g-4">
-                            {menuItems?.map(item => (
-                                <div key={item.id} className="col-6 col-md-4 col-lg-3">
-                                    
-                                    <div 
-                                        className={`${cardClass} h-100 text-center cursor-pointer transition-shadow hover-shadow-lg`} 
-                                        onClick={() => handleProductClick(item)} 
-                                        style={{ cursor: 'pointer', borderRadius: '10px' }}
-                                    >
-                                        <div className="card-body d-flex flex-column justify-content-between p-3">
-                                            <h6 className="card-title fw-bold mb-3">{item.nombre}</h6>
-                                            <div className="mt-auto">
-                                                {item.en_oferta ? (
-                                                    <div>
-                                                        <span className="text-muted text-decoration-line-through me-2 small">${Number(item.precio_original).toFixed(2)}</span>
-                                                        <span className="card-text fw-bolder fs-5 text-success">${Number(item.precio).toFixed(2)}</span>
+            <div className="container pb-5">
+                {loading && <div className="text-center py-5"><div className="spinner-border text-primary" role="status"></div></div>}
+                {error && <div className="alert alert-danger shadow-sm border-0">{error}</div>}
+
+                {/* --- PESTAÑA MENÚ --- */}
+                {!loading && activeTab === 'crear' && (
+                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="row">
+                        <div className="col-lg-8 mb-4">
+                            <h2 className="fw-bold mb-4 px-2 border-start border-4 border-primary">¿Qué se te antoja hoy?</h2>
+                            <div className="row g-3">
+                                {menuItems.map(item => (
+                                    <div key={item.id} className="col-6 col-md-4">
+                                        <motion.div 
+                                            whileHover={{ y: -5 }}
+                                            className="card h-100 border-0 shadow-sm overflow-hidden"
+                                            style={{ backgroundColor: cardBg, borderRadius: '16px', cursor: 'pointer' }}
+                                            onClick={() => setProductoSeleccionadoParaModal(item)}
+                                        >
+                                            <div className="card-body d-flex flex-column text-center p-3">
+                                                {/* Placeholder imagen si no hay */}
+                                                <div className="mb-3 d-flex align-items-center justify-content-center bg-secondary bg-opacity-10 rounded-circle mx-auto" style={{ width: '60px', height: '60px' }}>
+                                                    <span style={{ fontSize: '24px' }}>🍔</span>
+                                                </div>
+                                                <h6 className="card-title fw-bold mb-2 line-clamp-2">{item.nombre}</h6>
+                                                <div className="mt-auto pt-2">
+                                                    {item.en_oferta ? (
+                                                        <div>
+                                                            <small className="text-decoration-line-through text-muted me-2">${Number(item.precio_original).toFixed(2)}</small>
+                                                            <span className="fw-bold text-success fs-5">${Number(item.precio).toFixed(2)}</span>
+                                                        </div>
+                                                    ) : (
+                                                        <span className="fw-bold text-primary fs-5">${Number(item.precio).toFixed(2)}</span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* CARRITO DESKTOP */}
+                        <div className="col-lg-4 d-none d-lg-block">
+                            <div className="shadow border-0" style={{ position: 'sticky', top: '100px', backgroundColor: cardBg, borderRadius: '16px' }}>
+                                <CarritoContent
+                                    isModal={false}
+                                    pedidoActual={pedidoActual}
+                                    decrementarCantidad={decrementarCantidad}
+                                    incrementarCantidad={incrementarCantidad}
+                                    eliminarProducto={eliminarProducto}
+                                    tipoOrden={tipoOrden}
+                                    setTipoOrden={setTipoOrden}
+                                    direccionGuardada={direccionGuardada}
+                                    usarDireccionGuardada={usarDireccionGuardada}
+                                    handleLocationSelect={handleLocationSelect}
+                                    direccion={direccion}
+                                    referencia={referencia}
+                                    setReferencia={setReferencia}
+                                    guardarDireccion={guardarDireccion}
+                                    setGuardarDireccion={setGuardarDireccion}
+                                    subtotal={subtotal}
+                                    costoEnvio={costoEnvio}
+                                    calculandoEnvio={calculandoEnvio}
+                                    totalFinal={totalFinal}
+                                    handleContinue={handleContinue}
+                                    handleProcederAlPago={handleProcederAlPago}
+                                    paymentLoading={paymentLoading}
+                                    limpiarPedidoCompleto={limpiarPedidoCompleto}
+                                    isDark={isDark}
+                                    inputClass={inputClass}
+                                />
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+
+                {/* --- PESTAÑA PEDIDOS --- */}
+                {!loading && activeTab === 'ver' && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                        <h3 className="fw-bold mb-4">Historial de Pedidos</h3>
+                        {misPedidos.length === 0 ? (
+                            <div className="text-center py-5 rounded-4" style={{ backgroundColor: cardBg }}>
+                                <ListChecks size={48} className="text-muted mb-3 opacity-50"/>
+                                <p className="text-muted">Aún no tienes pedidos.</p>
+                            </div>
+                        ) : (
+                            <div className="d-flex flex-column gap-3">
+                                {misPedidos.map(p => (
+                                    <div key={p.id} className="card border-0 shadow-sm" style={{ backgroundColor: cardBg, borderRadius: '12px', overflow: 'hidden' }}>
+                                        <div 
+                                            className="card-header border-0 d-flex justify-content-between align-items-center p-3" 
+                                            style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#f8f9fa', cursor: 'pointer' }}
+                                            onClick={() => setOrdenExpandida(ordenExpandida === p.id ? null : p.id)}
+                                        >
+                                            <div className="d-flex align-items-center gap-3">
+                                                <div className={`rounded-circle p-2 ${isDark ? 'bg-dark' : 'bg-white'}`}>
+                                                    <Package size={20} className="text-primary"/>
+                                                </div>
+                                                <div>
+                                                    <div className="fw-bold">Pedido #{p.id}</div>
+                                                    <small className="text-muted">{new Date(p.fecha).toLocaleDateString()}</small>
+                                                </div>
+                                            </div>
+                                            <div className="text-end">
+                                                <div className="fw-bold text-success">${Number(p.total).toFixed(2)}</div>
+                                                <div>{getStatusBadge(p.estado)}</div>
+                                            </div>
+                                        </div>
+                                        
+                                        <AnimatePresence>
+                                            {ordenExpandida === p.id && (
+                                                <motion.div 
+                                                    initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} 
+                                                    className="overflow-hidden"
+                                                >
+                                                    <div className="card-body border-top border-light p-3 bg-opacity-10">
+                                                        {p.productos?.map((prod, idx) => (
+                                                            <div key={idx} className="d-flex justify-content-between mb-2 small">
+                                                                <span className={textMuted}>{prod.cantidad}x {prod.nombre}</span>
+                                                                <span className="fw-semibold">${(prod.cantidad * prod.precio).toFixed(2)}</span>
+                                                            </div>
+                                                        ))}
+                                                        {p.costo_envio > 0 && (
+                                                            <div className="d-flex justify-content-between mt-2 pt-2 border-top text-info small">
+                                                                <span>Envío</span><span>${p.costo_envio}</span>
+                                                            </div>
+                                                        )}
                                                     </div>
-                                                ) : (
-                                                    <p className="card-text fw-bolder fs-5 text-primary">${Number(item.precio).toFixed(2)}</p>
-                                                )}
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </motion.div>
+                )}
+
+                {/* --- PESTAÑA RECOMPENSAS --- */}
+                {!loading && activeTab === 'recompensas' && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                        <div className="text-center mb-5">
+                            <div className="d-inline-block p-3 rounded-circle mb-3 bg-warning bg-opacity-25">
+                                <Award size={40} className="text-warning"/>
+                            </div>
+                            <h3 className="fw-bold">Tus Recompensas</h3>
+                            <p className={textMuted}>¡Gana premios por tu lealtad! 1 Recompensa cada 20 pedidos.</p>
+                        </div>
+                        
+                        <div className="row g-4">
+                            {misRecompensas.length === 0 ? (
+                                <div className="col-12 text-center py-4">
+                                    <p className="text-muted">Aún no tienes recompensas disponibles.</p>
+                                </div>
+                            ) : misRecompensas.map(recompensa => (
+                                <div key={recompensa.id} className="col-md-6">
+                                    <div className="card border-0 shadow h-100" style={{ backgroundColor: '#2a9d8f', color: 'white', borderRadius: '16px' }}>
+                                        <div className="card-body d-flex align-items-center p-4">
+                                            <div className="me-3 display-4">🎁</div>
+                                            <div>
+                                                <h4 className="fw-bold mb-1">{recompensa.nombre}</h4>
+                                                <p className="mb-0 opacity-75">¡Disponible para canjear en tu próximo pedido!</p>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             ))}
                         </div>
-                    </div>
+                    </motion.div>
+                )}
+            </div>
 
-                    {/* CARRITO (Desktop) */}
-                    <div className="col-md-4 d-none d-md-block">
-                        <div className={`${cardClass} position-sticky`} style={{ top: '20px', borderRadius: '15px' }}>
-                            <CarritoContent
-                                isModal={false}
-                                pedidoActual={pedidoActual}
-                                decrementarCantidad={decrementarCantidad}
-                                incrementarCantidad={incrementarCantidad}
-                                eliminarProducto={eliminarProducto}
-                                tipoOrden={tipoOrden}
-                                setTipoOrden={setTipoOrden}
-                                direccionGuardada={direccionGuardada}
-                                usarDireccionGuardada={usarDireccionGuardada}
-                                handleLocationSelect={handleLocationSelect}
-                                direccion={direccion}
-                                referencia={referencia}
-                                setReferencia={setReferencia}
-                                guardarDireccion={guardarDireccion}
-                                setGuardarDireccion={setGuardarDireccion}
-                                subtotal={subtotal}
-                                costoEnvio={costoEnvio}
-                                calculandoEnvio={calculandoEnvio}
-                                totalFinal={totalFinal}
-                                handleContinue={handleContinue}
-                                handleProcederAlPago={handleProcederAlPago}
-                                paymentLoading={paymentLoading}
-                                limpiarPedidoCompleto={limpiarPedidoCompleto}
-                                isDark={isDark} // Pasar tema
-                                inputClass={inputClass} // Pasar clase de input
-                            />
-                        </div>
-                    </div>
-                </motion.div>
-            )}
+            {/* --- MODALES Y FLOTANTES --- */}
 
-            <hr className={isDark ? 'border-secondary mt-5' : 'mt-5'} />
-
-            {/* PESTAÑA 2: MIS PEDIDOS */}
-            {!loading && activeTab === 'ver' && (
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-                    <h2 className={`fw-bold mb-4 ${isDark ? 'text-primary' : 'text-dark'}`}>Historial de Pedidos</h2>
-                    {(!Array.isArray(misPedidos) || misPedidos.length === 0) ? (
-                        <div className={`p-4 text-center rounded-3 ${lightBgClass}`}><p className="mb-0">No has realizado ningún pedido aún. ¡Comienza uno!</p></div>
-                    ) : (
-                        <div className="table-responsive">
-                            <table className={`table table-hover ${isDark ? 'table-dark' : ''} align-middle`}>
-                                <thead className={isDark ? 'border-secondary' : 'table-light'}>
-                                    <tr>
-                                        <th className="fw-bold">ID</th>
-                                        <th className="fw-bold">Fecha</th>
-                                        <th className="fw-bold">Tipo</th>
-                                        <th className="fw-bold">Estado</th>
-                                        <th className="text-end fw-bold">Total</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {misPedidos?.map(p => (
-                                        <React.Fragment key={p.id}>
-                                            <tr style={{ cursor: 'pointer' }} onClick={() => handleToggleDetalle(p.id)} className={isDark ? 'text-white' : ''}>
-                                                <td>#{p.id}</td>
-                                                <td>{new Date(p.fecha).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
-                                                <td><span className={`badge ${isDark ? 'bg-info bg-opacity-10 text-info' : 'bg-secondary bg-opacity-10 text-secondary'} fw-normal`}>{p.tipo_orden}</span></td>
-                                                <td><span className={getStatusBadge(p.estado)}>{p.estado}</span></td>
-                                                <td className="text-end fw-bold text-success">${Number(p.total).toFixed(2)}</td>
-                                            </tr>
-                                            {ordenExpandida === p.id && (
-                                                <tr>
-                                                    <td colSpan="5" className={`p-0 border-0 ${isDark ? 'bg-secondary bg-opacity-10' : 'bg-light'}`}>
-                                                        <motion.div 
-                                                            className="p-4" 
-                                                            initial={{ opacity: 0, height: 0 }} 
-                                                            animate={{ opacity: 1, height: 'auto' }} 
-                                                            transition={{ duration: 0.3 }}
-                                                        >
-                                                            <h6 className="mb-3 fw-bold text-primary">Detalle de Productos</h6>
-                                                            <ul className="list-unstyled">
-                                                            {p.productos?.map(producto => (
-                                                                <li key={`${p.id}-${producto.nombre}`} className="d-flex justify-content-between py-1 border-bottom">
-                                                                    <div>
-                                                                        <span className="fw-semibold me-2">{producto.cantidad}x {producto.nombre}</span>
-                                                                        {producto.opciones && <small className={`text-muted d-block ${isDark ? 'text-secondary' : ''}`}>+ {producto.opciones}</small>}
-                                                                    </div>
-                                                                    <span className="fw-semibold">${(producto.cantidad * Number(producto.precio)).toFixed(2)}</span>
-                                                                </li>
-                                                            ))}
-                                                            </ul>
-                                                            {p.costo_envio > 0 && (
-                                                                <div className="d-flex justify-content-between mt-2 pt-2 fw-bold text-info border-top border-info border-opacity-50">
-                                                                    <span>Costo de Envío</span>
-                                                                    <span>${Number(p.costo_envio).toFixed(2)}</span>
-                                                                </div>
-                                                            )}
-                                                        </motion.div>
-                                                    </td>
-                                                </tr>
-                                            )}
-                                        </React.Fragment>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
-                </motion.div>
-            )}
-
-            <hr className={isDark ? 'border-secondary mt-5' : 'mt-5'} />
-
-            {/* PESTAÑA 3: MIS RECOMPENSAS */}
-            {!loading && activeTab === 'recompensas' && (
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-                    <h2 className={`fw-bold mb-4 ${isDark ? 'text-primary' : 'text-dark'}`}>Mis Recompensas</h2>
-                    {(!misRecompensas || misRecompensas.length === 0) ? (
-                        <div className={`${lightBgClass} p-5 text-center rounded-3`}>
-                            <img
-                                src="/tito-icon.png" 
-                                alt="Icono de Tito Cafe"
-                                className="mb-3"
-                                style={{ width: '80px', height: '80px', filter: isDark ? 'invert(1)' : 'none' }}
-                            />
-                            <h3 className="fw-bold">Aún no tienes recompensas</h3>
-                            <p className={isDark ? 'text-secondary' : 'text-muted'}>¡Sigue comprando! Ganas una recompensa por cada 20 compras. 🎁</p>
-                        </div>
-                    ) : (
-                        <div className="row g-4">
-                            {misRecompensas.map(recompensa => (
-                                <div key={recompensa.id} className="col-12">
-                                    <motion.div whileHover={{ scale: 1.02 }} style={styles.cupon}>
-                                        <div style={styles.cuponIcon}>⭐</div>
-                                        <div style={styles.cuponBody}>
-                                            <h4 style={styles.cuponTitle}>{recompensa.nombre}</h4>
-                                            <p style={styles.cuponDescription}>Canjeable por un producto seleccionado. ¡Felicidades!</p>
-                                        </div>
-                                    </motion.div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </motion.div>
-            )}
-
-
-            {/* --- SECCIÓN DE MODALES --- */}
-
-            {/* Botón Carrito Flotante (Móvil) */}
+            {/* Botón Flotante Carrito (Móvil) */}
             {activeTab === 'crear' && pedidoActual.length > 0 && (
-                <button 
-                    className="btn btn-primary btn-lg rounded-pill shadow-lg d-md-none" 
-                    onClick={() => setShowCartModal(true)}
-                    style={{ 
-                        pointerEvents: 'auto', 
-                        position: 'fixed', 
-                        bottom: '20px', 
-                        right: '20px',
-                        zIndex: 1050,
-                        padding: '10px 20px'
-                    }} 
-                >
-                    <ShoppingCart size={20} className="me-2"/> <span className="fw-bold">Ver Carrito</span>
-                    <span className="ms-2 badge bg-white text-primary rounded-pill">{totalItemsEnCarrito}</span>
-                </button>
+                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="fixed-bottom p-3 d-lg-none" style={{ zIndex: 1050, pointerEvents: 'none' }}>
+                    <button 
+                        className="btn btn-primary w-100 rounded-pill py-3 shadow-lg d-flex justify-content-between align-items-center px-4"
+                        onClick={() => setShowCartModal(true)}
+                        style={{ pointerEvents: 'auto' }}
+                    >
+                        <span className="badge bg-white text-primary rounded-pill px-2">{pedidoActual.reduce((acc, el) => acc + el.cantidad, 0)}</span>
+                        <span className="fw-bold">Ver Carrito</span>
+                        <span className="fw-bold">${totalFinal.toFixed(2)}</span>
+                    </button>
+                </motion.div>
             )}
 
-            {/* Modal de Carrito/Dirección (Móvil) */}
+            {/* Modal Carrito / Checkout */}
             {showCartModal && (
-                <div 
-                    className="modal show fade" 
-                    style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(3px)' }}
-                >
+                <div className="modal show fade d-block" style={{ backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(5px)', pointerEvents: 'auto' }}>
                     <motion.div 
-                        initial={{ y: '100%', opacity: 0 }} 
-                        animate={{ y: 0, opacity: 1 }} 
-                        transition={{ type: "spring", stiffness: 100, damping: 20 }}
-                        className="modal-dialog modal-dialog-centered modal-dialog-scrollable"
+                        initial={{ y: '100%' }} animate={{ y: 0 }} 
+                        className="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg"
                     >
-                        <div className={`${cardClass} modal-content border-0`} style={{ borderRadius: '12px' }}>
+                        <div className="modal-content border-0 shadow-lg" style={{ backgroundColor: cardBg, borderRadius: '20px', color: textMain }}>
                             <div className="modal-header border-0 pb-0">
-                                <h5 className="modal-title fw-bold">{modalView === 'cart' ? 'Mi Pedido' : 'Dirección de Entrega'}</h5>
+                                <h5 className="modal-title fw-bold">{modalView === 'cart' ? 'Tu Pedido' : 'Dirección de Entrega'}</h5>
                                 <button type="button" className={`btn-close ${isDark ? 'btn-close-white' : ''}`} onClick={() => { setShowCartModal(false); setModalView('cart'); }}></button>
                             </div>
+                            
                             {modalView === 'cart' ? (
                                 <CarritoContent
                                     isModal={true}
@@ -680,88 +641,64 @@ function ClientePage() {
                                     handleProcederAlPago={handleProcederAlPago}
                                     paymentLoading={paymentLoading}
                                     limpiarPedidoCompleto={limpiarPedidoCompleto}
-                                    isDark={isDark} // Pasar tema
-                                    inputClass={inputClass} // Pasar clase de input
+                                    isDark={isDark}
+                                    inputClass={inputClass}
                                 />
                             ) : (
-                                <>
-                                    <div className="modal-body p-4">
-                                        <div className={`p-3 rounded-3 ${lightBgClass}`}>
-                                            {direccionGuardada && (<button className="btn btn-outline-info w-100 mb-3 fw-bold" onClick={usarDireccionGuardada}>Usar mi dirección guardada</button>)}
-                                            <label className="form-label fw-bold">Busca tu dirección:</label>
-                                            <MapSelector onLocationSelect={handleLocationSelect} initialAddress={direccion} className={inputClass} />
-                                            <div className="mt-3">
-                                                <label htmlFor="referenciaModal" className="form-label fw-bold">Referencia:</label>
-                                                <input type="text" id="referenciaModal" className={inputClass} value={referencia} onChange={(e) => setReferencia(e.target.value)} />
-                                            </div>
-                                            <div className="form-check mt-3">
-                                                <input className="form-check-input" type="checkbox" id="guardarDireccionModal" checked={guardarDireccion} onChange={(e) => setGuardarDireccion(e.target.checked)} />
-                                                <label className={`form-check-label ${isDark ? 'text-white' : ''}`} htmlFor="guardarDireccionModal">Guardar dirección</label>
-                                            </div>
-                                            <hr className={isDark ? 'border-secondary' : ''} />
-                                            <p className="d-flex justify-content-between fw-light">Subtotal: <span>${subtotal.toFixed(2)}</span></p>
-                                            <p className="d-flex justify-content-between fw-light">Costo de Envío: {calculandoEnvio ? <span className={`spinner-border spinner-border-sm ${spinnerColor}`}></span> : <span>${costoEnvio.toFixed(2)}</span>}</p>
-                                            <h4 className="d-flex justify-content-between fw-bold mt-2">Total: <span className="text-success">${totalFinal.toFixed(2)}</span></h4>
-                                        </div>
-                                    </div>
-                                    <div className="modal-footer d-flex justify-content-between border-0 p-4">
-                                        <button className="btn btn-secondary fw-bold rounded-pill px-4" onClick={() => setModalView('cart')}>Volver</button>
-                                        <button className="btn btn-primary fw-bold rounded-pill px-4" onClick={handleProcederAlPago} disabled={!direccion || paymentLoading || calculandoEnvio}>{paymentLoading ? 'Iniciando...' : 'Confirmar y Pagar'}</button>
-                                    </div>
-                                </>
+                                // Renderizado duplicado de dirección para el modal si se requiere lógica separada
+                                // Reutilizamos CarritoContent arriba para simplificar, 
+                                // pero si necesitas vista exclusiva de address:
+                                <div className="modal-body p-4">
+                                     <button className="btn btn-link text-decoration-none mb-3 px-0" onClick={() => setModalView('cart')}>← Volver al carrito</button>
+                                     <div className={`p-4 rounded border ${isDark ? 'border-secondary' : 'bg-light border-0'}`}>
+                                         <h5 className="fw-bold mb-3">Confirma tu ubicación</h5>
+                                         <MapSelector onLocationSelect={handleLocationSelect} initialAddress={direccion} className={inputClass} />
+                                         <input type="text" className={`form-control mt-3 ${inputClass}`} placeholder="Referencia / Color de casa" value={referencia} onChange={(e) => setReferencia(e.target.value)} />
+                                         <div className="mt-4 d-grid">
+                                            <button className="btn btn-primary btn-lg rounded-pill" onClick={handleProcederAlPago} disabled={!direccion || paymentLoading}>
+                                                Confirmar y Pagar ${totalFinal.toFixed(2)}
+                                            </button>
+                                         </div>
+                                     </div>
+                                </div>
                             )}
                         </div>
                     </motion.div>
                 </div>
             )}
 
-
-            {/* Modal de Detalle de Producto */}
+            {/* Modal Detalle Producto */}
             {productoSeleccionadoParaModal && (
                 <div style={{ pointerEvents: 'auto' }}>
                     <ProductDetailModal
                         product={productoSeleccionadoParaModal}
                         onClose={() => setProductoSeleccionadoParaModal(null)}
                         onAddToCart={agregarProductoAPedido}
-                        // 🚨 Asumo que el modal de detalle de producto también acepta isDark
-                        isDark={isDark} 
+                        isDark={isDark}
                     />
                 </div>
             )}
 
-
-            {/* Modal de Pago (Stripe) */}
+            {/* Modal Stripe */}
             {showPaymentModal && clientSecret && (
-                <div 
-                    className="modal show fade" 
-                    style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(3px)' }}
-                >
-                    <motion.div 
-                        initial={{ y: -50, opacity: 0 }} 
-                        animate={{ y: 0, opacity: 1 }} 
-                        transition={{ type: "spring", stiffness: 100, damping: 20 }}
-                        className="modal-dialog modal-md modal-dialog-centered"
-                    >
-                        <div className={`${cardClass} modal-content border-0`} style={{ borderRadius: '12px' }}>
-                            <div className="modal-header border-0 pb-0">
-                                <h5 className="modal-title fw-bold text-success d-flex align-items-center gap-2"><DollarSign size={20}/> Finalizar Compra</h5>
+                <div className="modal show fade d-block" style={{ backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(5px)', pointerEvents: 'auto' }}>
+                    <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="modal-dialog modal-dialog-centered">
+                        <div className="modal-content border-0 shadow-lg" style={{ backgroundColor: cardBg, borderRadius: '16px', color: textMain }}>
+                            <div className="modal-header border-0">
+                                <h5 className="modal-title fw-bold text-success d-flex align-items-center gap-2">
+                                    <DollarSign size={24}/> Pago Seguro
+                                </h5>
                                 <button type="button" className={`btn-close ${isDark ? 'btn-close-white' : ''}`} onClick={() => setShowPaymentModal(false)}></button>
                             </div>
                             <div className="modal-body p-4">
-                                <Elements stripe={stripePromise} options={{ clientSecret }}>
-                                    <CheckoutForm
-                                        handleSuccess={handleSuccessfulPayment}
-                                        total={totalFinal}
-                                        datosPedido={datosParaCheckout}
-                                        isDark={isDark} // Pasar tema
-                                    />
+                                <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: isDark ? 'night' : 'stripe' } }}>
+                                    <CheckoutForm handleSuccess={handleSuccessfulPayment} total={totalFinal} datosPedido={datosParaCheckout} isDark={isDark} />
                                 </Elements>
                             </div>
                         </div>
                     </motion.div>
                 </div>
             )}
-            
         </div> 
     );
 }
