@@ -1,14 +1,19 @@
 import React from 'react';
-// IMPORTANTE: Asegúrate de que la ruta a tu ThemeContext sea la correcta.
 import { useTheme } from '../context/ThemeContext'; 
 
 function DetallesPedidoModal({ pedido, onClose }) {
   if (!pedido) return null;
 
-  // Obtenemos el tema actual desde el contexto
   const { theme } = useTheme();
 
-  const productos = Array.isArray(pedido.productos) ? pedido.productos : [];
+  // --- LÓGICA ROBUSTA DE MISS DONITAS PARA ENCONTRAR PRODUCTOS ---
+  const productos = 
+      pedido.items || 
+      pedido.detalles_pedido || 
+      pedido.productos || 
+      pedido.detalles || 
+      pedido.venta_detalles || 
+      [];
 
   let googleMapsUrl = '';
   if (pedido.latitude && pedido.longitude) {
@@ -17,14 +22,13 @@ function DetallesPedidoModal({ pedido, onClose }) {
     googleMapsUrl = `http://googleusercontent.com/maps.google.com/maps?q=${encodeURIComponent(pedido.direccion_entrega)}`;
   }
 
-  // Definimos clases y estilos que cambiarán según el tema
+  // Estilos según tema
   const modalClass = theme === 'dark' ? 'modal-content text-bg-dark' : 'modal-content';
   const closeButtonClass = theme === 'dark' ? 'btn-close btn-close-white' : 'btn-close';
   const cardBgStyle = {
     backgroundColor: theme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)'
   };
   const mutedTextColor = theme === 'dark' ? 'text-white-50' : 'text-muted';
-
 
   return (
     <div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.7)' }}>
@@ -37,7 +41,7 @@ function DetallesPedidoModal({ pedido, onClose }) {
           </div>
 
           <div className="modal-body pt-0">
-            {/* --- SECCIÓN DE INFORMACIÓN GENERAL --- */}
+            {/* --- INFO GENERAL --- */}
             <div className="d-flex justify-content-between mb-2">
               <span className={mutedTextColor}>Cliente:</span>
               <span className="fw-bold text-end">{pedido.nombre_cliente}</span>
@@ -57,39 +61,54 @@ function DetallesPedidoModal({ pedido, onClose }) {
             
             <hr />
 
-            {/* --- SECCIÓN DE PRODUCTOS --- */}
+            {/* --- PRODUCTOS --- */}
             <h6 className="mb-2">Productos:</h6>
             
             <ul className="list-unstyled mb-3">
-              {productos.map((producto, index) => (
-                <li key={index} className="mb-2 p-1 border-bottom">
-                  {/* Línea principal del producto */}
-                  <div className="d-flex justify-content-between align-items-center">
-                    <span className="fw-bold">{producto.cantidad}x {producto.nombre}</span>
-                    <span className="text-end">${(producto.cantidad * Number(producto.precio || 0)).toFixed(2)}</span>
-                  </div>
+              {productos.map((producto, index) => {
+                
+                // --- AQUI ESTA LA MAGIA DE MISS DONITAS ADAPTADA ---
+                // 1. Buscamos en 'opciones' O en 'selectedOptions'
+                const rawOpciones = producto.opciones || producto.selectedOptions;
+                let opcionesParaMostrar = [];
 
-                  {/* Renderizado de Opciones/Toppings */}
-                  {Array.isArray(producto.opciones) && producto.opciones.length > 0 && (
-                    <ul className="list-unstyled small ps-3 mb-0" style={{ opacity: 0.8 }}>
-                      {producto.opciones.map((opcion, opIndex) => (
-                        // Utilizamos 'nombre' ya que es lo que enviaste desde el frontend
-                        <li key={opIndex} className={mutedTextColor}>+ {opcion.nombre}</li>
-                      ))}
-                    </ul>
-                  )}
-                </li>
-              ))}
+                // 2. Procesamos según si es Array o Texto para que Tito Spot lo entienda
+                if (Array.isArray(rawOpciones) && rawOpciones.length > 0) {
+                    // Si es array, extraemos los nombres
+                    opcionesParaMostrar = rawOpciones.map(op => (typeof op === 'string' ? op : op.nombre));
+                } else if (typeof rawOpciones === 'string' && rawOpciones.length > 0) {
+                    // Si es string (ej: "Extra salsa, con limon"), lo separamos por comas para hacer lista
+                    opcionesParaMostrar = rawOpciones.split(',').map(s => s.trim());
+                }
+
+                return (
+                  <li key={index} className="mb-2 p-1 border-bottom">
+                    <div className="d-flex justify-content-between align-items-center">
+                      <span className="fw-bold">{producto.cantidad}x {producto.nombre || producto.nombre_producto}</span>
+                      <span className="text-end">${(producto.cantidad * Number(producto.precio || producto.precio_unitario || 0)).toFixed(2)}</span>
+                    </div>
+
+                    {/* Renderizado de Opciones (Toppings) */}
+                    {opcionesParaMostrar.length > 0 && (
+                      <ul className="list-unstyled small ps-3 mb-0" style={{ opacity: 0.8 }}>
+                        {opcionesParaMostrar.map((textoOpcion, opIndex) => (
+                          <li key={opIndex} className={mutedTextColor}>+ {textoOpcion}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
             
-            {/* --- SECCIÓN DE ENVÍO (SI APLICA) --- */}
+            {/* --- ENVÍO --- */}
             {pedido.tipo_orden === 'domicilio' && (
               <>
                 <hr />
                 <h6 className="mb-2">Detalles de Envío:</h6>
                 <div className="p-3 rounded" style={cardBgStyle}>
                   <p className="mb-1">
-                    <strong>Dirección:</strong> {pedido.direccion_entrega || 'No especificada'}
+                    <strong>Dirección:</strong> {pedido.direccion_entrega || pedido.direccion || 'No especificada'}
                   </p>
                   {pedido.referencia && (
                     <p className="mb-2">
@@ -107,7 +126,7 @@ function DetallesPedidoModal({ pedido, onClose }) {
 
             <hr />
             
-            {/* --- SECCIÓN DE TOTAL --- */}
+            {/* --- TOTAL --- */}
             <div className="d-flex justify-content-between align-items-center mt-3">
               <h5 className="mb-0">Total:</h5>
               <h5 className="mb-0 text-success fw-bold">${Number(pedido.total).toFixed(2)}</h5>
