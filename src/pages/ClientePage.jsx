@@ -27,7 +27,8 @@ import {
     Star,
     ArrowLeft,
     ChevronRight,
-    Map
+    Map,
+    X
 } from 'lucide-react'; 
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
@@ -75,7 +76,8 @@ const CarritoContent = ({
     limpiarPedidoCompleto,
     isDark,
     viewState,
-    setViewState
+    setViewState,
+    closeModal // Nueva prop para cerrar el modal desde dentro
 }) => {
 
     // --- Lógica de Navegación entre Pasos ---
@@ -113,14 +115,22 @@ const CarritoContent = ({
         <div className="d-flex flex-column h-100 position-relative overflow-hidden"> 
             
             {/* 1. HEADER DEL CARRITO (Fijo y Estilizado) */}
-            <div className={`flex-shrink-0 px-4 py-3 ${glassHeader} z-10`}>
+            <div className={`flex-shrink-0 px-4 py-3 ${glassHeader} z-10 d-flex align-items-center justify-content-between`}>
                 {viewState === 'cart' ? (
-                    <div className="d-flex align-items-center justify-content-center position-relative">
-                         <h5 className={`m-0 fw-bold d-flex align-items-center gap-2 ${isDark ? 'text-white' : 'text-gray-800'}`}>
+                    <>
+                        <h5 className={`m-0 fw-bold d-flex align-items-center gap-2 ${isDark ? 'text-white' : 'text-gray-800'}`}>
                             <ShoppingCart size={20} className="text-blue-500"/> 
                             {isModal ? 'Tu Pedido' : 'Mi Pedido'}
                         </h5>
-                    </div>
+                        {isModal && (
+                            <button 
+                                onClick={closeModal}
+                                className={`btn btn-sm p-1 rounded-circle ${isDark ? 'hover:bg-white/10 text-white' : 'hover:bg-gray-100 text-gray-600'}`}
+                            >
+                                <X size={20} />
+                            </button>
+                        )}
+                    </>
                 ) : (
                     <div className="d-flex align-items-center w-100">
                         <button 
@@ -662,7 +672,6 @@ function ClientePage() {
                                     <div key={item.id} className="col-6 col-md-4">
                                         <motion.div 
                                             whileHover={{ y: -8, scale: 1.02 }}
-                                            // AQUI ESTA LA CORRECCION DEL BORDE AZUL PARA PROMOCIONES
                                             className={`card h-100 shadow-lg overflow-hidden position-relative ${item.en_oferta ? 'border border-2 border-blue-500' : 'border-0'}`}
                                             style={{ backgroundColor: cardBg, borderRadius: '24px', cursor: 'pointer' }}
                                             onClick={() => setProductoSeleccionadoParaModal(item)}
@@ -860,49 +869,51 @@ function ClientePage() {
 
             {/* --- MODALES Y FLOTANTES --- */}
 
-            {/* BOTÓN FLOTANTE MÓVIL */}
+            {/* BOTÓN FLOTANTE MÓVIL (FAB) - NUEVO DISEÑO CIRCULAR */}
             {activeTab === 'crear' && pedidoActual.length > 0 && (
-                <motion.div 
-                    initial={{ y: 100, opacity: 0 }} 
-                    animate={{ y: 0, opacity: 1 }} 
-                    className="fixed-bottom p-4 d-lg-none d-flex justify-content-center pointer-events-none" 
+                <div 
+                    className="position-fixed bottom-0 end-0 m-4 d-lg-none" 
                     style={{ zIndex: 1050 }}
                 >
-                    <button 
-                        className="btn btn-dark rounded-pill shadow-2xl d-flex justify-content-between align-items-center px-4 py-3 fw-bold w-100 pointer-events-auto border border-white/10"
+                    <motion.button 
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="btn rounded-circle shadow-lg d-flex align-items-center justify-content-center position-relative border border-white/20"
                         onClick={() => setShowCartModal(true)}
-                        style={{ maxWidth: '400px', background: isDark ? 'rgba(20,20,20,0.9)' : 'rgba(30,30,30,0.9)', backdropFilter: 'blur(10px)' }}
+                        style={{ 
+                            width: '64px', 
+                            height: '64px', 
+                            background: 'linear-gradient(135deg, #2563eb 0%, #4f46e5 100%)',
+                            color: 'white'
+                        }}
                     >
-                        <div className="d-flex align-items-center">
-                            <div className="bg-blue-600 rounded-circle w-8 h-8 d-flex align-items-center justify-content-center me-3">
-                                {pedidoActual.reduce((acc, el) => acc + el.cantidad, 0)}
-                            </div>
-                            <span>Ver Carrito</span>
-                        </div>
-                        <span className="text-blue-400">${totalFinal.toFixed(2)}</span>
-                    </button>
-                </motion.div>
+                        <ShoppingCart size={28} />
+                        <span 
+                            className="position-absolute top-0 end-0 badge rounded-pill bg-danger border border-white shadow-sm"
+                            style={{ transform: 'translate(10%, -10%)' }}
+                        >
+                            {pedidoActual.reduce((acc, el) => acc + el.cantidad, 0)}
+                        </span>
+                    </motion.button>
+                </div>
             )}
 
-            {/* MODAL CARRITO (MÓVIL) */}
+            {/* MODAL CARRITO MÓVIL (CENTRADO Y FLOTANTE) */}
             {showCartModal && (
-                <div className="modal show fade d-block" style={{ backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', zIndex: 1060 }}>
+                <div className="modal show fade d-block" style={{ backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 1060 }}>
                     <motion.div 
-                        initial={{ y: '100%' }} 
-                        animate={{ y: 0 }} 
-                        className="modal-dialog modal-dialog-bottom modal-lg m-0 mx-lg-auto my-lg-5 h-100 h-lg-auto d-flex flex-column justify-content-end justify-content-lg-center"
+                        initial={{ scale: 0.9, opacity: 0 }} 
+                        animate={{ scale: 1, opacity: 1 }} 
+                        className="modal-dialog modal-dialog-centered mx-3" 
+                        // mx-3 asegura margen lateral para que parezca tarjeta flotante
                     >
-                        <div className="modal-content border-0 shadow-2xl h-75 h-lg-auto rounded-t-3xl rounded-lg-3xl overflow-hidden" style={{ backgroundColor: cardBg, color: textMain }}>
-                            <div className="d-flex justify-content-center pt-3 d-lg-none">
-                                <div className="bg-gray-500/30 rounded-pill" style={{width: '40px', height: '5px'}}></div>
-                            </div>
-                            
-                            <div className="d-flex justify-content-end p-3 position-absolute top-0 end-0 z-20">
-                                <button type="button" className={`btn-close ${isDark ? 'btn-close-white' : ''}`} onClick={() => { setShowCartModal(false); setCartViewState('cart'); }}></button>
-                            </div>
-                            
+                        <div className="modal-content border-0 shadow-2xl rounded-3xl overflow-hidden" style={{ backgroundColor: cardBg, color: textMain, maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}>
+                            {/* Pasamos la función closeModal para que el botón X funcione */}
                             <CarritoContent
                                 isModal={true}
+                                closeModal={() => { setShowCartModal(false); setCartViewState('cart'); }} 
                                 pedidoActual={pedidoActual}
                                 decrementarCantidad={decrementarCantidad}
                                 incrementarCantidad={incrementarCantidad}
