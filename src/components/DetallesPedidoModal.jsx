@@ -59,14 +59,28 @@ function DetallesPedidoModal({ pedido, onClose }) {
 
             {/* --- SECCIÓN DE PRODUCTOS --- */}
             <h6 className="mb-2">Productos:</h6>
-            <ul className="list-unstyled mb-3">
-              {productos.map((producto, index) => (
-                <li key={index} className="d-flex justify-content-between">
-                  <span>{producto.cantidad}x {producto.nombre}</span>
-                  <span className="text-end">${(producto.cantidad * Number(producto.precio || 0)).toFixed(2)}</span>
-                </li>
-              ))}
-            </ul>
+            // CÓDIGO CORREGIDO (Lo que debes poner en su lugar)
+            <ul className="list-unstyled mb-3">
+              {productos.map((producto, index) => (
+                <li key={index} className="mb-2 p-1 border-bottom">
+                  {/* Línea principal del producto */}
+                  <div className="d-flex justify-content-between align-items-center">
+                    <span className="fw-bold">{producto.cantidad}x {producto.nombre}</span>
+                    <span className="text-end">${(producto.cantidad * Number(producto.precio || 0)).toFixed(2)}</span>
+                  </div>
+
+                  {/* Renderizado de Opciones/Toppings */}
+                  {Array.isArray(producto.opciones) && producto.opciones.length > 0 && (
+                    <ul className="list-unstyled small ps-3 mb-0" style={{ opacity: 0.8 }}>
+                      {producto.opciones.map((opcion, opIndex) => (
+                        // Utilizamos 'nombre' ya que es lo que enviaste desde el frontend
+                        <li key={opIndex} className={mutedTextColor}>+ {opcion.nombre}</li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              ))}
+            </ul>
             
             {/* --- SECCIÓN DE ENVÍO (SI APLICA) --- */}
             {pedido.tipo_orden === 'domicilio' && (
