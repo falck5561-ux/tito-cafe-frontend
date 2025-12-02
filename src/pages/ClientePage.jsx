@@ -755,16 +755,21 @@ const estandarizar = (item) => {
     return (
         <div style={{ backgroundColor: bgBase, minHeight: '100vh', color: textMain, pointerEvents: (productoSeleccionadoParaModal || showPaymentModal || showCartModal) ? 'none' : 'auto' }}> 
             
-            {/* Estilo para ocultar el badge flotante de Stripe (Link) */}
+            {/* CSS AGRESIVO para ocultar el botón flotante de Stripe (Link) */}
             <style>{`
-                /* Oculta el contenedor del botón flotante de Link */
+                iframe[title="Secure checkout with Link"],
+                iframe[title="Link with Stripe"],
                 iframe[src*="link-authentication-element"],
-                .p-LinkTrigger,
-                iframe[title="Link with Stripe"] {
+                .LinkAuthElement,
+                .p-LinkTrigger {
                     display: none !important;
-                    visibility: hidden !important;
                     opacity: 0 !important;
+                    visibility: hidden !important;
                     pointer-events: none !important;
+                    z-index: -9999 !important;
+                    width: 0 !important;
+                    height: 0 !important;
+                    position: absolute !important;
                 }
             `}</style>
               

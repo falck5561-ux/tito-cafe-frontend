@@ -1,18 +1,22 @@
-// Archivo: src/components/CheckoutForm.jsx (Versión Corregida)
+// Archivo: src/components/CheckoutForm.jsx
 
 import React, { useState } from 'react';
 import { PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import toast from 'react-hot-toast';
-// IMPORTANTE: Necesitas una función para llamar a tu backend.
-import { crearPedidoAPI } from '../services/api'; // Asegúrate de que la ruta sea correcta
+import { crearPedidoAPI } from '../services/api'; 
 
-// Pasamos los datos completos del pedido al formulario.
-function CheckoutForm({ total, datosPedido, handleSuccess }) {
+// Recibimos 'isDark' para ajustar los estilos
+function CheckoutForm({ total, datosPedido, handleSuccess, isDark }) {
   const stripe = useStripe();
   const elements = useElements();
   
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState(null);
+
+  // Definimos el gradiente igual que en tu ClientePage para consistencia
+  const btnGradient = isDark 
+    ? 'linear-gradient(135deg, #2563eb 0%, #4f46e5 100%)' // Azul
+    : 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)'; // Rojo
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -28,9 +32,8 @@ function CheckoutForm({ total, datosPedido, handleSuccess }) {
     });
 
     if (stripeError) {
-      // Errores como "Tu tarjeta fue declinada".
       setError(stripeError.message);
-      toast.error(stripeError.message);
+      toast.error(stripeError.message, { id: 'stripe-error' });
       setProcessing(false);
       return;
     }
@@ -38,21 +41,19 @@ function CheckoutForm({ total, datosPedido, handleSuccess }) {
     // ================== PASO 2: CREAR EL PEDIDO EN TU BACKEND ==================
     if (paymentIntent && paymentIntent.status === 'succeeded') {
       try {
-        // Añadimos el ID de Stripe al pedido para tener una referencia
         const pedidoFinal = { ...datosPedido, stripePaymentId: paymentIntent.id };
 
-        // Llamamos a la API que creamos en el backend (pedidosController.js)
         await crearPedidoAPI(pedidoFinal);
         
-        // Si todo sale bien, mostramos el éxito y ejecutamos la función de éxito.
-        toast.success('¡Pedido realizado con éxito!');
-        handleSuccess();
+        // Usamos un ID único aquí también para prevenir cualquier duplicado accidental
+        toast.success('¡Pedido realizado con éxito!', { id: 'success-payment-unique' });
+        
+        handleSuccess(); // Cierra el modal y limpia el carrito
 
       } catch (apiError) {
-        // Error si nuestro propio backend falla después de un pago exitoso.
-        const errorMessage = apiError.response?.data?.msg || 'Tu pago fue exitoso, pero hubo un problema al registrar tu pedido. Por favor, contáctanos.';
+        const errorMessage = apiError.response?.data?.msg || 'Pago exitoso, pero error al registrar pedido.';
         setError(errorMessage);
-        toast.error(errorMessage);
+        toast.error(errorMessage, { id: 'backend-error' });
       }
     }
     
@@ -61,14 +62,35 @@ function CheckoutForm({ total, datosPedido, handleSuccess }) {
 
   return (
     <form onSubmit={handleSubmit}>
-      <PaymentElement />
+      {/* Layout 'tabs' hace que se vea más organizado */}
+      <PaymentElement options={{ layout: 'tabs' }} />
+      
       <button
         disabled={processing || !stripe || !elements}
-        className="btn btn-primary w-100 mt-4"
+        className="btn border-0 rounded-pill w-100 mt-4 fw-bold text-white shadow-lg py-3"
+        style={{ 
+            background: btnGradient,
+            transition: 'transform 0.2s',
+            opacity: (processing || !stripe || !elements) ? 0.7 : 1
+        }}
+        onMouseOver={(e) => !processing && (e.currentTarget.style.transform = 'scale(1.02)')}
+        onMouseOut={(e) => (e.currentTarget.style.transform = 'scale(1)')}
       >
-        {processing ? 'Procesando...' : `Pagar $${total.toFixed(2)}`}
+        {processing ? (
+            <span className="d-flex align-items-center justify-content-center gap-2">
+                <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                Procesando...
+            </span>
+        ) : (
+            `Pagar $${total.toFixed(2)}`
+        )}
       </button>
-      {error && <div className="alert alert-danger mt-3">{error}</div>}
+      
+      {error && (
+          <div className="alert alert-danger mt-3 py-2 px-3 rounded-3 small border-0 bg-red-500/10 text-red-500">
+              {error}
+          </div>
+      )}
     </form>
   );
 }
