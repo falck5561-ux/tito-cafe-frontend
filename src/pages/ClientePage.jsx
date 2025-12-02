@@ -31,7 +31,6 @@ import {
     Phone 
 } from 'lucide-react'; 
 
-// Asegúrate de que esta variable de entorno esté definida
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 // --- Configuración de Notificaciones ---
@@ -83,12 +82,10 @@ const CarritoContent = ({
     closeModal 
 }) => {
 
-    // --- CORRECCIÓN DE SCROLL: REFERENCIA PARA EL SCROLL ---
+    // --- SCROLL: REFERENCIA PARA EL SCROLL AUTOMÁTICO ---
     const contentRef = React.useRef(null);
     
-    // --- CORRECCIÓN DE SCROLL: SCROLL AUTOMÁTICO AL CAMBIAR VISTA ---
     useEffect(() => {
-        // Asegura que el contenido se desplace al tope al cambiar de vista ('cart' -> 'address')
         if (contentRef.current) {
             contentRef.current.scrollTop = 0;
         }
@@ -98,7 +95,6 @@ const CarritoContent = ({
     const accentColor = isDark ? 'text-blue-500' : 'text-red-600';
     const accentBg = isDark ? 'bg-blue-500' : 'bg-red-600';
     
-    // Gradiente del botón principal
     const btnGradient = isDark 
         ? 'linear-gradient(135deg, #2563eb 0%, #4f46e5 100%)' // Azul
         : 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)'; // Rojo
@@ -128,7 +124,7 @@ const CarritoContent = ({
         ${selected 
             ? (isDark 
                 ? 'border-blue-500 bg-blue-500/10 text-white shadow-[0_0_15px_rgba(59,130,246,0.3)]' 
-                : 'border-red-600 bg-red-50 text-red-900 shadow-sm') // Rojo en modo claro
+                : 'border-red-600 bg-red-50 text-red-900 shadow-sm')
             : (isDark 
                 ? 'border-white/10 hover:border-white/30 bg-white/5' 
                 : 'border-gray-200 hover:border-gray-300 bg-white')
@@ -173,7 +169,7 @@ const CarritoContent = ({
 
             {/* 2. BODY DEL CARRITO (CON REFERENCIA DE SCROLL) */}
             <div 
-                ref={contentRef} // <-- APLICACIÓN DE LA REFERENCIA PARA EL SCROLL
+                ref={contentRef}
                 className="flex-grow-1 overflow-auto custom-scrollbar px-4 py-3" 
                 style={{ minHeight: 0 }}
             >
@@ -342,7 +338,6 @@ const CarritoContent = ({
                                         placeholder="Ej: 55 1234 5678" 
                                         value={telefono} 
                                         onChange={(e) => {
-                                            // Permite solo dígitos
                                             const val = e.target.value.replace(/[^0-9]/g, '');
                                             setTelefono(val);
                                         }} 
@@ -391,11 +386,10 @@ const CarritoContent = ({
                         disabled={
                             pedidoActual.length === 0 || 
                             paymentLoading || 
-                            (viewState === 'address' && (!direccion || !telefono || telefono.length < 10)) || // Validación de teléfono
+                            (viewState === 'address' && (!direccion || !telefono || telefono.length < 10)) || // Validación de teléfono (10 dígitos)
                             calculandoEnvio
                         }
                     >
-                        {/* Efecto de brillo (CSS Animation: shine must be defined elsewhere) */}
                         <div className="position-absolute top-0 start-0 w-100 h-100 bg-white opacity-10" style={{ transform: 'skewX(-20deg) translateX(-150%)', animation: 'shine 3s infinite' }}></div>
                         
                         {paymentLoading ? (
@@ -435,7 +429,6 @@ function ClientePage() {
     const textMain = isDark ? '#ffffff' : '#1f2937';
     const textMuted = isDark ? '#a1a1aa' : '#374151'; 
     
-    // Configuración dinámica para el Menú y Tickets
     const accentColor = isDark ? 'text-blue-500' : 'text-red-600';
     const accentBorder = isDark ? '3px solid #2563eb' : '3px solid #dc2626';
     const accentGradient = isDark 
@@ -492,17 +485,26 @@ function ClientePage() {
                     apiClient.get('/usuarios/mi-direccion')
                 ]);
                 
+                // --- CORRECCIÓN DE PRECIOS: LÓGICA DE ESTANDARIZACIÓN SIMPLIFICADA ---
                 const estandarizar = (item) => {
                     const precioFinal = Number(item.precio);
                     let precioOriginal = precioFinal;
+                    // Ajustar el precio original solo si hay descuento/oferta
                     if (item.en_oferta && item.descuento_porcentaje > 0) {
+                        // Revertir el cálculo del descuento para obtener el precio original antes de la oferta
                         precioOriginal = precioFinal / (1 - item.descuento_porcentaje / 100);
+                    } else if (item.precio_base) {
+                        // Si no hay descuento, pero hay un precio base (para mostrar tachado si aplica)
+                        precioOriginal = Number(item.precio_base);
                     }
+
                     return { 
                         ...item, 
                         precio: precioFinal, 
-                        precio_original: precioOriginal, 
-                        nombre: item.nombre || item.titulo 
+                        // Aseguramos que el precio original sea mayor o igual al precio final si se muestra
+                        precio_original: precioOriginal > precioFinal ? precioOriginal : precioFinal, 
+                        nombre: item.nombre || item.titulo,
+                        en_oferta: item.en_oferta && precioOriginal > precioFinal
                     };
                 };
                 
@@ -513,13 +515,13 @@ function ClientePage() {
                 
                 if (direccionRes.data) {
                     setDireccionGuardada(direccionRes.data);
-                    // Cargar el teléfono guardado al inicio si existe
+                    // --- CORRECCIÓN TELÉFONO: Cargar el teléfono guardado al inicio si existe ---
                     if (direccionRes.data.telefono) {
                         setTelefono(direccionRes.data.telefono);
                     }
                 }
             } catch (err) { 
-                console.error(err); 
+                console.error("Error al cargar datos iniciales:", err); 
                 setError('Error al cargar el menú. Intenta de nuevo.'); 
             } finally { 
                 setLoading(false); 
@@ -563,7 +565,8 @@ function ClientePage() {
         setCostoEnvio(0); 
         setDireccion(null); 
         setReferencia(''); 
-        setTelefono(''); 
+        // No limpiamos el teléfono para que persista a través de limpiezas de carrito
+        // setTelefono(''); 
         setShowCartModal(false); 
         setCartViewState('cart');
     };
@@ -587,16 +590,28 @@ function ClientePage() {
         }
     };
 
+    // --- CORRECCIÓN TELÉFONO: Aseguramos que el teléfono se cargue al usar dirección guardada ---
     const usarDireccionGuardada = () => {
         if (direccionGuardada) { 
+            // 1. Cargamos la dirección y calculamos el envío
             handleLocationSelect(direccionGuardada); 
+            
+            // 2. Cargamos la referencia
             if (direccionGuardada.referencia) {
                 setReferencia(direccionGuardada.referencia); 
+            } else {
+                setReferencia('');
             }
-            // Cargar teléfono guardado
+            
+            // 3. Cargamos el teléfono
             if (direccionGuardada.telefono) { 
                 setTelefono(direccionGuardada.telefono);
+            } else {
+                setTelefono('');
             }
+            
+            // Opcional: notificamos
+            notify('success', 'Dirección y número guardados cargados.');
         }
     };
 
@@ -650,18 +665,23 @@ function ClientePage() {
     };
 
     const handleSuccessfulPayment = async () => {
+        // --- CORRECCIÓN TELÉFONO: Aseguramos que el teléfono se guarde ---
         if (guardarDireccion && direccion) { 
             try { 
-                // Guardando dirección y teléfono
+                // Guardamos la dirección, referencia y teléfono
                 const data = { ...direccion, referencia, telefono }; 
                 await apiClient.put('/usuarios/mi-direccion', data); 
                 setDireccionGuardada(data); 
+                notify('success', 'Dirección y número guardados para futuros pedidos.');
             } catch (e) { 
                 console.error("Error guardando dirección:", e); 
             } 
         }
         notify('success', '¡Pedido realizado con éxito!'); 
-        limpiarPedidoCompleto(); 
+        limpiarPedido(); // Limpiamos solo el carrito
+        setCostoEnvio(0); 
+        setDireccion(null); 
+        setReferencia('');
         setShowPaymentModal(false); 
         setActiveTab('ver'); 
     };
@@ -989,7 +1009,6 @@ function ClientePage() {
                     <motion.div 
                         initial={{ scale: 0.9, opacity: 0 }} 
                         animate={{ scale: 1, opacity: 1 }} 
-                        // CORRECCIÓN CENTRADO ROBUSTO: Estilo para centrar y limitar ancho
                         className="modal-dialog modal-dialog-centered" 
                         style={{ 
                             maxWidth: '400px', 
