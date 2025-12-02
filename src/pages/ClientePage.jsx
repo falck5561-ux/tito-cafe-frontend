@@ -612,8 +612,9 @@ function ClientePage() {
     };
 
     // Helper para badges de estado
+    // CORRECCIÓN: Quitamos la clase "badge" que fuerza el texto blanco
     const getStatusBadge = (estado) => {
-        const style = "badge rounded-pill d-inline-flex align-items-center gap-1 px-3 py-2 border";
+        const style = "rounded-pill d-inline-flex align-items-center gap-1 px-3 py-2 border fw-bold small";
         switch (estado) { 
             case 'Pendiente': 
                 return <span className={`${style} bg-yellow-500/10 text-yellow-500 border-yellow-500/20`}><Clock size={14}/> Pendiente</span>;
@@ -698,7 +699,8 @@ function ClientePage() {
                                                                 ${Number(item.precio_original).toFixed(2)}
                                                             </small>
 
-                                                            <span className="badge bg-green-500/10 text-green-500 border border-green-500/20 px-2 py-1 rounded-pill">
+                                                            {/* CORRECCIÓN: Se elimina la clase "badge" para evitar conflicto con blanco. Se usa color explícito */}
+                                                            <span className="rounded-pill bg-green-500/10 border border-green-500/20 px-2 py-1 fw-bold" style={{ color: '#22c55e' }}>
                                                                 ${Number(item.precio).toFixed(2)}
                                                             </span>
                                                         </div>
@@ -871,7 +873,8 @@ function ClientePage() {
                                             <h5 className={`fw-bold mb-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>{recompensa.nombre}</h5>
                                             {/* CORRECCIÓN: Usar style={{ color }} para textMuted */}
                                             <p className="small mb-3" style={{ color: textMuted }}>Canjéalo en tu próximo pedido.</p>
-                                            <span className="badge bg-green-500/10 text-green-600 border border-green-500/20 px-3 py-1 rounded-pill align-self-start">Activo</span>
+                                            {/* CORRECCIÓN: Quitar clase badge */}
+                                            <span className="rounded-pill bg-green-500/10 border border-green-500/20 px-3 py-1 fw-bold small align-self-start" style={{ color: '#16a34a' }}>Activo</span>
                                         </div>
                                     </motion.div>
                                 </div>
