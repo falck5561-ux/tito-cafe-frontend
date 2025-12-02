@@ -1,8 +1,8 @@
-// Archivo: src/pages/NosotrosPage.jsx (VERSIÓN MEJORADA)
+// Archivo: src/pages/NosotrosPage.jsx (VERSIÓN FINAL Y LIMPIA)
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
-import { Award, Zap, Heart, Utensils, ChefHat } from 'lucide-react'; // Cambié Clock por Zap y CheckCircle por Heart
+import { Award, Zap, Heart, Utensils, ChefHat } from 'lucide-react'; 
 
 function NosotrosPage() {
     const { theme } = useTheme();
@@ -73,17 +73,17 @@ function NosotrosPage() {
                                     <h2 className="fw-bold mb-1">Tito Spot</h2>
                                     <p className={`${accentColor} fw-bold`}>Fundado por Tito Perez Ponce</p>
 
-                                    {/* LA FRASE DEL ERIZO (Estilo Blockquote) */}
+                                    {/* LA FRASE DEL ERIZO (Estilo Blockquote LIMPIO) */}
                                     <div className="col-md-9 mx-auto mb-5 mt-4">
                                         <div className={`p-4 rounded-3xl position-relative shadow-lg ${isDark ? 'bg-white/5 border border-white/10' : 'bg-white border border-gray-200'}`} style={{ borderLeft: `5px solid ${isDark ? '#2563eb' : '#dc2626'}` }}>
                                             <p className="fs-5 fst-italic mb-0" style={{ lineHeight: '1.6', color: isDark ? '#ccc' : '#4a4a4a' }}>
                                                 "Aunque los erizos tenemos fama de ser 'picudos', mi compromiso es dejar las espinas afuera y ponerle todo el corazón a tu comida, para ofrecerte un servicio suave y delicioso."
                                             </p>
-                                            <footer className={`${accentColor} mt-2 small fw-semibold d-block text-end`}>— Tito Perez Ponce</footer>
+                                            {/* Eliminamos el footer redundante para mayor limpieza */}
                                         </div>
                                     </div>
 
-                                    {/* 3. SECCIÓN DE VALORES (Mejora estética de tarjetas) */}
+                                    {/* 3. SECCIÓN DE VALORES */}
                                     <h3 className="fw-bold mb-4 mt-5">Nuestros Pilares</h3>
                                     <div className="row g-4 justify-content-center text-center">
                                         {/* Tarjeta 1: Calidad */}
