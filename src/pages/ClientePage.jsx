@@ -77,7 +77,7 @@ const CarritoContent = ({
     isDark,
     viewState,
     setViewState,
-    closeModal // Nueva prop para cerrar el modal desde dentro
+    closeModal 
 }) => {
 
     // --- Lógica de Navegación entre Pasos ---
@@ -163,7 +163,7 @@ const CarritoContent = ({
                             {/* Lista de Productos */}
                             <div className="d-flex flex-column gap-3 mb-4">
                                 {pedidoActual.length === 0 && (
-                                    <div className="text-center py-5 opacity-50">
+                                    <div className={`text-center py-5 opacity-50 ${isDark ? 'text-white' : 'text-gray-500'}`}>
                                         <ShoppingCart size={48} className="mb-2 mx-auto"/>
                                         <p>Tu carrito está vacío</p>
                                     </div>
@@ -384,8 +384,9 @@ function ClientePage() {
     // Colores de fondo más profundos para look premium
     const bgBase = isDark ? '#09090b' : '#f3f4f6'; 
     const cardBg = isDark ? '#18181b' : '#ffffff'; 
+    
+    // VARIABLES DE COLOR (CORRECCIÓN: Se usarán en style={{}}, no en className)
     const textMain = isDark ? '#ffffff' : '#1f2937';
-    // Corrección: Hacemos el texto "muted" más oscuro en modo claro para que se lea mejor (gray-700)
     const textMuted = isDark ? '#a1a1aa' : '#374151'; 
     
     // --- 2. HOOKS Y ESTADOS ---
@@ -667,7 +668,7 @@ function ClientePage() {
                 {!loading && activeTab === 'crear' && (
                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="row">
                         <div className="col-lg-8 mb-4">
-                            <h2 className="fw-bold mb-4 px-3 border-start border-4 border-blue-500">¿Qué se te antoja hoy?</h2>
+                            <h2 className={`fw-bold mb-4 px-3 border-start border-4 border-blue-500 ${isDark ? 'text-white' : 'text-gray-900'}`}>¿Qué se te antoja hoy?</h2>
                             <div className="row g-3">
                                 {menuItems.map(item => (
                                     <div key={item.id} className="col-6 col-md-4">
@@ -683,12 +684,13 @@ function ClientePage() {
                                                     <Utensils size={28} className="text-blue-500 md:w-8 md:h-8" />
                                                 </div>
                                                 
-                                                <h6 className="card-title fw-bold mb-2 line-clamp-2" style={{fontSize: '1rem'}}>{item.nombre}</h6>
+                                                {/* CORRECCIÓN: Título con color explícito para evitar blanco sobre blanco */}
+                                                <h6 className={`card-title fw-bold mb-2 line-clamp-2 ${isDark ? 'text-white' : 'text-gray-900'}`} style={{fontSize: '1rem'}}>{item.nombre}</h6>
                                                 
                                                 <div className="mt-auto pt-2">
                                                     {item.en_oferta ? (
                                                         <div className="d-flex justify-content-center align-items-center gap-2 flex-wrap">
-                                                            {/* CORRECCIÓN DE PRECIO TACHADO: Rojo en modo claro, Muted en modo oscuro */}
+                                                            {/* Precio tachado: Rojo en luz, Muted en dark */}
                                                             <small 
                                                                 className={`text-decoration-line-through ${isDark ? 'text-muted opacity-75' : 'text-danger fw-bold'}`} 
                                                                 style={{fontSize: '0.9rem'}}
@@ -751,9 +753,9 @@ function ClientePage() {
                 {/* --- PESTAÑA 2: HISTORIAL DE PEDIDOS --- */}
                 {!loading && activeTab === 'ver' && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                        <h3 className="fw-bold mb-4">Historial de Pedidos</h3>
+                        <h3 className={`fw-bold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>Historial de Pedidos</h3>
                         {misPedidos.length === 0 ? (
-                            <div className="text-center py-5 rounded-4 border border-dashed border-secondary opacity-50">
+                            <div className={`text-center py-5 rounded-4 border border-dashed border-secondary opacity-50 ${isDark ? 'text-white' : 'text-gray-600'}`}>
                                 <ListChecks size={48} className="mb-3"/>
                                 <p>Aún no tienes pedidos.</p>
                             </div>
@@ -770,8 +772,10 @@ function ClientePage() {
                                                     <Package size={24} className="text-blue-500"/>
                                                 </div>
                                                 <div>
-                                                    <div className="fw-bold fs-5">Pedido #{p.id}</div>
-                                                    <small className={textMuted}>{new Date(p.fecha).toLocaleDateString()}</small>
+                                                    {/* CORRECCIÓN: Color explícito para ID */}
+                                                    <div className={`fw-bold fs-5 ${isDark ? 'text-white' : 'text-gray-900'}`}>Pedido #{p.id}</div>
+                                                    {/* CORRECCIÓN: Usar style={{ color }} para variable HEX */}
+                                                    <small style={{ color: textMuted }}>{new Date(p.fecha).toLocaleDateString()}</small>
                                                 </div>
                                             </div>
                                             <div className="text-end">
@@ -792,7 +796,8 @@ function ClientePage() {
                                                         {p.productos?.map((prod, idx) => (
                                                             <div key={idx} className="d-flex justify-content-between align-items-center mb-2">
                                                                 <div>
-                                                                    <span className={`fw-semibold ${textMain}`}>{prod.cantidad}x {prod.nombre}</span>
+                                                                    {/* CORRECCIÓN: Usar style={{ color }} para textMain */}
+                                                                    <span className="fw-semibold" style={{ color: textMain }}>{prod.cantidad}x {prod.nombre}</span>
                                                                     
                                                                     {prod.opciones && (
                                                                         <div className="small text-blue-400 ps-3 border-start border-blue-500 ms-1 mt-1">
@@ -800,12 +805,12 @@ function ClientePage() {
                                                                         </div>
                                                                     )}
                                                                 </div>
-                                                                <span className="fw-bold opacity-75">${(prod.cantidad * Number(prod.precio)).toFixed(2)}</span>
+                                                                <span className="fw-bold opacity-75" style={{ color: textMain }}>${(prod.cantidad * Number(prod.precio)).toFixed(2)}</span>
                                                             </div>
                                                         ))}
                                                         
                                                         {p.costo_envio > 0 && (
-                                                            <div className="d-flex justify-content-between mt-3 pt-3 border-t border-dashed border-gray-500/30 text-muted small">
+                                                            <div className="d-flex justify-content-between mt-3 pt-3 border-t border-dashed border-gray-500/30 small" style={{ color: textMuted }}>
                                                                 <span>Envío</span>
                                                                 <span>${Number(p.costo_envio).toFixed(2)}</span>
                                                             </div>
@@ -828,13 +833,14 @@ function ClientePage() {
                             <div className="d-inline-block p-4 rounded-full mb-3 bg-gradient-to-tr from-yellow-400 to-orange-500 shadow-lg shadow-orange-500/30">
                                 <Gift size={40} className="text-white"/>
                             </div>
-                            <h3 className="fw-bold display-6">Sala de Premios</h3>
-                            <p className={textMuted}>¡Tu lealtad tiene recompensa!</p>
+                            <h3 className={`fw-bold display-6 ${isDark ? 'text-white' : 'text-gray-900'}`}>Sala de Premios</h3>
+                            {/* CORRECCIÓN: Usar style={{ color }} para textMuted */}
+                            <p style={{ color: textMuted }}>¡Tu lealtad tiene recompensa!</p>
                         </div>
                         
                         <div className="row g-4 justify-content-center">
                             {misRecompensas.length === 0 ? (
-                                <div className="col-12 text-center py-5 rounded-4 border border-dashed border-secondary opacity-50">
+                                <div className={`col-12 text-center py-5 rounded-4 border border-dashed border-secondary opacity-50 ${isDark ? 'text-white' : 'text-gray-600'}`}>
                                     <Star size={40} className="mb-2"/>
                                     <p>Completa 20 pedidos para desbloquear.</p>
                                 </div>
@@ -861,8 +867,10 @@ function ClientePage() {
                                         </div>
 
                                         <div className="p-4 flex-grow-1 d-flex flex-column justify-content-center">
+                                            {/* CORRECCIÓN: Título con color explícito */}
                                             <h5 className={`fw-bold mb-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>{recompensa.nombre}</h5>
-                                            <p className={`small mb-3 ${textMuted}`}>Canjéalo en tu próximo pedido.</p>
+                                            {/* CORRECCIÓN: Usar style={{ color }} para textMuted */}
+                                            <p className="small mb-3" style={{ color: textMuted }}>Canjéalo en tu próximo pedido.</p>
                                             <span className="badge bg-green-500/10 text-green-600 border border-green-500/20 px-3 py-1 rounded-pill align-self-start">Activo</span>
                                         </div>
                                     </motion.div>
