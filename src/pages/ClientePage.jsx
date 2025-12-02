@@ -19,7 +19,6 @@ import {
     Clock, 
     Package, 
     CheckCircle, 
-    AlertCircle, 
     ChefHat, 
     Truck, 
     Utensils, 
@@ -27,7 +26,6 @@ import {
     Star,
     ArrowLeft,
     ChevronRight,
-    Map,
     X
 } from 'lucide-react'; 
 
@@ -80,7 +78,6 @@ const CarritoContent = ({
     closeModal 
 }) => {
 
-    // --- Lógica de Navegación entre Pasos ---
     const irASiguiente = () => {
         if (tipoOrden === 'domicilio') {
             setViewState('address');
@@ -93,7 +90,6 @@ const CarritoContent = ({
         setViewState('cart');
     };
 
-    // --- Estilos Dinámicos (Glassmorphism & Temas) ---
     const glassHeader = isDark 
         ? "bg-black/40 backdrop-blur-md border-b border-white/10" 
         : "bg-white/60 backdrop-blur-md border-b border-gray-200";
@@ -102,7 +98,7 @@ const CarritoContent = ({
         ? "bg-black/40 backdrop-blur-md border-t border-white/10" 
         : "bg-white/80 backdrop-blur-md border-t border-gray-200";
 
-    // Función para generar clases de las tarjetas de selección
+    // --- CORRECCIÓN 1: Estilos de Selección de Entrega ---
     const cardSelectable = (selected) => `
         cursor-pointer rounded-xl border p-3 transition-all duration-200 flex items-center gap-3 relative overflow-hidden
         ${selected 
@@ -114,7 +110,7 @@ const CarritoContent = ({
     return (
         <div className="d-flex flex-column h-100 position-relative overflow-hidden"> 
             
-            {/* 1. HEADER DEL CARRITO (Fijo y Estilizado) */}
+            {/* 1. HEADER DEL CARRITO */}
             <div className={`flex-shrink-0 px-4 py-3 ${glassHeader} z-10 d-flex align-items-center justify-content-between`}>
                 {viewState === 'cart' ? (
                     <>
@@ -147,11 +143,10 @@ const CarritoContent = ({
                 )}
             </div>
 
-            {/* 2. BODY DEL CARRITO (Scrollable) */}
+            {/* 2. BODY DEL CARRITO */}
             <div className="flex-grow-1 overflow-auto custom-scrollbar px-4 py-3" style={{ minHeight: 0 }}>
                 <AnimatePresence mode="wait">
                     
-                    {/* --- VISTA 1: LISTA DE PRODUCTOS Y SELECCIÓN DE ENVÍO --- */}
                     {viewState === 'cart' ? (
                         <motion.div 
                             key="cart-view"
@@ -160,7 +155,6 @@ const CarritoContent = ({
                             exit={{ x: -20, opacity: 0 }}
                             transition={{ duration: 0.2 }}
                         >
-                            {/* Lista de Productos */}
                             <div className="d-flex flex-column gap-3 mb-4">
                                 {pedidoActual.length === 0 && (
                                     <div className={`text-center py-5 opacity-50 ${isDark ? 'text-white' : 'text-gray-500'}`}>
@@ -173,21 +167,17 @@ const CarritoContent = ({
                                     <div key={item.cartItemId || item.id} className={`d-flex align-items-center p-3 rounded-xl ${isDark ? 'bg-white/5 border border-white/5' : 'bg-gray-50 border border-gray-100'}`}>
                                         <div className="flex-grow-1">
                                             <span className={`fw-bold d-block ${isDark ? 'text-white' : 'text-gray-900'}`}>{item.nombre}</span>
-                                            
-                                            {/* Opciones seleccionadas */}
                                             {item.opcionesSeleccionadas && item.opcionesSeleccionadas.length > 0 && (
                                                 <small className={`${isDark ? 'text-blue-300' : 'text-blue-600'} d-block mb-1`}>
                                                     {item.opcionesSeleccionadas.map(op => op.nombre).join(', ')}
                                                 </small>
                                             )}
-                                            
                                             <div className="fw-bold text-success">
                                                 ${(item.cantidad * Number(item.precio)).toFixed(2)}
                                             </div>
                                         </div>
 
                                         <div className="d-flex flex-column align-items-end gap-2">
-                                            {/* Selector de Cantidad (Diseño Cápsula) */}
                                             <div className={`d-flex align-items-center rounded-pill px-1 py-1 ${isDark ? 'bg-black/30 border border-white/10' : 'bg-white border border-gray-200 shadow-sm'}`}>
                                                 <button 
                                                     className="btn btn-sm p-1 rounded-circle hover-bg-primary d-flex align-items-center justify-content-center" 
@@ -197,11 +187,9 @@ const CarritoContent = ({
                                                 >
                                                     <span className={isDark ? 'text-white' : 'text-black'}>-</span>
                                                 </button>
-                                                
                                                 <span className={`mx-2 fw-bold small ${isDark ? 'text-white' : 'text-black'}`}>
                                                     {item.cantidad}
                                                 </span>
-                                                
                                                 <button 
                                                     className="btn btn-sm p-1 rounded-circle hover-bg-primary d-flex align-items-center justify-content-center" 
                                                     style={{width: '28px', height: '28px'}} 
@@ -211,7 +199,6 @@ const CarritoContent = ({
                                                     <span className={isDark ? 'text-white' : 'text-black'}>+</span>
                                                 </button>
                                             </div>
-                                            
                                             <button 
                                                 className="btn btn-link p-0 text-danger text-decoration-none small" 
                                                 style={{fontSize: '0.8rem'}} 
@@ -224,7 +211,6 @@ const CarritoContent = ({
                                 ))}
                             </div>
 
-                            {/* Selector de Método de Entrega (Visible solo si hay items) */}
                             {pedidoActual.length > 0 && (
                                 <div className="mb-4">
                                     <h6 className={`fw-bold mb-3 small text-uppercase tracking-wider ${isDark ? 'text-gray-400' : 'text-gray-500'}`} style={{letterSpacing: '1px'}}>
@@ -242,7 +228,15 @@ const CarritoContent = ({
                                                 className={cardSelectable(tipoOrden === opt.id)}
                                                 onClick={() => setTipoOrden(opt.id)}
                                             >
-                                                <div className={`p-2 rounded-circle d-flex align-items-center justify-content-center ${tipoOrden === opt.id ? 'bg-blue-500 text-white' : (isDark ? 'bg-white/10' : 'bg-gray-200')}`} style={{width: '40px', height: '40px'}}>
+                                                {/* CORRECCIÓN ICONO: text-white explícito cuando está seleccionado */}
+                                                <div 
+                                                    className={`p-2 rounded-circle d-flex align-items-center justify-content-center ${
+                                                        tipoOrden === opt.id 
+                                                            ? 'bg-blue-500 text-white' // Aquí forzamos el blanco
+                                                            : (isDark ? 'bg-white/10 text-gray-400' : 'bg-gray-200 text-gray-600')
+                                                    }`} 
+                                                    style={{width: '40px', height: '40px'}}
+                                                >
                                                     {opt.icon}
                                                 </div>
                                                 <div>
@@ -261,7 +255,6 @@ const CarritoContent = ({
                             )}
                         </motion.div>
                     ) : (
-                        /* --- VISTA 2: MAPA Y DIRECCIÓN --- */
                         <motion.div 
                             key="address-view"
                             initial={{ x: 20, opacity: 0 }}
@@ -269,7 +262,6 @@ const CarritoContent = ({
                             exit={{ x: 20, opacity: 0 }}
                             transition={{ duration: 0.2 }}
                         >
-                            {/* Botón para usar dirección guardada */}
                             {direccionGuardada && (
                                 <button 
                                     className="btn btn-outline-primary w-100 mb-3 rounded-xl py-2 d-flex align-items-center justify-content-center gap-2 border-2 fw-semibold" 
@@ -279,7 +271,6 @@ const CarritoContent = ({
                                 </button>
                             )}
                             
-                            {/* Contenedor del Mapa */}
                             <div className="rounded-xl overflow-hidden border border-white/10 shadow-md mb-3" style={{ height: '300px' }}> 
                                 <MapSelector 
                                     onLocationSelect={handleLocationSelect} 
@@ -288,7 +279,6 @@ const CarritoContent = ({
                                 />
                             </div>
                             
-                            {/* Input de Referencia */}
                             <div className="form-group mb-3">
                                 <label className={`form-label small fw-bold ms-1 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
                                     Referencia de entrega
@@ -306,7 +296,6 @@ const CarritoContent = ({
                                 </div>
                             </div>
                             
-                            {/* Checkbox Guardar Dirección */}
                             <div className="d-flex align-items-center gap-2 p-3 rounded-xl bg-opacity-10" style={{backgroundColor: isDark ? 'rgba(59,130,246,0.1)' : '#eff6ff'}}>
                                 <input 
                                     className="form-check-input mt-0" 
@@ -324,7 +313,7 @@ const CarritoContent = ({
                 </AnimatePresence>
             </div>
 
-            {/* 3. FOOTER FLOTANTE CON GRADIENTE */}
+            {/* 3. FOOTER FLOTANTE */}
             <div className={`flex-shrink-0 px-4 py-3 ${glassFooter} z-10`}>
                 <div className="d-flex justify-content-between align-items-end mb-3">
                     <span className={`small fw-bold ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Total a Pagar</span>
@@ -345,7 +334,6 @@ const CarritoContent = ({
                         onClick={viewState === 'cart' ? irASiguiente : handleProcederAlPago}
                         disabled={pedidoActual.length === 0 || paymentLoading || (viewState === 'address' && !direccion) || calculandoEnvio}
                     >
-                        {/* Efecto de brillo en el botón */}
                         <div className="position-absolute top-0 start-0 w-100 h-100 bg-white opacity-10" style={{ transform: 'skewX(-20deg) translateX(-150%)', animation: 'shine 3s infinite' }}></div>
                         
                         {paymentLoading ? (
@@ -377,19 +365,14 @@ const CarritoContent = ({
 // COMPONENTE PRINCIPAL DE LA PÁGINA
 // ==========================================
 function ClientePage() {
-    // --- 1. TEMA Y ESTILOS GLOBALES ---
     const { theme } = useTheme(); 
     const isDark = theme === 'dark';
 
-    // Colores de fondo más profundos para look premium
     const bgBase = isDark ? '#09090b' : '#f3f4f6'; 
     const cardBg = isDark ? '#18181b' : '#ffffff'; 
-    
-    // VARIABLES DE COLOR (CORRECCIÓN: Se usarán en style={{}}, no en className)
     const textMain = isDark ? '#ffffff' : '#1f2937';
     const textMuted = isDark ? '#a1a1aa' : '#374151'; 
     
-    // --- 2. HOOKS Y ESTADOS ---
     const {
         pedidoActual,
         subtotal,
@@ -400,7 +383,6 @@ function ClientePage() {
         agregarProductoAPedido
     } = useCart();
 
-    // Estados de navegación y datos
     const [activeTab, setActiveTab] = useState('crear');
     const [ordenExpandida, setOrdenExpandida] = useState(null);
     const [menuItems, setMenuItems] = useState([]);
@@ -409,7 +391,6 @@ function ClientePage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
-    // Estados del Carrito y Pago
     const [tipoOrden, setTipoOrden] = useState('llevar');
     const [direccion, setDireccion] = useState(null);
     const [costoEnvio, setCostoEnvio] = useState(0);
@@ -419,23 +400,17 @@ function ClientePage() {
     const [clientSecret, setClientSecret] = useState('');
     const [paymentLoading, setPaymentLoading] = useState(false);
     
-    // Estados de Dirección
     const [direccionGuardada, setDireccionGuardada] = useState(null);
     const [guardarDireccion, setGuardarDireccion] = useState(false);
     const [referencia, setReferencia] = useState('');
     
-    // Estados de Modales
     const [showCartModal, setShowCartModal] = useState(false);
     const [productoSeleccionadoParaModal, setProductoSeleccionadoParaModal] = useState(null);
     
-    // ESTADO PARA CONTROLAR EL PASO DEL CARRITO (Cart vs Address)
     const [cartViewState, setCartViewState] = useState('cart'); 
 
     const totalFinal = subtotal + costoEnvio;
 
-    // --- 3. EFECTOS (DATA FETCHING) ---
-
-    // Cargar menú inicial, combos y dirección guardada
     useEffect(() => {
         const fetchInitialData = async () => {
             if (activeTab !== 'crear') return;
@@ -479,7 +454,6 @@ function ClientePage() {
         fetchInitialData();
     }, [activeTab]);
 
-    // Cargar Historial o Recompensas al cambiar de Tab
     useEffect(() => {
         const fetchTabData = async () => {
             if (activeTab === 'crear') return;
@@ -502,7 +476,6 @@ function ClientePage() {
         fetchTabData();
     }, [activeTab]);
 
-    // Resetear envío al cambiar tipo de orden y volver al paso 1
     useEffect(() => {
         if (tipoOrden !== 'domicilio') {
             setCostoEnvio(0); 
@@ -510,8 +483,6 @@ function ClientePage() {
             setCartViewState('cart'); 
         }
     }, [tipoOrden]);
-
-    // --- 4. HANDLERS (LOGICA DE NEGOCIO) ---
 
     const limpiarPedidoCompleto = () => {
         limpiarPedido(); 
@@ -611,8 +582,6 @@ function ClientePage() {
         setActiveTab('ver'); 
     };
 
-    // Helper para badges de estado
-    // CORRECCIÓN: Quitamos la clase "badge" que fuerza el texto blanco
     const getStatusBadge = (estado) => {
         const style = "rounded-pill d-inline-flex align-items-center gap-1 px-3 py-2 border fw-bold small";
         switch (estado) { 
@@ -634,7 +603,7 @@ function ClientePage() {
     return (
         <div style={{ backgroundColor: bgBase, minHeight: '100vh', color: textMain, pointerEvents: (productoSeleccionadoParaModal || showPaymentModal || showCartModal) ? 'none' : 'auto' }}> 
             
-            {/* --- NAVEGACIÓN (TABS STICKY) --- */}
+            {/* TABS NAVEGACIÓN */}
             <div className={`sticky-top pt-3 pb-2 px-3 mb-4 shadow-sm z-50 ${isDark ? 'bg-black/80 border-b border-white/10 backdrop-blur-md' : 'bg-white/80 border-b border-gray-200 backdrop-blur-md'}`}>
                 <ul className="nav nav-pills nav-fill gap-2 container" style={{ maxWidth: '800px' }}>
                     {[
@@ -660,7 +629,6 @@ function ClientePage() {
                 </ul>
             </div>
 
-            {/* Añadimos pb-32 para que el botón flotante no tape el contenido al final */}
             <div className="container pb-5 md:pb-5 pb-32">
                 {loading && <div className="text-center py-5"><div className="spinner-border text-primary" role="status"></div></div>}
                 {error && <div className="alert alert-danger shadow-sm border-0">{error}</div>}
@@ -675,31 +643,33 @@ function ClientePage() {
                                     <div key={item.id} className="col-6 col-md-4">
                                         <motion.div 
                                             whileHover={{ y: -8, scale: 1.02 }}
-                                            className={`card h-100 shadow-lg overflow-hidden position-relative ${item.en_oferta ? 'border border-2 border-blue-500' : 'border-0'}`}
+                                            // --- CORRECCIÓN 3: Borde ROJO en luz, AZUL en dark si hay oferta ---
+                                            className={`card h-100 shadow-lg overflow-hidden position-relative ${
+                                                item.en_oferta 
+                                                    ? (isDark ? 'border border-2 border-blue-500' : 'border border-2 border-red-500') 
+                                                    : 'border-0'
+                                            }`}
                                             style={{ backgroundColor: cardBg, borderRadius: '24px', cursor: 'pointer' }}
                                             onClick={() => setProductoSeleccionadoParaModal(item)}
                                         >
                                             <div className="card-body d-flex flex-column text-center p-3 md:p-4">
-                                                {/* ICONO DEL PRODUCTO */}
                                                 <div className={`mb-3 mb-md-4 d-flex align-items-center justify-content-center rounded-circle mx-auto shadow-sm ${isDark ? 'bg-white/5' : 'bg-blue-50'}`} style={{ width: '60px', height: '60px', md: {width: '80px', height: '80px'} }}>
                                                     <Utensils size={28} className="text-blue-500 md:w-8 md:h-8" />
                                                 </div>
                                                 
-                                                {/* CORRECCIÓN: Título con color explícito para evitar blanco sobre blanco */}
                                                 <h6 className={`card-title fw-bold mb-2 line-clamp-2 ${isDark ? 'text-white' : 'text-gray-900'}`} style={{fontSize: '1rem'}}>{item.nombre}</h6>
                                                 
                                                 <div className="mt-auto pt-2">
                                                     {item.en_oferta ? (
                                                         <div className="d-flex justify-content-center align-items-center gap-2 flex-wrap">
-                                                            {/* Precio tachado: Rojo en luz, Muted en dark */}
+                                                            {/* --- CORRECCIÓN 4: Precio tachado: ROJO en luz, AZUL en dark --- */}
                                                             <small 
-                                                                className={`text-decoration-line-through ${isDark ? 'text-muted opacity-75' : 'text-danger fw-bold'}`} 
+                                                                className={`text-decoration-line-through fw-bold ${isDark ? 'text-blue-400' : 'text-danger'}`} 
                                                                 style={{fontSize: '0.9rem'}}
                                                             >
                                                                 ${Number(item.precio_original).toFixed(2)}
                                                             </small>
 
-                                                            {/* CORRECCIÓN: Se elimina la clase "badge" para evitar conflicto con blanco. Se usa color explícito */}
                                                             <span className="rounded-pill bg-green-500/10 border border-green-500/20 px-2 py-1 fw-bold" style={{ color: '#22c55e' }}>
                                                                 ${Number(item.precio).toFixed(2)}
                                                             </span>
@@ -717,7 +687,6 @@ function ClientePage() {
                             </div>
                         </div>
 
-                        {/* CARRITO VERSION DESKTOP (STICKY) */}
                         <div className="col-lg-4 d-none d-lg-block">
                             <div className="shadow-xl border border-white/5" style={{ position: 'sticky', top: '100px', height: 'calc(100vh - 120px)', backgroundColor: cardBg, borderRadius: '24px' }}>
                                 <CarritoContent
@@ -774,9 +743,7 @@ function ClientePage() {
                                                     <Package size={24} className="text-blue-500"/>
                                                 </div>
                                                 <div>
-                                                    {/* CORRECCIÓN: Color explícito para ID */}
                                                     <div className={`fw-bold fs-5 ${isDark ? 'text-white' : 'text-gray-900'}`}>Pedido #{p.id}</div>
-                                                    {/* CORRECCIÓN: Usar style={{ color }} para variable HEX */}
                                                     <small style={{ color: textMuted }}>{new Date(p.fecha).toLocaleDateString()}</small>
                                                 </div>
                                             </div>
@@ -798,9 +765,7 @@ function ClientePage() {
                                                         {p.productos?.map((prod, idx) => (
                                                             <div key={idx} className="d-flex justify-content-between align-items-center mb-2">
                                                                 <div>
-                                                                    {/* CORRECCIÓN: Usar style={{ color }} para textMain */}
                                                                     <span className="fw-semibold" style={{ color: textMain }}>{prod.cantidad}x {prod.nombre}</span>
-                                                                    
                                                                     {prod.opciones && (
                                                                         <div className="small text-blue-400 ps-3 border-start border-blue-500 ms-1 mt-1">
                                                                             {prod.opciones}
@@ -836,15 +801,15 @@ function ClientePage() {
                                 <Gift size={40} className="text-white"/>
                             </div>
                             <h3 className={`fw-bold display-6 ${isDark ? 'text-white' : 'text-gray-900'}`}>Sala de Premios</h3>
-                            {/* CORRECCIÓN: Usar style={{ color }} para textMuted */}
                             <p style={{ color: textMuted }}>¡Tu lealtad tiene recompensa!</p>
                         </div>
                         
                         <div className="row g-4 justify-content-center">
                             {misRecompensas.length === 0 ? (
-                                <div className={`col-12 text-center py-5 rounded-4 border border-dashed border-secondary opacity-50 ${isDark ? 'text-white' : 'text-gray-600'}`}>
-                                    <Star size={40} className="mb-2"/>
-                                    <p>Completa 20 pedidos para desbloquear.</p>
+                                // --- CORRECCIÓN 2: Estilos Empty State en Modo Luz (sin opacidad excesiva) ---
+                                <div className={`col-12 text-center py-5 rounded-4 border border-dashed ${isDark ? 'border-secondary text-white opacity-50' : 'border-gray-300 text-gray-500'}`}>
+                                    <Star size={40} className={`mb-2 ${isDark ? 'text-white' : 'text-yellow-500'}`}/>
+                                    <p className="fw-bold">Completa 20 pedidos para desbloquear.</p>
                                 </div>
                             ) : misRecompensas.map(recompensa => (
                                 <div key={recompensa.id} className="col-md-8 col-lg-6">
@@ -869,11 +834,8 @@ function ClientePage() {
                                         </div>
 
                                         <div className="p-4 flex-grow-1 d-flex flex-column justify-content-center">
-                                            {/* CORRECCIÓN: Título con color explícito */}
                                             <h5 className={`fw-bold mb-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>{recompensa.nombre}</h5>
-                                            {/* CORRECCIÓN: Usar style={{ color }} para textMuted */}
                                             <p className="small mb-3" style={{ color: textMuted }}>Canjéalo en tu próximo pedido.</p>
-                                            {/* CORRECCIÓN: Quitar clase badge */}
                                             <span className="rounded-pill bg-green-500/10 border border-green-500/20 px-3 py-1 fw-bold small align-self-start" style={{ color: '#16a34a' }}>Activo</span>
                                         </div>
                                     </motion.div>
@@ -884,9 +846,6 @@ function ClientePage() {
                 )}
             </div>
 
-            {/* --- MODALES Y FLOTANTES --- */}
-
-            {/* BOTÓN FLOTANTE MÓVIL (FAB) - NUEVO DISEÑO CIRCULAR */}
             {activeTab === 'crear' && pedidoActual.length > 0 && (
                 <div 
                     className="position-fixed bottom-0 end-0 m-4 d-lg-none" 
@@ -917,17 +876,14 @@ function ClientePage() {
                 </div>
             )}
 
-            {/* MODAL CARRITO MÓVIL (CENTRADO Y FLOTANTE) */}
             {showCartModal && (
                 <div className="modal show fade d-block" style={{ backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 1060 }}>
                     <motion.div 
                         initial={{ scale: 0.9, opacity: 0 }} 
                         animate={{ scale: 1, opacity: 1 }} 
                         className="modal-dialog modal-dialog-centered mx-3" 
-                        // mx-3 asegura margen lateral para que parezca tarjeta flotante
                     >
                         <div className="modal-content border-0 shadow-2xl rounded-3xl overflow-hidden" style={{ backgroundColor: cardBg, color: textMain, maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}>
-                            {/* Pasamos la función closeModal para que el botón X funcione */}
                             <CarritoContent
                                 isModal={true}
                                 closeModal={() => { setShowCartModal(false); setCartViewState('cart'); }} 
@@ -961,7 +917,6 @@ function ClientePage() {
                 </div>
             )}
 
-            {/* MODAL DETALLE PRODUCTO */}
             {productoSeleccionadoParaModal && (
                 <div style={{ pointerEvents: 'auto', zIndex: 1070 }}>
                     <ProductDetailModal
@@ -973,7 +928,6 @@ function ClientePage() {
                 </div>
             )}
 
-            {/* MODAL PAGO (STRIPE) */}
             {showPaymentModal && clientSecret && (
                 <div className="modal show fade d-block" style={{ backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 1080 }}>
                     <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="modal-dialog modal-dialog-centered">
