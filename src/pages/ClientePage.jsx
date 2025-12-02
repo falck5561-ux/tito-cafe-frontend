@@ -98,7 +98,6 @@ const CarritoContent = ({
         ? "bg-black/40 backdrop-blur-md border-t border-white/10" 
         : "bg-white/80 backdrop-blur-md border-t border-gray-200";
 
-    // Estilos de Selección de Entrega
     const cardSelectable = (selected) => `
         cursor-pointer rounded-xl border p-3 transition-all duration-200 flex items-center gap-3 relative overflow-hidden
         ${selected 
@@ -643,13 +642,17 @@ function ClientePage() {
                                     <div key={item.id} className="col-6 col-md-4">
                                         <motion.div 
                                             whileHover={{ y: -8, scale: 1.02 }}
-                                            // --- BORDES FUERTES Y VISIBLES (border-4) ---
-                                            className={`card h-100 shadow-lg overflow-hidden position-relative ${
-                                                item.en_oferta 
-                                                    ? (isDark ? 'border border-4 border-blue-600' : 'border border-4 border-red-600') 
-                                                    : 'border-0'
-                                            }`}
-                                            style={{ backgroundColor: cardBg, borderRadius: '24px', cursor: 'pointer' }}
+                                            // --- BORDES FORZADOS: ROJO (Luz), AZUL (Dark) ---
+                                            // Usamos style={{ border: ... }} para garantizar prioridad
+                                            className="card h-100 shadow-lg overflow-hidden position-relative"
+                                            style={{ 
+                                                backgroundColor: cardBg, 
+                                                borderRadius: '24px', 
+                                                cursor: 'pointer',
+                                                border: item.en_oferta 
+                                                    ? (isDark ? '3px solid #2563eb' : '3px solid #dc2626') // Azul vs Rojo
+                                                    : 'none'
+                                            }}
                                             onClick={() => setProductoSeleccionadoParaModal(item)}
                                         >
                                             <div className="card-body d-flex flex-column text-center p-3 md:p-4">
@@ -662,12 +665,12 @@ function ClientePage() {
                                                 <div className="mt-auto pt-2">
                                                     {item.en_oferta ? (
                                                         <div className="d-flex justify-content-center align-items-center gap-2 flex-wrap">
-                                                            {/* --- PRECIO ORIGINAL AZUL (DARK) y ROJO (LUZ) --- */}
+                                                            {/* --- PRECIO ORIGINAL: ROJO (Luz), AZUL (Dark) --- */}
                                                             <small 
                                                                 className="text-decoration-line-through fw-bold" 
                                                                 style={{ 
                                                                     fontSize: '0.9rem',
-                                                                    color: isDark ? '#3b82f6' : '#dc2626' // #3b82f6 es azul puro, #dc2626 es rojo puro
+                                                                    color: isDark ? '#3b82f6' : '#dc2626' // #3b82f6 (blue-500), #dc2626 (red-600)
                                                                 }}
                                                             >
                                                                 ${Number(item.precio_original).toFixed(2)}
@@ -818,12 +821,15 @@ function ClientePage() {
                                     <motion.div 
                                         whileHover={{ scale: 1.02 }}
                                         className="d-flex position-relative overflow-hidden shadow-2xl rounded-3xl"
+                                        // Añado border gris en modo luz para que se vea la tarjeta contra el fondo blanco
                                         style={{ 
                                             background: isDark ? '#18181b' : 'white', 
-                                            border: '1px solid rgba(255,255,255,0.1)' 
+                                            border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid #e5e7eb',
+                                            boxShadow: isDark ? 'none' : '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
                                         }}
                                     >
-                                        <div className="d-flex flex-column align-items-center justify-content-center p-4 text-white position-relative overflow-hidden" style={{ width: '130px', background: 'linear-gradient(135deg, #fbbf24, #d97706)' }}>
+                                        {/* BARRA LATERAL: ROJA EN AMBOS MODOS */}
+                                        <div className="d-flex flex-column align-items-center justify-content-center p-4 text-white position-relative overflow-hidden" style={{ width: '130px', background: 'linear-gradient(135deg, #ef4444, #b91c1c)' }}>
                                             <div className="position-absolute top-0 start-0 w-100 h-100 opacity-20" style={{ backgroundImage: 'radial-gradient(circle, white 2px, transparent 2.5px)', backgroundSize: '10px 10px' }}></div>
                                             
                                             {/* --- IMAGEN PREMIO REEMPLAZADA --- */}
