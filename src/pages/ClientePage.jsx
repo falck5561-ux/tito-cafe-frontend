@@ -799,11 +799,22 @@ function ClientePage() {
                     </motion.div>
                 )}
 
-                {/* --- PESTAÑA 3: RECOMPENSAS (CON IMAGEN premio.png) --- */}
+                {/* --- PESTAÑA 3: RECOMPENSAS (MEJORADA) --- */}
                 {!loading && activeTab === 'recompensas' && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                         <div className="text-center mb-5">
-                            <div className="d-inline-block p-4 rounded-full mb-3 bg-gradient-to-tr from-yellow-400 to-orange-500 shadow-lg shadow-orange-500/30">
+                            {/* El ícono del encabezado también cambia de color según el modo */}
+                            <div 
+                                className="d-inline-block p-4 rounded-full mb-3 shadow-lg"
+                                style={{ 
+                                    background: isDark 
+                                        ? 'linear-gradient(to top right, #3b82f6, #2563eb)' // Azul
+                                        : 'linear-gradient(to top right, #ef4444, #f97316)', // Rojo/Naranja
+                                    boxShadow: isDark 
+                                        ? '0 10px 15px -3px rgba(59, 130, 246, 0.3)' 
+                                        : '0 10px 15px -3px rgba(239, 68, 68, 0.3)'
+                                }}
+                            >
                                 <Gift size={40} className="text-white"/>
                             </div>
                             <h3 className={`fw-bold display-6 ${isDark ? 'text-white' : 'text-gray-900'}`}>Sala de Premios</h3>
@@ -821,28 +832,39 @@ function ClientePage() {
                                     <motion.div 
                                         whileHover={{ scale: 1.02 }}
                                         className="d-flex position-relative overflow-hidden shadow-2xl rounded-3xl"
-                                        // Añado border gris en modo luz para que se vea la tarjeta contra el fondo blanco
                                         style={{ 
                                             background: isDark ? '#18181b' : 'white', 
-                                            border: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid #e5e7eb',
-                                            boxShadow: isDark ? 'none' : '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
+                                            // Borde sutil: Azul en Dark, Rojo sutil en Light
+                                            border: isDark ? '1px solid rgba(59, 130, 246, 0.2)' : '1px solid rgba(239, 68, 68, 0.2)',
+                                            boxShadow: isDark ? 'none' : '0 10px 25px -5px rgba(0, 0, 0, 0.1)'
                                         }}
                                     >
-                                        {/* BARRA LATERAL: ROJA EN AMBOS MODOS */}
-                                        <div className="d-flex flex-column align-items-center justify-content-center p-4 text-white position-relative overflow-hidden" style={{ width: '130px', background: 'linear-gradient(135deg, #ef4444, #b91c1c)' }}>
+                                        {/* BARRA LATERAL: LÓGICA DE COLOR (AZUL vs ROJO) */}
+                                        <div 
+                                            className="d-flex flex-column align-items-center justify-content-center p-4 text-white position-relative overflow-hidden" 
+                                            style={{ 
+                                                width: '130px', 
+                                                // AQUÍ ESTÁ EL CAMBIO PRINCIPAL DE COLOR
+                                                background: isDark 
+                                                    ? 'linear-gradient(135deg, #2563eb, #1e40af)' // Azul vibrante a oscuro
+                                                    : 'linear-gradient(135deg, #ef4444, #b91c1c)'  // Rojo vibrante a oscuro
+                                            }}
+                                        >
+                                            {/* Patrón de fondo sutil */}
                                             <div className="position-absolute top-0 start-0 w-100 h-100 opacity-20" style={{ backgroundImage: 'radial-gradient(circle, white 2px, transparent 2.5px)', backgroundSize: '10px 10px' }}></div>
                                             
-                                            {/* --- IMAGEN PREMIO REEMPLAZADA --- */}
+                                            {/* --- IMAGEN PREMIO.PNG --- */}
                                             <img 
                                                 src="premio.png" 
                                                 alt="Premio" 
-                                                className="mb-2 position-relative z-10"
-                                                style={{ width: '40px', height: '40px', objectFit: 'contain' }}
+                                                className="mb-2 position-relative z-10 drop-shadow-md"
+                                                style={{ width: '50px', height: '50px', objectFit: 'contain' }}
                                             />
                                             
                                             <span className="fw-bold small position-relative z-10 tracking-widest">GIFT</span>
                                         </div>
                                         
+                                        {/* Separador tipo "Cupón" */}
                                         <div className="position-relative d-flex align-items-center">
                                             <div style={{ width: '1px', height: '80%', borderLeft: '2px dashed #ccc' }}></div>
                                             <div style={{ position: 'absolute', top: '-12px', left: '-10px', width: '20px', height: '20px', borderRadius: '50%', background: bgBase }}></div>
@@ -852,7 +874,17 @@ function ClientePage() {
                                         <div className="p-4 flex-grow-1 d-flex flex-column justify-content-center">
                                             <h5 className={`fw-bold mb-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>{recompensa.nombre}</h5>
                                             <p className="small mb-3" style={{ color: textMuted }}>Canjéalo en tu próximo pedido.</p>
-                                            <span className="rounded-pill bg-green-500/10 border border-green-500/20 px-3 py-1 fw-bold small align-self-start" style={{ color: '#16a34a' }}>Activo</span>
+                                            
+                                            {/* Badge de estado: Cambia de color según el modo también para combinar */}
+                                            <span 
+                                                className={`rounded-pill px-3 py-1 fw-bold small align-self-start border ${
+                                                    isDark 
+                                                        ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' 
+                                                        : 'bg-red-500/10 border-red-500/20 text-red-600'
+                                                }`}
+                                            >
+                                                Activo
+                                            </span>
                                         </div>
                                     </motion.div>
                                 </div>
@@ -860,7 +892,6 @@ function ClientePage() {
                         </div>
                     </motion.div>
                 )}
-            </div>
 
             {activeTab === 'crear' && pedidoActual.length > 0 && (
                 <div 
