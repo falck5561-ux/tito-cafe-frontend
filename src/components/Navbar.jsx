@@ -29,7 +29,7 @@ const MenuLinks = ({ onLinkClick }) => {
         </NavLink>
       </li>
       
-      {/* <--- 1. AGREGADO: Enlace a Nosotros (Público) */}
+      {/* Enlace a Nosotros */}
       <li className="nav-item">
         <NavLink className="nav-link" to="/nosotros" onClick={(e) => handleClick(e, "/nosotros")}>
           Nosotros
@@ -51,20 +51,13 @@ const MenuLinks = ({ onLinkClick }) => {
         </li>
       )}
 
-      {/* <--- 2. AGREGADO: Menú para Empleados y Jefes (Basado en tus rutas de App.js) */}
+      {/* Menú para Empleados y Jefes (Solo Vender, Canjear oculto) */}
       {(user?.rol === 'Empleado' || user?.rol === 'Jefe') && (
-        <>
-          <li className="nav-item">
-            <NavLink className="nav-link" to="/pos" onClick={(e) => handleClick(e, "/pos")}>
-              Vender
-            </NavLink>
-          </li>
-          <li className="nav-item">
-            <NavLink className="nav-link" to="/canjear" onClick={(e) => handleClick(e, "/canjear")}>
-              Canjear
-            </NavLink>
-          </li>
-        </>
+        <li className="nav-item">
+          <NavLink className="nav-link" to="/pos" onClick={(e) => handleClick(e, "/pos")}>
+            Vender
+          </NavLink>
+        </li>
       )}
 
       {/* Menú exclusivo de Jefe */}
