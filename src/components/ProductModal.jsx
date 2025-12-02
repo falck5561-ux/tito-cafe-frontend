@@ -223,25 +223,36 @@ export default function ProductModal({ show, handleClose, handleSave, productoAc
   const inputBaseClass = "form-control bg-dark text-white border-secondary focus-ring focus-ring-primary";
   const labelClass = "form-label text-secondary small fw-bold text-uppercase ls-1";
 
-  // --- ESTILOS DE SCROLLBAR ---
-  const scrollbarStyles = {
-    scrollbarWidth: 'thin',
-    scrollbarColor: '#444 #18181b'
-  };
-
   if (!show) return null;
 
   return (
     <AnimatePresence>
       <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', zIndex: 1055 }}>
         
-        {/* Estilos inline para Webkit Scrollbar (Chrome/Edge) */}
+        {/* --- ESTILOS PARA ELIMINAR LA BARRA BLANCA --- */}
         <style>
           {`
-            .custom-scroll::-webkit-scrollbar { width: 8px; }
-            .custom-scroll::-webkit-scrollbar-track { background: #18181b; }
-            .custom-scroll::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
-            .custom-scroll::-webkit-scrollbar-thumb:hover { background: #555; }
+            /* Estiliza la barra de scroll en Chrome, Edge, Safari */
+            .custom-scroll::-webkit-scrollbar {
+              width: 8px;
+            }
+            .custom-scroll::-webkit-scrollbar-track {
+              background: #18181b; 
+            }
+            .custom-scroll::-webkit-scrollbar-thumb {
+              background-color: #3f3f46; 
+              border-radius: 4px;
+              border: 2px solid #18181b;
+            }
+            .custom-scroll::-webkit-scrollbar-thumb:hover {
+              background-color: #52525b; 
+            }
+            
+            /* Para Firefox */
+            .custom-scroll {
+              scrollbar-width: thin;
+              scrollbar-color: #3f3f46 #18181b;
+            }
           `}
         </style>
 
@@ -251,15 +262,16 @@ export default function ProductModal({ show, handleClose, handleSave, productoAc
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           className="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable"
         >
+          {/* AQUÍ FORZAMOS EL COLOR DE FONDO OSCURO EN TODO EL MODAL */}
           <div className="modal-content border-0 shadow-2xl overflow-hidden" style={{ backgroundColor: '#18181b', color: '#fff', borderRadius: '24px' }}>
             
-            {/* Header: CORREGIDO - Eliminamos bg-white */}
-            <div className="modal-header border-bottom border-secondary border-opacity-25 px-4 py-3" style={{backgroundColor: 'rgba(255,255,255,0.02)'}}>
+            {/* Header: Totalmente transparente para heredar el oscuro */}
+            <div className="modal-header border-bottom border-secondary border-opacity-25 px-4 py-3" style={{ backgroundColor: '#18181b' }}>
               <h5 className="modal-title fw-bold d-flex align-items-center gap-2">
                 {formData.id ? <EditIcon /> : <PlusIcon />} 
                 {formData.id ? 'Editar Producto' : 'Crear Nuevo Producto'}
               </h5>
-              <button onClick={handleClose} className="btn btn-icon btn-dark rounded-circle p-2 text-white-50 hover-text-white">
+              <button onClick={handleClose} className="btn btn-icon btn-dark rounded-circle p-2 text-white-50 hover-text-white border-0">
                 <X size={20} />
               </button>
             </div>
@@ -269,7 +281,7 @@ export default function ProductModal({ show, handleClose, handleSave, productoAc
                 <div className="container-fluid p-0">
                   <div className="row g-0">
                     
-                    {/* COLUMNA IZQUIERDA */}
+                    {/* COLUMNA IZQUIERDA (Fija) */}
                     <div className="col-lg-4 bg-black bg-opacity-25 border-end border-secondary border-opacity-25 p-4">
                       <div className="ratio ratio-1x1 bg-dark rounded-4 border border-secondary border-dashed mb-4 position-relative overflow-hidden group-hover">
                         {previewImage ? (
@@ -318,8 +330,8 @@ export default function ProductModal({ show, handleClose, handleSave, productoAc
                       </div>
                     </div>
 
-                    {/* COLUMNA DERECHA: Con SCROLL OSCURO */}
-                    <div className="col-lg-8 p-4 custom-scroll" style={{maxHeight: '80vh', overflowY: 'auto', ...scrollbarStyles}}>
+                    {/* COLUMNA DERECHA: Con SCROLL OSCURO PERSONALIZADO */}
+                    <div className="col-lg-8 p-4 custom-scroll" style={{maxHeight: '80vh', overflowY: 'auto'}}>
                       
                       <h6 className="text-primary text-uppercase fw-bold mb-3 small ls-1"><Package size={14} className="me-1"/> Información Básica</h6>
                       
@@ -439,7 +451,7 @@ export default function ProductModal({ show, handleClose, handleSave, productoAc
                   </div>
                 </div>
 
-                <div className="modal-footer border-top border-secondary border-opacity-25 bg-dark py-3">
+                <div className="modal-footer border-top border-secondary border-opacity-25 bg-dark py-3" style={{ backgroundColor: '#18181b' }}>
                    <button type="button" className="btn btn-link text-white text-decoration-none me-auto" onClick={handleClose}>Cancelar</button>
                    <button type="submit" className="btn btn-primary px-4 fw-bold rounded-pill d-flex align-items-center gap-2 shadow-lg">
                       <Save size={18}/> Guardar Producto
