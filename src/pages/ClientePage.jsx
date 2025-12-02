@@ -364,20 +364,59 @@ const CarritoContent = ({
                 </AnimatePresence>
             </div>
 
-            {/* 3. FOOTER FLOTANTE */}
+            {/* 3. FOOTER FLOTANTE MEJORADO */}
             <div className={`flex-shrink-0 px-4 py-3 ${glassFooter} z-10`}>
+                
+                {/* Barra de Progreso para Envío Gratis */}
+                {tipoOrden === 'domicilio' && subtotal > 0 && subtotal < 150 && (
+                    <div className="mb-3 animate-fade-in">
+                        <div className="d-flex justify-content-between align-items-center small mb-1">
+                            <span className={`${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                                Faltan <span className="fw-bold text-success">${(150 - subtotal).toFixed(2)}</span> para envío gratis
+                            </span>
+                            <span className="text-muted fw-bold" style={{fontSize: '0.7rem'}}>{Math.round((subtotal/150)*100)}%</span>
+                        </div>
+                        <div className="progress" style={{height: '6px', backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#e9ecef', borderRadius: '4px'}}>
+                            <div 
+                                className="progress-bar bg-success" 
+                                role="progressbar" 
+                                style={{
+                                    width: `${(subtotal/150)*100}%`, 
+                                    transition: 'width 0.5s ease-in-out',
+                                    borderRadius: '4px'
+                                }}
+                            ></div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Totales */}
                 <div className="d-flex justify-content-between align-items-end mb-3">
                     <span className={`small fw-bold ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Total a Pagar</span>
                     <div className="text-end">
                         {tipoOrden === 'domicilio' && (
                                <div className={`small mb-1 fw-bold ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                                    Envío: {calculandoEnvio ? <span className="spinner-border spinner-border-sm"/> : <span className="text-success">+${costoEnvio.toFixed(2)}</span>}
+                                    Envío: {calculandoEnvio ? (
+                                        <span className="spinner-border spinner-border-sm"/> 
+                                    ) : (
+                                        subtotal >= 150 ? (
+                                            <span className="text-success fw-bold animate-bounce-in">
+                                                ¡GRATIS! <span className="text-decoration-line-through text-muted opacity-50 ms-1 small" style={{fontSize: '0.75em'}}>${costoEnvio.toFixed(2)}</span>
+                                            </span>
+                                        ) : (
+                                            <span className={isDark ? 'text-white' : 'text-gray-900'}>+${costoEnvio.toFixed(2)}</span>
+                                        )
+                                    )}
                                </div>
                         )}
-                        <span className={`h4 fw-bold m-0 ${isDark ? 'text-white' : 'text-gray-900'}`}>${totalFinal.toFixed(2)}</span>
+                        <span className={`h4 fw-bold m-0 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                            {/* Calculamos el total visualmente aquí para que coincida con la lógica de envío gratis */}
+                            ${(subtotal + (tipoOrden === 'domicilio' && subtotal >= 150 ? 0 : (tipoOrden === 'domicilio' ? costoEnvio : 0))).toFixed(2)}
+                        </span>
                     </div>
                 </div>
                 
+                {/* Botón de Acción */}
                 <div className="d-grid gap-2">
                     <button
                         className="btn btn-lg border-0 rounded-pill fw-bold text-white shadow-lg d-flex justify-content-center align-items-center gap-2 position-relative overflow-hidden"
@@ -386,7 +425,7 @@ const CarritoContent = ({
                         disabled={
                             pedidoActual.length === 0 || 
                             paymentLoading || 
-                            (viewState === 'address' && (!direccion || !telefono || telefono.length < 10)) || // Validación de teléfono (10 dígitos)
+                            (viewState === 'address' && (!direccion || !telefono || telefono.length < 10)) || 
                             calculandoEnvio
                         }
                     >
@@ -472,7 +511,9 @@ function ClientePage() {
       
     const [cartViewState, setCartViewState] = useState('cart'); 
 
-    const totalFinal = subtotal + costoEnvio;
+    const aplicaEnvioGratis = subtotal >= 150;
+    const costoEnvioReal = aplicaEnvioGratis ? 0 : costoEnvio;
+    const totalFinal = subtotal + costoEnvioReal;
 
     useEffect(() => {
         const fetchInitialData = async () => {
@@ -641,7 +682,8 @@ const estandarizar = (item) => {
                 total: totalFinal, 
                 productos: productosData, 
                 tipo_orden: tipoOrden, 
-                costo_envio: costoEnvio,
+                // AQUÍ ESTÁ EL CAMBIO: Usamos costoEnvioReal (que es 0 si supera los $150)
+                costo_envio: costoEnvioReal, 
                 direccion_entrega: direccion?.description, 
                 latitude: direccion?.lat, 
                 longitude: direccion?.lng, 
