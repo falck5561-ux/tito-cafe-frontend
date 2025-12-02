@@ -1,100 +1,41 @@
-import React, { useContext, useState, useEffect, useCallback } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import AuthContext from '../context/AuthContext';
 import { getProductById } from '../services/productService'; 
 
-// (Los estilos no cambian)
+// (Los estilos se mantienen igual)
 const modalStyles = {
   backdrop: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    width: '100%',
-    height: '100%',
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1050,
+    position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+    backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center',
+    alignItems: 'center', zIndex: 1050,
   },
   content: {
-    width: '90%',
-    maxWidth: '500px',
-    background: 'var(--bs-card-bg)',
-    borderRadius: '15px',
-    maxHeight: '90vh',
-    display: 'flex',
-    flexDirection: 'column',
-    color: 'var(--bs-body-color)',
+    width: '90%', maxWidth: '500px', background: 'var(--bs-card-bg)', borderRadius: '15px',
+    maxHeight: '90vh', display: 'flex', flexDirection: 'column', color: 'var(--bs-body-color)',
     boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
   },
-  header: {
-    position: 'relative',
-    width: '100%',
-    height: '250px',
-  },
-  body: {
-    padding: '1.5rem 2rem 2rem 2rem',
-    overflowY: 'auto',
-  },
+  header: { position: 'relative', width: '100%', height: '250px' },
+  body: { padding: '1.5rem 2rem 2rem 2rem', overflowY: 'auto' },
   footer: {
-    padding: '1.5rem 2rem',
-    borderTop: '1px solid var(--bs-border-color)',
-    backgroundColor: 'var(--bs-tertiary-bg)',
-    borderBottomLeftRadius: '15px',
-    borderBottomRightRadius: '15px',
+    padding: '1.5rem 2rem', borderTop: '1px solid var(--bs-border-color)',
+    backgroundColor: 'var(--bs-tertiary-bg)', borderBottomLeftRadius: '15px', borderBottomRightRadius: '15px',
   },
   closeButton: {
-    position: 'absolute',
-    top: '10px',
-    right: '10px',
-    background: 'rgba(0,0,0,0.3)',
-    backdropFilter: 'blur(5px)',
-    border: 'none',
-    borderRadius: '50%',
-    width: '32px',
-    height: '32px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '1.2rem',
-    color: 'white',
-    cursor: 'pointer',
-    transition: 'background-color 0.2s',
-    zIndex: 10,
+    position: 'absolute', top: '10px', right: '10px', background: 'rgba(0,0,0,0.3)',
+    backdropFilter: 'blur(5px)', border: 'none', borderRadius: '50%', width: '32px', height: '32px',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', color: 'white',
+    cursor: 'pointer', transition: 'background-color 0.2s', zIndex: 10,
   },
   productImage: {
-    width: '100%',
-    height: '100%',
-    objectFit: 'cover',
-    borderTopLeftRadius: '15px',
-    borderTopRightRadius: '15px',
-    backgroundColor: 'var(--bs-tertiary-bg)',
+    width: '100%', height: '100%', objectFit: 'cover', borderTopLeftRadius: '15px',
+    borderTopRightRadius: '15px', backgroundColor: 'var(--bs-tertiary-bg)',
   },
-  productTitle: {
-    fontFamily: "'Playfair Display', serif",
-    marginBottom: '0.5rem',
-  },
-  productDescription: {
-    margin: '1rem 0',
-    fontSize: '1rem',
-    lineHeight: '1.6',
-  },
-  optionsContainer: {
-    marginTop: '1.5rem',
-  },
-  optionGroup: {
-    marginBottom: '1.5rem',
-    padding: '1rem',
-    border: '1px solid var(--bs-border-color)',
-    borderRadius: '8px',
-  },
-  optionGroupTitle: {
-    fontWeight: 'bold',
-    marginBottom: '0.75rem',
-    fontSize: '1.1rem',
-    color: 'var(--bs-heading-color)',
-  },
+  productTitle: { fontFamily: "'Playfair Display', serif", marginBottom: '0.5rem' },
+  productDescription: { margin: '1rem 0', fontSize: '1rem', lineHeight: '1.6' },
+  optionsContainer: { marginTop: '1.5rem' },
+  optionGroup: { marginBottom: '1.5rem', padding: '1rem', border: '1px solid var(--bs-border-color)', borderRadius: '8px' },
+  optionGroupTitle: { fontWeight: 'bold', marginBottom: '0.75rem', fontSize: '1.1rem', color: 'var(--bs-heading-color)' },
 };
 
 function ProductDetailModal({ product, onClose, onAddToCart }) {
@@ -114,14 +55,35 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
         .then(data => {
           const tieneOpciones = data.grupos_opciones && data.grupos_opciones.length > 0;
 
+          // LOGICA DE PRECIO BASE:
+          // Determinamos si usamos el precio de la base de datos o el precio que venía del menú (oferta)
+          let precioBaseCorrecto = Number(data.precio);
+          
+          // Si el producto en el menú (prop 'product') tenía un precio menor al de la BD, usamos ese (es la oferta)
+          if (product.precio && Number(product.precio) < precioBaseCorrecto) {
+             precioBaseCorrecto = Number(product.precio);
+          }
+          // O si la data de la BD dice explícitamente que hay oferta y trae el precio oferta
+          else if (data.en_oferta && data.precio_oferta) {
+             precioBaseCorrecto = Number(data.precio_oferta);
+          }
+
+          // Inyectamos el precio correcto al objeto data para usarlo después
+          const productoConPrecioCorregido = {
+              ...data,
+              precio: precioBaseCorrecto,
+              // Guardamos el original para mostrar tachado si aplica
+              precio_original: data.precio 
+          };
+
           if (tieneOpciones) {
-            // CASO 1: SÍ tiene opciones
-            setFullProduct(data); 
-            setLoadingToppings(false); // Deja que el modal se renderice
+            // CASO 1: SÍ tiene opciones -> Guardamos en estado y mostramos modal
+            setFullProduct(productoConPrecioCorregido); 
+            setLoadingToppings(false); 
           } else {
-            // CASO 2: NO tiene opciones
-            onAddToCart(data); // Añade directo
-            onClose(); // Cierra el modal (que nunca fue visible)
+            // CASO 2: NO tiene opciones -> Agregamos directo al carrito con el precio YA corregido
+            onAddToCart(productoConPrecioCorregido); 
+            onClose(); 
           }
         })
         .catch(err => {
@@ -132,10 +94,11 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
   }, [product, onAddToCart, onClose]);
 
   
-  // --- 2. EFECTO PARA CALCULAR EL PRECIO TOTAL (Corregido) ---
+  // --- 2. EFECTO PARA CALCULAR EL PRECIO TOTAL (CORREGIDO) ---
   useEffect(() => {
     if (!fullProduct) return;
 
+    // Aquí fullProduct.precio ya viene corregido desde el useEffect anterior
     const basePrice = Number(fullProduct.precio);
     let optionsPrice = 0;
     
@@ -156,7 +119,7 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
 
   }, [fullProduct, selectedOptions]);
 
-  // --- 3. MANEJADORES DE SELECCIÓN (Sin cambios) ---
+  // --- 3. MANEJADORES DE SELECCIÓN ---
   const handleRadioChange = (grupo, opcion) => {
     setSelectedOptions(prev => ({
       ...prev,
@@ -167,21 +130,16 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
   const handleCheckboxChange = (grupo, opcion, isChecked) => {
     setSelectedOptions(prev => {
       const currentGroupSelections = prev[grupo.id] || {};
-      
       if (isChecked) {
         currentGroupSelections[opcion.id] = opcion;
       } else {
         delete currentGroupSelections[opcion.id];
       }
-
-      return {
-        ...prev,
-        [grupo.id]: currentGroupSelections
-      };
+      return { ...prev, [grupo.id]: currentGroupSelections };
     });
   };
 
-  // --- 4. MANEJADOR PARA AÑADIR AL CARRITO (Corregido) ---
+  // --- 4. MANEJADOR PARA AÑADIR AL CARRITO ---
   const handleAddToCart = () => {
     const opcionesParaCarrito = [];
     fullProduct.grupos_opciones?.forEach(grupo => {
@@ -198,7 +156,7 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
 
     const cartProduct = {
       ...fullProduct,
-      precio: totalPrice, 
+      precio: totalPrice, // Enviamos el total calculado (Base Oferta + Opciones)
       opcionesSeleccionadas: opcionesParaCarrito,
       cartItemId: tieneOpciones ? `${fullProduct.id}-${Date.now()}` : null 
     };
@@ -208,7 +166,7 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
   };
 
 
-  // --- Renderizado ---
+  // --- RENDERIZADO ---
   if (!product) return null; 
 
   const displayImage = fullProduct.imagen_url
@@ -217,16 +175,10 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
     
   const placeholderImage = `https://placehold.co/500x250/333333/CCCCCC?text=${encodeURIComponent(fullProduct.nombre)}`;
 
-  
-  // 🚨 SOLUCIÓN BUG 2 (Estético):
-  // Si está cargando, no retornamos NADA.
-  // Esto evita el "flash" del spinner en los productos sin opciones.
-  // El modal solo se renderizará cuando SÍ tenga opciones y esté listo.
   if (loadingToppings) {
     return null;
   }
   
-  // Si no está cargando (y tiene opciones), muestra el modal:
   return (
     <motion.div
       style={modalStyles.backdrop}
@@ -322,16 +274,12 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
             <div>
               <span className="fs-3 fw-bold">${totalPrice.toFixed(2)}</span>
               
-              {fullProduct.en_oferta && Number(fullProduct.precio_original) > Number(fullProduct.precio) && (
+              {/* Mostramos el precio original tachado si el precio actual es menor */}
+              {Number(fullProduct.precio_original) > Number(fullProduct.precio) && (
                 <span className="text-muted text-decoration-line-through ms-2">${Number(fullProduct.precio_original).toFixed(2)}</span>
               )}
             </div>
 
-            {/*
-              * ✅ SOLUCIÓN BUG 1: 
-              * Se elimina la condición {(!user || user.rol === 'Cliente') && ...}
-              * para que el botón aparezca siempre.
-            */}
             <button className="btn btn-primary" onClick={handleAddToCart}>
               {'Hacer Pedido'}
             </button>
