@@ -18,9 +18,11 @@ function DetallesPedidoModal({ pedido, onClose }) {
 
   let googleMapsUrl = '';
   if (pedido.latitude && pedido.longitude) {
-    googleMapsUrl = `http://googleusercontent.com/maps.google.com/maps?q=${pedido.latitude},${pedido.longitude}`;
+    // Usamos el formato estándar de Google Maps para coordenadas
+    googleMapsUrl = `https://www.google.com/maps?q=${pedido.latitude},${pedido.longitude}`;
   } else if (pedido.direccion_entrega) {
-    googleMapsUrl = `http://googleusercontent.com/maps.google.com/maps?q=${encodeURIComponent(pedido.direccion_entrega)}`;
+    // Usamos el formato de búsqueda por dirección
+    googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(pedido.direccion_entrega)}`;
   }
 
   // Estilos
