@@ -717,13 +717,15 @@ const estandarizar = (item) => {
                 const data = { ...direccion, referencia, telefono }; 
                 await apiClient.put('/usuarios/mi-direccion', data); 
                 setDireccionGuardada(data); 
-                notify('success', 'Dirección y número guardados para futuros pedidos.');
+                notify('success', 'Dirección guardada para futuros pedidos.', 'address-saved');
             } catch (e) { 
                 console.error("Error guardando dirección:", e); 
             } 
         }
-        // El tercer parámetro es el ID único. Si se intenta llamar de nuevo, no creará otro toast.
-        notify('success', '¡Pedido realizado con éxito!', 'pedido-exito-unico');
+        
+        // BORRAMOS la notificación de aquí porque CheckoutForm ya debe estar mostrando una.
+        // Esto elimina el mensaje duplicado.
+        
         limpiarPedido(); // Limpiamos solo el carrito
         setCostoEnvio(0); 
         setDireccion(null); 
@@ -752,6 +754,19 @@ const estandarizar = (item) => {
 
     return (
         <div style={{ backgroundColor: bgBase, minHeight: '100vh', color: textMain, pointerEvents: (productoSeleccionadoParaModal || showPaymentModal || showCartModal) ? 'none' : 'auto' }}> 
+            
+            {/* Estilo para ocultar el badge flotante de Stripe (Link) */}
+            <style>{`
+                /* Oculta el contenedor del botón flotante de Link */
+                iframe[src*="link-authentication-element"],
+                .p-LinkTrigger,
+                iframe[title="Link with Stripe"] {
+                    display: none !important;
+                    visibility: hidden !important;
+                    opacity: 0 !important;
+                    pointer-events: none !important;
+                }
+            `}</style>
               
             {/* TABS NAVEGACIÓN */}
             <div className={`sticky-top pt-3 pb-2 px-3 mb-4 shadow-sm z-50 ${isDark ? 'bg-black/80 border-b border-white/10 backdrop-blur-md' : 'bg-white/80 border-b border-gray-200 backdrop-blur-md'}`}>
