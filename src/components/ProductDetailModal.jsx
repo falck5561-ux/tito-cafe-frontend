@@ -1,9 +1,8 @@
-import React, { useContext, useState, useEffect } from 'react';
+import React, { useContext, useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import AuthContext from '../context/AuthContext';
 import { getProductById } from '../services/productService'; 
 
-// (Estilos visuales se mantienen igual)
 const modalStyles = {
   backdrop: {
     position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
@@ -41,12 +40,19 @@ const modalStyles = {
 function ProductDetailModal({ product, onClose, onAddToCart }) {
   const { user } = useContext(AuthContext); 
 
+  // 🔒 BLOQUEO DE PRECIO: Capturamos el precio que viene del menú (24.96)
+  // Usamos un estado separado para que la base de datos NO pueda sobrescribirlo.
+  const [precioBaseMenu] = useState(() => {
+     // Si product.precio existe, úsalo. Si no, usa 0.
+     return product?.precio ? Number(product.precio) : 0;
+  });
+
   const [fullProduct, setFullProduct] = useState(product); 
   const [selectedOptions, setSelectedOptions] = useState({});
   const [totalPrice, setTotalPrice] = useState(0); 
   const [loadingToppings, setLoadingToppings] = useState(true);
 
-  // --- 1. CARGA DE DATOS Y LÓGICA DE PRECIO "FUERZA BRUTA" ---
+  // --- 1. CARGA DE OPCIONES (TOPIINGS) ---
   useEffect(() => {
     if (product?.id) {
       setSelectedOptions({}); 
@@ -55,26 +61,22 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
         .then(data => {
           const tieneOpciones = data.grupos_opciones && data.grupos_opciones.length > 0;
 
-          // 🔥 SOLUCIÓN DEFINITIVA: 
-          // Priorizamos SIEMPRE el precio que viene del 'product' (el del menú).
-          // Si product.precio existe (que sí existe porque se ve en el menú), lo usamos.
-          // Solo si fuera null/undefined usamos data.precio (el de la BD).
-          const precioMenu = product.precio ? Number(product.precio) : Number(data.precio);
-
-          // Creamos un objeto híbrido: Detalles de la BD + Precio del Menú
-          const productoFusionado = {
-              ...data,                // Tomamos descripciones y opciones frescas de la BD
-              precio: precioMenu,     // SOBRESCRIBIMOS el precio con el del menú ($32.00)
-              precio_original: Number(data.precio) // Guardamos el alto ($41.03) para referencia
+          // 🛡️ AQUI ESTÁ EL TRUCO:
+          // Creamos un objeto mezclado.
+          // Tomamos TOOOODO lo de la base de datos (descripción, opciones, imagen)...
+          // ...PERO forzamos que el precio sea 'precioBaseMenu' (el de la oferta).
+          const productoFinal = {
+              ...data,
+              precio: precioBaseMenu > 0 ? precioBaseMenu : Number(data.precio), // Prioridad absoluta al menú
+              precio_original: Number(data.precio) // Guardamos el de BD solo para tacharlo visualmente
           };
 
           if (tieneOpciones) {
-            // Caso con opciones: Guardamos y mostramos modal
-            setFullProduct(productoFusionado); 
+            setFullProduct(productoFinal); 
             setLoadingToppings(false); 
           } else {
-            // Caso directo: Enviamos al carrito el producto YA corregido
-            onAddToCart(productoFusionado); 
+            // Si no hay opciones, agregamos directo
+            onAddToCart(productoFinal); 
             onClose(); 
           }
         })
@@ -83,20 +85,26 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
           onClose(); 
         });
     }
-  }, [product, onAddToCart, onClose]);
+  }, [product, onAddToCart, onClose, precioBaseMenu]);
 
   
   // --- 2. CÁLCULO DEL TOTAL ---
   useEffect(() => {
-    if (!fullProduct) return;
+    // Usamos precioBaseMenu directamente para el cálculo base
+    // Esto asegura que aunque fullProduct cambie, la base es la oferta.
+    let base = precioBaseMenu;
+    
+    // Fallback: Si por alguna razón el menú vino en 0 (raro), usamos el del producto cargado
+    if (!base || base === 0) {
+        if (fullProduct && fullProduct.precio) {
+            base = Number(fullProduct.precio);
+        }
+    }
 
-    // Aquí fullProduct.precio YA ES $32.00 gracias a la fusión de arriba
-    const basePrice = Number(fullProduct.precio);
     let optionsPrice = 0;
     
-    fullProduct.grupos_opciones?.forEach(grupo => {
+    fullProduct?.grupos_opciones?.forEach(grupo => {
       const selection = selectedOptions[grupo.id];
-      
       if (grupo.tipo_seleccion === 'unico' && selection) {
         optionsPrice += parseFloat(selection.precio_adicional);
       } 
@@ -107,12 +115,11 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
       }
     });
 
-    setTotalPrice(basePrice + optionsPrice);
+    setTotalPrice(base + optionsPrice);
 
-  }, [fullProduct, selectedOptions]);
+  }, [fullProduct, selectedOptions, precioBaseMenu]);
 
-
-  // --- 3. HANDLERS (Sin cambios) ---
+  // --- 3. HANDLERS ---
   const handleRadioChange = (grupo, opcion) => {
     setSelectedOptions(prev => ({ ...prev, [grupo.id]: opcion }));
   };
@@ -132,7 +139,7 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
   // --- 4. AGREGAR AL CARRITO ---
   const handleAddToCart = () => {
     const opcionesParaCarrito = [];
-    fullProduct.grupos_opciones?.forEach(grupo => {
+    fullProduct?.grupos_opciones?.forEach(grupo => {
       const selection = selectedOptions[grupo.id];
       if (grupo.tipo_seleccion === 'unico' && selection) {
         opcionesParaCarrito.push(selection);
@@ -146,7 +153,7 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
 
     const cartProduct = {
       ...fullProduct,
-      precio: totalPrice, // Aquí va el total correcto ($32 + extras)
+      precio: totalPrice, // TOTAL FINAL CORRECTO
       opcionesSeleccionadas: opcionesParaCarrito,
       cartItemId: tieneOpciones ? `${fullProduct.id}-${Date.now()}` : null 
     };
@@ -159,8 +166,11 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
   // --- RENDER ---
   if (!product) return null; 
 
-  const displayImage = fullProduct.imagen_url || `https://placehold.co/500x250/333333/CCCCCC?text=${encodeURIComponent(fullProduct.nombre)}`;
-  const placeholderImage = `https://placehold.co/500x250/333333/CCCCCC?text=${encodeURIComponent(fullProduct.nombre)}`;
+  // Usamos fullProduct si está listo, sino usamos product (props) para que no se vea vacío
+  const objToShow = fullProduct || product;
+
+  const displayImage = objToShow.imagen_url || `https://placehold.co/500x250/333333/CCCCCC?text=${encodeURIComponent(objToShow.nombre || 'Producto')}`;
+  const placeholderImage = `https://placehold.co/500x250/333333/CCCCCC?text=${encodeURIComponent(objToShow.nombre || 'Producto')}`;
 
   if (loadingToppings) return null;
   
@@ -168,22 +178,20 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
     <motion.div style={modalStyles.backdrop} initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={onClose}>
       <motion.div style={modalStyles.content} initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} onClick={(e) => e.stopPropagation()}>
         
-        {/* HEADER IMAGEN */}
         <div style={modalStyles.header}>
           <button style={modalStyles.closeButton} onClick={onClose}>&times;</button>
           <img 
-            src={displayImage} alt={fullProduct.nombre} style={modalStyles.productImage}
+            src={displayImage} alt={objToShow.nombre} style={modalStyles.productImage}
             onError={(e) => { e.target.onerror = null; e.target.src = placeholderImage; }}
           />
         </div>
 
-        {/* BODY CONTENIDO */}
         <div style={modalStyles.body}>
-          <h2 style={modalStyles.productTitle}>{fullProduct.nombre}</h2>
-          {fullProduct.descripcion && <p style={modalStyles.productDescription}>{fullProduct.descripcion}</p>}
+          <h2 style={modalStyles.productTitle}>{objToShow.nombre}</h2>
+          {objToShow.descripcion && <p style={modalStyles.productDescription}>{objToShow.descripcion}</p>}
 
           <div style={modalStyles.optionsContainer}>
-            {!loadingToppings && fullProduct.grupos_opciones?.map(grupo => (
+            {!loadingToppings && fullProduct?.grupos_opciones?.map(grupo => (
                 <div key={grupo.id} style={modalStyles.optionGroup}>
                   <h5 style={modalStyles.optionGroupTitle}>{grupo.nombre}</h5>
                   
@@ -228,14 +236,15 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
           </div>
         </div>
 
-        {/* FOOTER PRECIO */}
         <div style={modalStyles.footer}>
           <div className="d-flex justify-content-between align-items-center">
             <div>
               <span className="fs-3 fw-bold">${totalPrice.toFixed(2)}</span>
-              {/* Muestra tachado si el precio de BD es mayor al que estamos cobrando */}
-              {Number(fullProduct.precio_original) > Number(fullProduct.precio) && (
-                <span className="text-muted text-decoration-line-through ms-2">${Number(fullProduct.precio_original).toFixed(2)}</span>
+              {/* Mostramos el precio original de la BD tachado solo si es mayor al que estamos cobrando */}
+              {fullProduct?.precio_original && Number(fullProduct.precio_original) > totalPrice && (
+                 <span className="text-muted text-decoration-line-through ms-2">
+                    ${Number(fullProduct.precio_original).toFixed(2)}
+                 </span>
               )}
             </div>
             <button className="btn btn-primary" onClick={handleAddToCart}>
