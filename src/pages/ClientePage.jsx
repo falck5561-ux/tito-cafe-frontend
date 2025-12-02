@@ -93,7 +93,7 @@ const CarritoContent = ({
     const glassHeader = isDark 
         ? "bg-black/40 backdrop-blur-md border-b border-white/10" 
         : "bg-white/60 backdrop-blur-md border-b border-gray-200";
-    
+     
     const glassFooter = isDark 
         ? "bg-black/40 backdrop-blur-md border-t border-white/10" 
         : "bg-white/80 backdrop-blur-md border-t border-gray-200";
@@ -108,7 +108,7 @@ const CarritoContent = ({
 
     return (
         <div className="d-flex flex-column h-100 position-relative overflow-hidden"> 
-            
+             
             {/* 1. HEADER DEL CARRITO */}
             <div className={`flex-shrink-0 px-4 py-3 ${glassHeader} z-10 d-flex align-items-center justify-content-between`}>
                 {viewState === 'cart' ? (
@@ -145,7 +145,7 @@ const CarritoContent = ({
             {/* 2. BODY DEL CARRITO */}
             <div className="flex-grow-1 overflow-auto custom-scrollbar px-4 py-3" style={{ minHeight: 0 }}>
                 <AnimatePresence mode="wait">
-                    
+                     
                     {viewState === 'cart' ? (
                         <motion.div 
                             key="cart-view"
@@ -215,7 +215,7 @@ const CarritoContent = ({
                                     <h6 className={`fw-bold mb-3 small text-uppercase tracking-wider ${isDark ? 'text-gray-400' : 'text-gray-500'}`} style={{letterSpacing: '1px'}}>
                                         Método de Entrega
                                     </h6>
-                                    
+                                     
                                     <div className="d-flex flex-column gap-2">
                                         {[
                                             { id: 'llevar', label: 'Para Recoger', sub: 'Pasa por él al local', icon: <Package size={20}/> },
@@ -371,7 +371,7 @@ function ClientePage() {
     const cardBg = isDark ? '#18181b' : '#ffffff'; 
     const textMain = isDark ? '#ffffff' : '#1f2937';
     const textMuted = isDark ? '#a1a1aa' : '#374151'; 
-    
+     
     const {
         pedidoActual,
         subtotal,
@@ -398,14 +398,14 @@ function ClientePage() {
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [clientSecret, setClientSecret] = useState('');
     const [paymentLoading, setPaymentLoading] = useState(false);
-    
+     
     const [direccionGuardada, setDireccionGuardada] = useState(null);
     const [guardarDireccion, setGuardarDireccion] = useState(false);
     const [referencia, setReferencia] = useState('');
-    
+     
     const [showCartModal, setShowCartModal] = useState(false);
     const [productoSeleccionadoParaModal, setProductoSeleccionadoParaModal] = useState(null);
-    
+     
     const [cartViewState, setCartViewState] = useState('cart'); 
 
     const totalFinal = subtotal + costoEnvio;
@@ -601,7 +601,7 @@ function ClientePage() {
 
     return (
         <div style={{ backgroundColor: bgBase, minHeight: '100vh', color: textMain, pointerEvents: (productoSeleccionadoParaModal || showPaymentModal || showCartModal) ? 'none' : 'auto' }}> 
-            
+             
             {/* TABS NAVEGACIÓN */}
             <div className={`sticky-top pt-3 pb-2 px-3 mb-4 shadow-sm z-50 ${isDark ? 'bg-black/80 border-b border-white/10 backdrop-blur-md' : 'bg-white/80 border-b border-gray-200 backdrop-blur-md'}`}>
                 <ul className="nav nav-pills nav-fill gap-2 container" style={{ maxWidth: '800px' }}>
@@ -757,7 +757,7 @@ function ClientePage() {
                                                 {getStatusBadge(p.estado)}
                                             </div>
                                         </div>
-                                        
+                                         
                                         <AnimatePresence>
                                             {ordenExpandida === p.id && (
                                                 <motion.div 
@@ -798,7 +798,7 @@ function ClientePage() {
                     </motion.div>
                 )}
 
-                {/* --- PESTAÑA 3: RECOMPENSAS (CON DISEÑO CORREGIDO) --- */}
+                {/* --- PESTAÑA 3: RECOMPENSAS (DISEÑO MEJORADO) --- */}
                 {!loading && activeTab === 'recompensas' && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                         <div className="text-center mb-5">
@@ -830,45 +830,49 @@ function ClientePage() {
                                 <div key={recompensa.id} className="col-md-8 col-lg-6">
                                     <motion.div 
                                         whileHover={{ scale: 1.02 }}
-                                        className="d-flex position-relative overflow-hidden shadow-2xl rounded-3xl"
+                                        className="d-flex position-relative shadow-2xl"
                                         style={{ 
                                             background: isDark ? '#18181b' : 'white', 
+                                            // AQUI SE APLICA EL BORDE REDONDEADO FUERTE
+                                            borderRadius: '24px', 
+                                            overflow: 'hidden',
                                             // BORDE SUTIL: Azul en Dark, Rojo en Light
                                             border: isDark ? '1px solid rgba(59, 130, 246, 0.2)' : '1px solid rgba(239, 68, 68, 0.2)',
                                             boxShadow: isDark ? 'none' : '0 10px 25px -5px rgba(0, 0, 0, 0.1)'
                                         }}
                                     >
-                                        {/* BARRA LATERAL (TICKET STUB) - LIMPIA Y SIN TEXTO "GIFT" */}
+                                        {/* BARRA LATERAL (STUB) - COLOR VARIABLE */}
                                         <div 
-                                            className="d-flex flex-column align-items-center justify-content-center p-4 text-white position-relative overflow-hidden" 
+                                            className="d-flex flex-column align-items-center justify-content-center p-4 text-white position-relative" 
                                             style={{ 
                                                 width: '130px', 
-                                                // AQUI ESTA LA LOGICA DE COLOR: Dark = Gradiente Azul, Light = Gradiente Rojo (limpio)
+                                                // LOGICA DE COLOR: Dark = Gradiente Azul, Light = Gradiente Rojo Intenso
                                                 background: isDark 
                                                     ? 'linear-gradient(135deg, #2563eb, #1e40af)' 
-                                                    : 'linear-gradient(135deg, #dc2626, #b91c1c)'
+                                                    : 'linear-gradient(135deg, #dc2626, #991b1b)'
                                             }}
                                         >
-                                            {/* Eliminé el div de los puntos blancos (polka dots) */}
-
-                                            {/* --- IMAGEN PREMIO.PNG --- */}
                                             <img 
                                                 src="premio.png" 
                                                 alt="Premio" 
                                                 className="position-relative z-10 drop-shadow-md"
                                                 style={{ width: '65px', height: '65px', objectFit: 'contain' }}
                                             />
-                                            
-                                            {/* ELIMINADO: El span que decía GIFT */}
                                         </div>
                                         
-                                        {/* LINEA PUNTEADA DE SEPARACION */}
+                                        {/* LINEA PUNTEADA DE SEPARACION Y CORTES CIRCULARES */}
                                         <div className="position-relative d-flex align-items-center">
-                                            <div style={{ width: '1px', height: '80%', borderLeft: `2px dashed ${isDark ? '#3f3f46' : '#ccc'}` }}></div>
-                                            <div style={{ position: 'absolute', top: '-12px', left: '-10px', width: '20px', height: '20px', borderRadius: '50%', background: bgBase }}></div>
-                                            <div style={{ position: 'absolute', bottom: '-12px', left: '-10px', width: '20px', height: '20px', borderRadius: '50%', background: bgBase }}></div>
+                                            {/* Linea punteada */}
+                                            <div style={{ width: '1px', height: '80%', borderLeft: `2px dashed ${isDark ? '#3f3f46' : '#e5e7eb'}` }}></div>
+                                            
+                                            {/* Circulo corte superior */}
+                                            <div style={{ position: 'absolute', top: '-15px', left: '-10px', width: '20px', height: '20px', borderRadius: '50%', background: bgBase }}></div>
+                                            
+                                            {/* Circulo corte inferior */}
+                                            <div style={{ position: 'absolute', bottom: '-15px', left: '-10px', width: '20px', height: '20px', borderRadius: '50%', background: bgBase }}></div>
                                         </div>
 
+                                        {/* CONTENIDO DEL CUPÓN */}
                                         <div className="p-4 flex-grow-1 d-flex flex-column justify-content-center">
                                             <h5 className={`fw-bold mb-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>{recompensa.nombre}</h5>
                                             <p className="small mb-3" style={{ color: textMuted }}>Canjéalo en tu próximo pedido.</p>
