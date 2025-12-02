@@ -1,82 +1,78 @@
-// Archivo: src/components/ComboCard.jsx
-
-import React, { useContext } from 'react'; // 1. Importa useContext
+import React, { useContext } from 'react'; 
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom'; // 2. Importa useNavigate para la redirección
-import { CartContext } from '../context/CartContext'; // 3. Importa tu contexto del carrito (asegúrate de que la ruta sea correcta)
+// Eliminamos useNavigate y CartContext, ya que la tarjeta solo debe mostrar detalles
+// import { useNavigate } from 'react-router-dom'; 
+// import { CartContext } from '../context/CartContext'; 
 
-function ComboCard({ combo }) {
-  const navigate = useNavigate(); // 4. Inicializa el hook de navegación
-  const { agregarAlCarrito } = useContext(CartContext); // 5. Obtiene la función para agregar al carrito desde el contexto
+// CLAVE: Recibimos una función para mostrar los detalles del combo.
+function ComboCard({ combo, onShowDetails }) { 
+  // const navigate = useNavigate(); // Ya no se necesita aquí
+  // const { agregarAlCarrito } = useContext(CartContext); // Ya no se necesita aquí
 
-  // --- LÓGICA DE PRECIOS Y DESCUENTOS (sin cambios) ---
-  const precioOriginal = parseFloat(combo.precio || 0);
-  const precioFinal = parseFloat(combo.precio_final || precioOriginal);
-  const tieneDescuento = precioOriginal > precioFinal;
-  let descuento = 0;
-  if (tieneDescuento && precioOriginal > 0) {
-    descuento = ((precioOriginal - precioFinal) / precioOriginal) * 100;
-  }
-  const imageUrl = combo.imagen_url || `https://placehold.co/400x300/2a2a2a/f5f5f5?text=${combo.nombre}`;
+  // --- LÓGICA DE PRECIOS Y DESCUENTOS (sin cambios) ---
+  const precioOriginal = parseFloat(combo.precio || 0);
+  const precioFinal = parseFloat(combo.precio_final || precioOriginal);
+  const tieneDescuento = precioOriginal > precioFinal;
+  let descuento = 0;
+  if (tieneDescuento && precioOriginal > 0) {
+    descuento = ((precioOriginal - precioFinal) / precioOriginal) * 100;
+  }
+  const imageUrl = combo.imagen_url || `https://placehold.co/400x300/2a2a2a/f5f5f5?text=${combo.nombre}`;
 
-  // --- NUEVA FUNCIÓN PARA EL BOTÓN ---
-  const handleBuyClick = (e) => {
-    // 6. ¡CLAVE! Detiene la propagación para evitar dobles notificaciones
-    e.stopPropagation();
+  // --- NUEVA FUNCIÓN PARA ABRIR EL MODAL ---
+  const handleDetailsClick = (e) => {
+    e.stopPropagation(); // Previene la acción por defecto
+    if (onShowDetails) {
+      onShowDetails(combo); // Llama a la función del padre para abrir el modal
+    }
+  };
 
-    // 7. Agrega el combo al carrito
-    agregarAlCarrito(combo);
+  const cardVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: { y: 0, opacity: 1 }
+  };
 
-    // (Opcional) Aquí puedes llamar a una función para mostrar una notificación si la tienes
-    // mostrarNotificacion(`${combo.nombre} agregado al carrito!`);
+  return (
+    <motion.div 
+      className="col"
+      variants={cardVariants}
+      initial="hidden"
+      animate="visible"
+      transition={{ duration: 0.4 }}
+    >
+      {/*         CLAVE: El click en la tarjeta o en el botón ahora abre el modal de detalles.
+        Eliminamos la lógica de carrito de este componente. 
+      */}
+      <div className="product-card" onClick={handleDetailsClick}>
+        <div className="card-image-container">
+          <img src={imageUrl} alt={combo.nombre} />
+          {tieneDescuento && (
+            <span className="discount-badge">-{descuento.toFixed(0)}%</span>
+          )}
+        </div>
 
-    // 8. Redirige al usuario a la página de su pedido
-    navigate('/hacer-un-pedido'); // Asegúrate de que esta sea la ruta correcta
-  };
-
-  const cardVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: { y: 0, opacity: 1 }
-  };
-
-  return (
-    <motion.div 
-      className="col"
-      variants={cardVariants}
-      initial="hidden"
-      animate="visible"
-      transition={{ duration: 0.4 }}
-    >
-      <div className="product-card">
-        <div className="card-image-container">
-          <img src={imageUrl} alt={combo.nombre} />
-          {tieneDescuento && (
-            <span className="discount-badge">-{descuento.toFixed(0)}%</span>
-          )}
-        </div>
-
-        <div className="card-body">
-          <h3 className="card-title">{combo.nombre || 'Nombre no disponible'}</h3>
-          
-          <div className="card-price">
-            {tieneDescuento ? (
-              <>
-                <span className="original-price">${precioOriginal.toFixed(2)}</span>
-                <span className="discounted-price">${precioFinal.toFixed(2)}</span>
-              </>
-            ) : (
-              <span className="discounted-price">${precioFinal.toFixed(2)}</span>
-            )}
-          </div>
-          
-          {/* 9. Asigna la nueva función al evento onClick del botón */}
-          <button className="btn-buy" onClick={handleBuyClick}>
-            ¡Lo Quiero!
-          </button>
-        </div>
-      </div>
-    </motion.div>
-  );
+        <div className="card-body">
+          <h3 className="card-title">{combo.nombre || 'Nombre no disponible'}</h3>
+          
+          <div className="card-price">
+            {tieneDescuento ? (
+              <>
+                <span className="original-price">${precioOriginal.toFixed(2)}</span>
+                <span className="discounted-price">${precioFinal.toFixed(2)}</span>
+              </>
+            ) : (
+              <span className="discounted-price">${precioFinal.toFixed(2)}</span>
+            )}
+          </div>
+          
+          {/* El botón ahora también llama a handleDetailsClick */}
+          <button className="btn-buy" onClick={handleDetailsClick}>
+            Ver Detalles
+          </button>
+        </div>
+      </div>
+    </motion.div>
+  );
 }
 
 export default ComboCard;
