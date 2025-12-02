@@ -318,9 +318,9 @@ const CarritoContent = ({
                     <span className={`small fw-bold ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Total a Pagar</span>
                     <div className="text-end">
                         {tipoOrden === 'domicilio' && (
-                             <div className={`small mb-1 fw-bold ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                                Envío: {calculandoEnvio ? <span className="spinner-border spinner-border-sm"/> : <span className="text-success">+${costoEnvio.toFixed(2)}</span>}
-                             </div>
+                               <div className={`small mb-1 fw-bold ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                                   Envío: {calculandoEnvio ? <span className="spinner-border spinner-border-sm"/> : <span className="text-success">+${costoEnvio.toFixed(2)}</span>}
+                               </div>
                         )}
                         <span className={`h4 fw-bold m-0 ${isDark ? 'text-white' : 'text-gray-900'}`}>${totalFinal.toFixed(2)}</span>
                     </div>
@@ -798,7 +798,7 @@ function ClientePage() {
                     </motion.div>
                 )}
 
-                {/* --- PESTAÑA 3: RECOMPENSAS (ESTILO ROJO/PUNTOS BLANCOS EN LIGHT MODE) --- */}
+                {/* --- PESTAÑA 3: RECOMPENSAS (CON DISEÑO CORREGIDO) --- */}
                 {!loading && activeTab === 'recompensas' && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                         <div className="text-center mb-5">
@@ -838,39 +838,33 @@ function ClientePage() {
                                             boxShadow: isDark ? 'none' : '0 10px 25px -5px rgba(0, 0, 0, 0.1)'
                                         }}
                                     >
-                                        {/* BARRA LATERAL (TICKET STUB) */}
+                                        {/* BARRA LATERAL (TICKET STUB) - LIMPIA Y SIN TEXTO "GIFT" */}
                                         <div 
                                             className="d-flex flex-column align-items-center justify-content-center p-4 text-white position-relative overflow-hidden" 
                                             style={{ 
                                                 width: '130px', 
-                                                // AQUÍ ESTÁ EL CAMBIO: Rojo fuerte en Light Mode, Azul en Dark Mode
+                                                // AQUI ESTA LA LOGICA DE COLOR: Dark = Gradiente Azul, Light = Gradiente Rojo (limpio)
                                                 background: isDark 
-                                                    ? 'linear-gradient(135deg, #2563eb, #1e40af)' // Azul
-                                                    : 'linear-gradient(135deg, #dc2626, #ef4444)'  // Rojo Brillante
+                                                    ? 'linear-gradient(135deg, #2563eb, #1e40af)' 
+                                                    : 'linear-gradient(135deg, #dc2626, #b91c1c)'
                                             }}
                                         >
-                                            {/* PUNTOS BLANCOS (POLKA DOTS) */}
-                                            <div 
-                                                className="position-absolute top-0 start-0 w-100 h-100 opacity-30" 
-                                                style={{ 
-                                                    backgroundImage: 'radial-gradient(circle, #ffffff 2px, transparent 2.5px)', 
-                                                    backgroundSize: '12px 12px' 
-                                                }}
-                                            ></div>
-                                            
+                                            {/* Eliminé el div de los puntos blancos (polka dots) */}
+
                                             {/* --- IMAGEN PREMIO.PNG --- */}
                                             <img 
                                                 src="premio.png" 
                                                 alt="Premio" 
-                                                className="mb-2 position-relative z-10 drop-shadow-md"
-                                                style={{ width: '50px', height: '50px', objectFit: 'contain' }}
+                                                className="position-relative z-10 drop-shadow-md"
+                                                style={{ width: '65px', height: '65px', objectFit: 'contain' }}
                                             />
                                             
-                                            <span className="fw-bold small position-relative z-10 tracking-widest">GIFT</span>
+                                            {/* ELIMINADO: El span que decía GIFT */}
                                         </div>
                                         
+                                        {/* LINEA PUNTEADA DE SEPARACION */}
                                         <div className="position-relative d-flex align-items-center">
-                                            <div style={{ width: '1px', height: '80%', borderLeft: '2px dashed #ccc' }}></div>
+                                            <div style={{ width: '1px', height: '80%', borderLeft: `2px dashed ${isDark ? '#3f3f46' : '#ccc'}` }}></div>
                                             <div style={{ position: 'absolute', top: '-12px', left: '-10px', width: '20px', height: '20px', borderRadius: '50%', background: bgBase }}></div>
                                             <div style={{ position: 'absolute', bottom: '-12px', left: '-10px', width: '20px', height: '20px', borderRadius: '50%', background: bgBase }}></div>
                                         </div>
@@ -879,7 +873,7 @@ function ClientePage() {
                                             <h5 className={`fw-bold mb-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>{recompensa.nombre}</h5>
                                             <p className="small mb-3" style={{ color: textMuted }}>Canjéalo en tu próximo pedido.</p>
                                             
-                                            {/* BADGE: Rojo en Light, Azul en Dark */}
+                                            {/* BADGE: Azul en Dark, Rojo en Light */}
                                             <span 
                                                 className={`rounded-pill px-3 py-1 fw-bold small align-self-start border ${
                                                     isDark 
