@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import AuthContext from '../context/AuthContext';
 import { getProductById } from '../services/productService'; 
 
-// (Los estilos se mantienen igual)
+// (Estilos visuales se mantienen igual)
 const modalStyles = {
   backdrop: {
     position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
@@ -46,7 +46,7 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
   const [totalPrice, setTotalPrice] = useState(0); 
   const [loadingToppings, setLoadingToppings] = useState(true);
 
-  // --- 1. EFECTO PARA BUSCAR DATOS Y DECIDIR ---
+  // --- 1. CARGA DE DATOS Y LÓGICA DE PRECIO "FUERZA BRUTA" ---
   useEffect(() => {
     if (product?.id) {
       setSelectedOptions({}); 
@@ -55,49 +55,42 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
         .then(data => {
           const tieneOpciones = data.grupos_opciones && data.grupos_opciones.length > 0;
 
-          // LOGICA DE CORRECCIÓN DE PRECIO:
-          // Determinamos si usamos el precio de la base de datos o el precio de oferta (que viene en 'product')
-          let precioBaseCorrecto = Number(data.precio);
-          
-          // 1. Si el producto que pasamos por prop (del menú) es más barato, es porque tiene descuento aplicado.
-          if (product.precio && Number(product.precio) < precioBaseCorrecto) {
-             precioBaseCorrecto = Number(product.precio);
-          }
-          // 2. O si la base de datos dice explícitamente que hay oferta y trae el precio rebajado
-          else if (data.en_oferta && data.precio_oferta) {
-             precioBaseCorrecto = Number(data.precio_oferta);
-          }
+          // 🔥 SOLUCIÓN DEFINITIVA: 
+          // Priorizamos SIEMPRE el precio que viene del 'product' (el del menú).
+          // Si product.precio existe (que sí existe porque se ve en el menú), lo usamos.
+          // Solo si fuera null/undefined usamos data.precio (el de la BD).
+          const precioMenu = product.precio ? Number(product.precio) : Number(data.precio);
 
-          // Creamos el objeto final con el precio corregido para que todo el componente lo use
-          const productoConPrecioCorregido = {
-              ...data,
-              precio: precioBaseCorrecto,
-              precio_original: data.precio // Guardamos el original para mostrar tachado
+          // Creamos un objeto híbrido: Detalles de la BD + Precio del Menú
+          const productoFusionado = {
+              ...data,                // Tomamos descripciones y opciones frescas de la BD
+              precio: precioMenu,     // SOBRESCRIBIMOS el precio con el del menú ($32.00)
+              precio_original: Number(data.precio) // Guardamos el alto ($41.03) para referencia
           };
 
           if (tieneOpciones) {
-            // CASO 1: SÍ tiene opciones -> Guardamos en estado
-            setFullProduct(productoConPrecioCorregido); 
+            // Caso con opciones: Guardamos y mostramos modal
+            setFullProduct(productoFusionado); 
             setLoadingToppings(false); 
           } else {
-            // CASO 2: NO tiene opciones -> Agregamos directo al carrito con el precio YA corregido
-            onAddToCart(productoConPrecioCorregido); 
+            // Caso directo: Enviamos al carrito el producto YA corregido
+            onAddToCart(productoFusionado); 
             onClose(); 
           }
         })
         .catch(err => {
-          console.error("Error al cargar detalles del producto:", err);
+          console.error("Error al cargar detalles:", err);
           onClose(); 
         });
     }
   }, [product, onAddToCart, onClose]);
 
   
-  // --- 2. EFECTO PARA CALCULAR EL PRECIO TOTAL ---
+  // --- 2. CÁLCULO DEL TOTAL ---
   useEffect(() => {
     if (!fullProduct) return;
 
-    // Aquí fullProduct.precio ya es el precio con descuento (gracias a la corrección arriba)
+    // Aquí fullProduct.precio YA ES $32.00 gracias a la fusión de arriba
     const basePrice = Number(fullProduct.precio);
     let optionsPrice = 0;
     
@@ -118,12 +111,10 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
 
   }, [fullProduct, selectedOptions]);
 
-  // --- 3. MANEJADORES DE SELECCIÓN ---
+
+  // --- 3. HANDLERS (Sin cambios) ---
   const handleRadioChange = (grupo, opcion) => {
-    setSelectedOptions(prev => ({
-      ...prev,
-      [grupo.id]: opcion
-    }));
+    setSelectedOptions(prev => ({ ...prev, [grupo.id]: opcion }));
   };
 
   const handleCheckboxChange = (grupo, opcion, isChecked) => {
@@ -138,7 +129,7 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
     });
   };
 
-  // --- 4. MANEJADOR PARA AÑADIR AL CARRITO ---
+  // --- 4. AGREGAR AL CARRITO ---
   const handleAddToCart = () => {
     const opcionesParaCarrito = [];
     fullProduct.grupos_opciones?.forEach(grupo => {
@@ -155,7 +146,7 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
 
     const cartProduct = {
       ...fullProduct,
-      precio: totalPrice, // Enviamos el total calculado (Base Oferta + Opciones)
+      precio: totalPrice, // Aquí va el total correcto ($32 + extras)
       opcionesSeleccionadas: opcionesParaCarrito,
       cartItemId: tieneOpciones ? `${fullProduct.id}-${Date.now()}` : null 
     };
@@ -165,78 +156,50 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
   };
 
 
-  // --- RENDERIZADO ---
+  // --- RENDER ---
   if (!product) return null; 
 
-  const displayImage = fullProduct.imagen_url
-    ? fullProduct.imagen_url
-    : `https://placehold.co/500x250/333333/CCCCCC?text=${encodeURIComponent(fullProduct.nombre)}`;
-    
+  const displayImage = fullProduct.imagen_url || `https://placehold.co/500x250/333333/CCCCCC?text=${encodeURIComponent(fullProduct.nombre)}`;
   const placeholderImage = `https://placehold.co/500x250/333333/CCCCCC?text=${encodeURIComponent(fullProduct.nombre)}`;
 
-  if (loadingToppings) {
-    return null;
-  }
+  if (loadingToppings) return null;
   
   return (
-    <motion.div
-      style={modalStyles.backdrop}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      onClick={onClose}
-    >
-      <motion.div
-        style={modalStyles.content}
-        initial={{ y: -50, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        onClick={(e) => e.stopPropagation()}
-      >
+    <motion.div style={modalStyles.backdrop} initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={onClose}>
+      <motion.div style={modalStyles.content} initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} onClick={(e) => e.stopPropagation()}>
+        
+        {/* HEADER IMAGEN */}
         <div style={modalStyles.header}>
           <button style={modalStyles.closeButton} onClick={onClose}>&times;</button>
           <img 
-            src={displayImage} 
-            alt={fullProduct.nombre} 
-            style={modalStyles.productImage}
+            src={displayImage} alt={fullProduct.nombre} style={modalStyles.productImage}
             onError={(e) => { e.target.onerror = null; e.target.src = placeholderImage; }}
           />
         </div>
 
+        {/* BODY CONTENIDO */}
         <div style={modalStyles.body}>
           <h2 style={modalStyles.productTitle}>{fullProduct.nombre}</h2>
-        
-          {fullProduct.descripcion && (
-            <p style={modalStyles.productDescription}>{fullProduct.descripcion}</p>
-          )}
+          {fullProduct.descripcion && <p style={modalStyles.productDescription}>{fullProduct.descripcion}</p>}
 
           <div style={modalStyles.optionsContainer}>
-            {!loadingToppings && fullProduct.grupos_opciones?.length > 0 && 
-              fullProduct.grupos_opciones.map(grupo => (
+            {!loadingToppings && fullProduct.grupos_opciones?.map(grupo => (
                 <div key={grupo.id} style={modalStyles.optionGroup}>
                   <h5 style={modalStyles.optionGroupTitle}>{grupo.nombre}</h5>
                   
                   {grupo.tipo_seleccion === 'unico' && (
                     <>
                       <div className="form-check">
-                        <input
-                          className="form-check-input"
-                          type="radio"
-                          name={`grupo-${grupo.id}`}
-                          id={`opcion-ninguna-${grupo.id}`}
-                          checked={!selectedOptions[grupo.id]}
+                        <input className="form-check-input" type="radio" name={`grupo-${grupo.id}`}
+                          id={`opcion-ninguna-${grupo.id}`} checked={!selectedOptions[grupo.id]}
                           onChange={() => handleRadioChange(grupo, null)} 
                         />
-                        <label className="form-check-label" htmlFor={`opcion-ninguna-${grupo.id}`}>
-                          Sin opción
-                        </label>
+                        <label className="form-check-label" htmlFor={`opcion-ninguna-${grupo.id}`}>Sin opción</label>
                       </div>
                       {grupo.opciones.map(opcion => (
                         <div className="form-check" key={opcion.id}>
-                          <input
-                            className="form-check-input"
-                            type="radio"
-                            name={`grupo-${grupo.id}`}
-                            id={`opcion-${opcion.id}`}
-                            checked={selectedOptions[grupo.id]?.id === opcion.id}
+                          <input className="form-check-input" type="radio" name={`grupo-${grupo.id}`}
+                            id={`opcion-${opcion.id}`} checked={selectedOptions[grupo.id]?.id === opcion.id}
                             onChange={() => handleRadioChange(grupo, opcion)}
                           />
                           <label className="form-check-label d-flex justify-content-between" htmlFor={`opcion-${opcion.id}`}>
@@ -250,10 +213,7 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
                   
                   {grupo.tipo_seleccion === 'multiple' && grupo.opciones.map(opcion => (
                     <div className="form-check" key={opcion.id}>
-                      <input
-                        className="form-check-input"
-                        type="checkbox"
-                        id={`opcion-${opcion.id}`}
+                      <input className="form-check-input" type="checkbox" id={`opcion-${opcion.id}`}
                         checked={!!selectedOptions[grupo.id]?.[opcion.id]}
                         onChange={(e) => handleCheckboxChange(grupo, opcion, e.target.checked)}
                       />
@@ -268,21 +228,19 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
           </div>
         </div>
 
+        {/* FOOTER PRECIO */}
         <div style={modalStyles.footer}>
           <div className="d-flex justify-content-between align-items-center">
             <div>
               <span className="fs-3 fw-bold">${totalPrice.toFixed(2)}</span>
-              
-              {/* Mostrar precio original tachado si hay descuento */}
+              {/* Muestra tachado si el precio de BD es mayor al que estamos cobrando */}
               {Number(fullProduct.precio_original) > Number(fullProduct.precio) && (
                 <span className="text-muted text-decoration-line-through ms-2">${Number(fullProduct.precio_original).toFixed(2)}</span>
               )}
             </div>
-
             <button className="btn btn-primary" onClick={handleAddToCart}>
               {'Hacer Pedido'}
             </button>
-            
           </div>
         </div>
 
