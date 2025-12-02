@@ -798,7 +798,7 @@ function ClientePage() {
                     </motion.div>
                 )}
 
-                {/* --- PESTAÑA 3: RECOMPENSAS (MEJORADA Y CORREGIDA) --- */}
+                {/* --- PESTAÑA 3: RECOMPENSAS (ESTILO ROJO/PUNTOS BLANCOS EN LIGHT MODE) --- */}
                 {!loading && activeTab === 'recompensas' && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                         <div className="text-center mb-5">
@@ -838,18 +838,25 @@ function ClientePage() {
                                             boxShadow: isDark ? 'none' : '0 10px 25px -5px rgba(0, 0, 0, 0.1)'
                                         }}
                                     >
-                                        {/* BARRA LATERAL (TICKET STUB): Cambia Azul vs Rojo */}
+                                        {/* BARRA LATERAL (TICKET STUB) */}
                                         <div 
                                             className="d-flex flex-column align-items-center justify-content-center p-4 text-white position-relative overflow-hidden" 
                                             style={{ 
                                                 width: '130px', 
-                                                // AQUÍ ESTÁ EL CAMBIO CLAVE DE COLOR
+                                                // AQUÍ ESTÁ EL CAMBIO: Rojo fuerte en Light Mode, Azul en Dark Mode
                                                 background: isDark 
                                                     ? 'linear-gradient(135deg, #2563eb, #1e40af)' // Azul
-                                                    : 'linear-gradient(135deg, #ef4444, #b91c1c)'  // Rojo
+                                                    : 'linear-gradient(135deg, #dc2626, #ef4444)'  // Rojo Brillante
                                             }}
                                         >
-                                            <div className="position-absolute top-0 start-0 w-100 h-100 opacity-20" style={{ backgroundImage: 'radial-gradient(circle, white 2px, transparent 2.5px)', backgroundSize: '10px 10px' }}></div>
+                                            {/* PUNTOS BLANCOS (POLKA DOTS) */}
+                                            <div 
+                                                className="position-absolute top-0 start-0 w-100 h-100 opacity-30" 
+                                                style={{ 
+                                                    backgroundImage: 'radial-gradient(circle, #ffffff 2px, transparent 2.5px)', 
+                                                    backgroundSize: '12px 12px' 
+                                                }}
+                                            ></div>
                                             
                                             {/* --- IMAGEN PREMIO.PNG --- */}
                                             <img 
@@ -871,6 +878,8 @@ function ClientePage() {
                                         <div className="p-4 flex-grow-1 d-flex flex-column justify-content-center">
                                             <h5 className={`fw-bold mb-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>{recompensa.nombre}</h5>
                                             <p className="small mb-3" style={{ color: textMuted }}>Canjéalo en tu próximo pedido.</p>
+                                            
+                                            {/* BADGE: Rojo en Light, Azul en Dark */}
                                             <span 
                                                 className={`rounded-pill px-3 py-1 fw-bold small align-self-start border ${
                                                     isDark 
@@ -995,7 +1004,8 @@ function ClientePage() {
                     </motion.div>
                 </div>
             )}
-        </div> 
+            
+        </div>
     );
 }
 
