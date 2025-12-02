@@ -27,7 +27,8 @@ import {
     ArrowLeft,
     ChevronRight,
     X,
-    Ticket 
+    Ticket,
+    Phone // <--- Importado icono de teléfono
 } from 'lucide-react'; 
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
@@ -64,6 +65,8 @@ const CarritoContent = ({
     direccion,
     referencia,
     setReferencia,
+    telefono,          // <--- Nuevo prop
+    setTelefono,       // <--- Nuevo prop
     guardarDireccion,
     setGuardarDireccion,
     subtotal,
@@ -291,6 +294,7 @@ const CarritoContent = ({
                                 />
                             </div>
                             
+                            {/* CAMPO REFERENCIA */}
                             <div className="form-group mb-3">
                                 <label className={`form-label small fw-bold ms-1 ${isDark ? 'text-gray-300' : 'text-red-700'}`}>
                                     Referencia de entrega
@@ -304,6 +308,28 @@ const CarritoContent = ({
                                         placeholder="Ej: Portón negro, casa de dos pisos..." 
                                         value={referencia} 
                                         onChange={(e) => setReferencia(e.target.value)} 
+                                    />
+                                </div>
+                            </div>
+
+                            {/* --- NUEVO CAMPO: TELÉFONO --- */}
+                            <div className="form-group mb-3">
+                                <label className={`form-label small fw-bold ms-1 ${isDark ? 'text-gray-300' : 'text-red-700'}`}>
+                                    Número de Contacto
+                                </label>
+                                <div className={`d-flex align-items-center px-3 py-3 rounded-3xl border transition-all ${isDark ? 'bg-black/20 border-white/10' : 'bg-white border-gray-200 focus-within:border-red-500'}`} style={{ borderRadius: '24px' }}>
+                                    <Phone size={18} className={`${isDark ? 'opacity-50' : 'text-red-500'} me-2`}/>
+                                    <input 
+                                        type="tel" 
+                                        className="bg-transparent border-0 w-100 outline-none shadow-none"
+                                        style={{ color: isDark ? 'white' : 'black', outline: 'none' }}
+                                        placeholder="Ej: 55 1234 5678" 
+                                        value={telefono} 
+                                        onChange={(e) => {
+                                            const val = e.target.value.replace(/[^0-9]/g, '');
+                                            setTelefono(val);
+                                        }} 
+                                        maxLength={10}
                                     />
                                 </div>
                             </div>
@@ -344,7 +370,12 @@ const CarritoContent = ({
                         className="btn btn-lg border-0 rounded-pill fw-bold text-white shadow-lg d-flex justify-content-center align-items-center gap-2 position-relative overflow-hidden"
                         style={{ background: btnGradient }}
                         onClick={viewState === 'cart' ? irASiguiente : handleProcederAlPago}
-                        disabled={pedidoActual.length === 0 || paymentLoading || (viewState === 'address' && !direccion) || calculandoEnvio}
+                        disabled={
+                            pedidoActual.length === 0 || 
+                            paymentLoading || 
+                            (viewState === 'address' && (!direccion || !telefono || telefono.length < 10)) || // Validación de teléfono
+                            calculandoEnvio
+                        }
                     >
                         {/* Efecto de brillo */}
                         <div className="position-absolute top-0 start-0 w-100 h-100 bg-white opacity-10" style={{ transform: 'skewX(-20deg) translateX(-150%)', animation: 'shine 3s infinite' }}></div>
@@ -423,6 +454,7 @@ function ClientePage() {
     const [direccionGuardada, setDireccionGuardada] = useState(null);
     const [guardarDireccion, setGuardarDireccion] = useState(false);
     const [referencia, setReferencia] = useState('');
+    const [telefono, setTelefono] = useState(''); // <--- Nuevo Estado Teléfono
       
     const [showCartModal, setShowCartModal] = useState(false);
     const [productoSeleccionadoParaModal, setProductoSeleccionadoParaModal] = useState(null);
@@ -509,6 +541,7 @@ function ClientePage() {
         setCostoEnvio(0); 
         setDireccion(null); 
         setReferencia(''); 
+        setTelefono(''); // <--- Limpiar teléfono
         setShowCartModal(false); 
         setCartViewState('cart');
     };
@@ -538,13 +571,19 @@ function ClientePage() {
             if (direccionGuardada.referencia) {
                 setReferencia(direccionGuardada.referencia); 
             }
+            if (direccionGuardada.telefono) { // <--- Cargar teléfono guardado
+                setTelefono(direccionGuardada.telefono);
+            }
         }
     };
 
     const handleProcederAlPago = async () => {
         if (totalFinal <= 0) return;
-        if (tipoOrden === 'domicilio' && !direccion) {
-            return notify('error', 'Por favor selecciona una dirección de entrega.');
+        
+        // Validación de Domicilio
+        if (tipoOrden === 'domicilio') {
+            if (!direccion) return notify('error', 'Por favor selecciona una dirección de entrega.');
+            if (!telefono || telefono.length < 10) return notify('error', 'Ingresa un número de contacto válido.');
         }
         
         setPaymentLoading(true);
@@ -567,7 +606,8 @@ function ClientePage() {
                 direccion_entrega: direccion?.description, 
                 latitude: direccion?.lat, 
                 longitude: direccion?.lng, 
-                referencia
+                referencia,
+                telefono // <--- Enviando teléfono al backend
             };
             
             setDatosParaCheckout(pedidoData);
@@ -589,7 +629,7 @@ function ClientePage() {
     const handleSuccessfulPayment = async () => {
         if (guardarDireccion && direccion) { 
             try { 
-                const data = { ...direccion, referencia };
+                const data = { ...direccion, referencia, telefono }; // <--- Guardando teléfono
                 await apiClient.put('/usuarios/mi-direccion', data); 
                 setDireccionGuardada(data); 
             } catch (e) { 
@@ -623,7 +663,7 @@ function ClientePage() {
     return (
         <div style={{ backgroundColor: bgBase, minHeight: '100vh', color: textMain, pointerEvents: (productoSeleccionadoParaModal || showPaymentModal || showCartModal) ? 'none' : 'auto' }}> 
               
-            {/* TABS NAVEGACIÓN - CORRECCIÓN APLICADA AQUÍ */}
+            {/* TABS NAVEGACIÓN */}
             <div className={`sticky-top pt-3 pb-2 px-3 mb-4 shadow-sm z-50 ${isDark ? 'bg-black/80 border-b border-white/10 backdrop-blur-md' : 'bg-white/80 border-b border-gray-200 backdrop-blur-md'}`}>
                 <ul className="nav nav-pills nav-fill gap-2 container" style={{ maxWidth: '800px' }}>
                     {[
@@ -638,8 +678,7 @@ function ClientePage() {
                                 style={{ 
                                     borderRadius: '16px', 
                                     transition: 'all 0.2s', 
-                                    backgroundColor: activeTab === tab.id ? (isDark ? '#2563eb' : '#dc2626') : 'transparent', // Rojo si activo y light
-                                    // AQUÍ ESTÁ EL CAMBIO: Si no es dark y no está activo, se fuerza el rojo (#dc2626)
+                                    backgroundColor: activeTab === tab.id ? (isDark ? '#2563eb' : '#dc2626') : 'transparent', 
                                     color: activeTab === tab.id ? 'white' : (isDark ? '#9ca3af' : '#dc2626') 
                                 }}
                             >
@@ -728,6 +767,8 @@ function ClientePage() {
                                     direccion={direccion}
                                     referencia={referencia}
                                     setReferencia={setReferencia}
+                                    telefono={telefono}        // <--- PASADO AQUI
+                                    setTelefono={setTelefono}  // <--- PASADO AQUI
                                     guardarDireccion={guardarDireccion}
                                     setGuardarDireccion={setGuardarDireccion}
                                     subtotal={subtotal}
@@ -942,6 +983,8 @@ function ClientePage() {
                                 direccion={direccion}
                                 referencia={referencia}
                                 setReferencia={setReferencia}
+                                telefono={telefono}        // <--- PASADO AQUI
+                                setTelefono={setTelefono}  // <--- PASADO AQUI
                                 guardarDireccion={guardarDireccion}
                                 setGuardarDireccion={setGuardarDireccion}
                                 subtotal={subtotal}

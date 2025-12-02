@@ -1,5 +1,6 @@
 import React from 'react';
-import { useTheme } from '../context/ThemeContext'; 
+import { useTheme } from '../context/ThemeContext';
+import { Phone } from 'lucide-react'; // <--- 1. IMPORTAMOS EL ICONO
 
 function DetallesPedidoModal({ pedido, onClose }) {
   if (!pedido) return null;
@@ -26,9 +27,9 @@ function DetallesPedidoModal({ pedido, onClose }) {
   const modalClass = theme === 'dark' ? 'modal-content text-bg-dark' : 'modal-content';
   const closeButtonClass = theme === 'dark' ? 'btn-close btn-close-white' : 'btn-close';
   const mutedTextColor = theme === 'dark' ? 'text-white-50' : 'text-muted';
-  const borderColor = theme === 'dark' ? 'border-secondary' : ''; // Borde más sutil en modo oscuro
+  const borderColor = theme === 'dark' ? 'border-secondary' : ''; 
 
-  // --- FUNCIÓN DE LIMPIEZA AGRESIVA (MANTENIDA) ---
+  // --- FUNCIÓN DE LIMPIEZA AGRESIVA ---
   const parseOpciones = (raw) => {
     if (!raw) return [];
     
@@ -84,7 +85,6 @@ function DetallesPedidoModal({ pedido, onClose }) {
                 </div>
                 <div className="d-flex justify-content-between align-items-center">
                 <span className={mutedTextColor}>Estado:</span>
-                {/* CORRECCIÓN 1: Si no hay estado, mostramos 'Completado' en verde */}
                 <span className={`badge ${!pedido.estado || pedido.estado === 'Completado' ? 'bg-success' : 'bg-warning text-dark'}`}>
                     {pedido.estado || 'Completado'}
                 </span>
@@ -99,7 +99,6 @@ function DetallesPedidoModal({ pedido, onClose }) {
                 const opcionesLimpias = parseOpciones(producto.opciones || producto.selectedOptions);
 
                 return (
-                  // CORRECCIÓN 2: Más espaciado (py-3) para que no se vean pegados
                   <li key={index} className={`py-3 border-bottom ${borderColor}`} style={{ borderColor: theme === 'dark' ? '#444' : '#eee' }}>
                     <div className="d-flex justify-content-between align-items-start mb-1">
                       <div>
@@ -112,7 +111,6 @@ function DetallesPedidoModal({ pedido, onClose }) {
                       </span>
                     </div>
 
-                    {/* Opciones con mejor indentación y color */}
                     {opcionesLimpias.length > 0 && (
                       <div className="mt-1 ps-3 border-start border-3" style={{ borderColor: theme === 'dark' ? '#555' : '#ddd' }}>
                         {opcionesLimpias.map((textoOpcion, opIndex) => (
@@ -127,15 +125,29 @@ function DetallesPedidoModal({ pedido, onClose }) {
               })}
             </ul>
             
-            {/* --- ENVÍO (Solo si aplica) --- */}
+            {/* --- SECCIÓN DE ENVÍO CON TELÉFONO --- */}
             {pedido.tipo_orden === 'domicilio' && (
               <div className="mt-4">
-                <h6 className="mb-2 border-bottom pb-2">Envío</h6>
+                <h6 className="mb-2 border-bottom pb-2">Datos de Entrega</h6>
                 <div className="small">
+                  
+                  {/* 2. AQUÍ MOSTRAMOS EL TELÉFONO DESTACADO */}
+                  {pedido.telefono && (
+                    <div className="mb-2 p-2 rounded d-flex align-items-center gap-2" style={{ backgroundColor: theme === 'dark' ? 'rgba(37, 99, 235, 0.2)' : '#eff6ff', color: theme === 'dark' ? '#60a5fa' : '#1d4ed8' }}>
+                        <Phone size={16} />
+                        <span className="fw-bold">Tel:</span>
+                        <a href={`tel:${pedido.telefono}`} className="fw-bold text-decoration-none" style={{ color: 'inherit' }}>
+                            {pedido.telefono}
+                        </a>
+                    </div>
+                  )}
+
                   <p className="mb-1"><strong>📍 Dirección:</strong> {pedido.direccion_entrega || pedido.direccion || 'No especificada'}</p>
+                  
                   {pedido.referencia && <p className="mb-1 text-muted">Ref: {pedido.referencia}</p>}
+                  
                   {googleMapsUrl && (
-                    <a href={googleMapsUrl} target="_blank" rel="noopener noreferrer" className="text-primary text-decoration-none fw-bold">
+                    <a href={googleMapsUrl} target="_blank" rel="noopener noreferrer" className="text-primary text-decoration-none fw-bold mt-1 d-inline-block">
                       Ver en Mapa &rarr;
                     </a>
                   )}
