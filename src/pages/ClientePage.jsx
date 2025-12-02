@@ -27,7 +27,7 @@ import {
     ArrowLeft,
     ChevronRight,
     X,
-    Ticket // Importamos el icono de Ticket
+    Ticket 
 } from 'lucide-react'; 
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
@@ -80,9 +80,12 @@ const CarritoContent = ({
 }) => {
 
     // --- VARIABLES DE ESTILO DINÁMICO (ROJO vs AZUL) ---
+    // CORRECCIÓN: Aseguramos que el color sea ROJO intenso en modo claro
     const accentColor = isDark ? 'text-blue-500' : 'text-red-600';
     const accentBg = isDark ? 'bg-blue-500' : 'bg-red-600';
     const accentBorder = isDark ? 'border-blue-500' : 'border-red-600';
+    
+    // Gradiente del botón principal
     const btnGradient = isDark 
         ? 'linear-gradient(135deg, #2563eb 0%, #4f46e5 100%)' // Azul
         : 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)'; // Rojo
@@ -102,13 +105,13 @@ const CarritoContent = ({
     const glassHeader = isDark 
         ? "bg-black/40 backdrop-blur-md border-b border-white/10" 
         : "bg-white/60 backdrop-blur-md border-b border-gray-200";
-     
+      
     const glassFooter = isDark 
         ? "bg-black/40 backdrop-blur-md border-t border-white/10" 
         : "bg-white/80 backdrop-blur-md border-t border-gray-200";
 
     const cardSelectable = (selected) => `
-        cursor-pointer rounded-2xl border p-3 transition-all duration-200 flex items-center gap-3 relative overflow-hidden
+        cursor-pointer rounded-3xl border p-3 transition-all duration-200 flex items-center gap-3 relative overflow-hidden
         ${selected 
             ? (isDark 
                 ? 'border-blue-500 bg-blue-500/10 text-white shadow-[0_0_15px_rgba(59,130,246,0.3)]' 
@@ -121,7 +124,7 @@ const CarritoContent = ({
 
     return (
         <div className="d-flex flex-column h-100 position-relative overflow-hidden"> 
-             
+              
             {/* 1. HEADER DEL CARRITO */}
             <div className={`flex-shrink-0 px-4 py-3 ${glassHeader} z-10 d-flex align-items-center justify-content-between`}>
                 {viewState === 'cart' ? (
@@ -143,7 +146,7 @@ const CarritoContent = ({
                     <div className="d-flex align-items-center w-100">
                         <button 
                             onClick={volverAlCarrito} 
-                            className={`btn btn-link p-0 me-3 ${isDark ? 'text-white/70 hover:text-white' : 'text-gray-500 hover:text-black'}`} 
+                            className={`btn btn-link p-0 me-3 ${isDark ? 'text-white/70 hover:text-white' : 'text-red-600 hover:text-red-800'}`} 
                             style={{textDecoration: 'none'}}
                         >
                             <ArrowLeft size={24} />
@@ -158,7 +161,7 @@ const CarritoContent = ({
             {/* 2. BODY DEL CARRITO */}
             <div className="flex-grow-1 overflow-auto custom-scrollbar px-4 py-3" style={{ minHeight: 0 }}>
                 <AnimatePresence mode="wait">
-                     
+                      
                     {viewState === 'cart' ? (
                         <motion.div 
                             key="cart-view"
@@ -176,7 +179,7 @@ const CarritoContent = ({
                                 )}
                                 
                                 {pedidoActual.map((item) => (
-                                    <div key={item.cartItemId || item.id} className={`d-flex align-items-center p-3 rounded-2xl ${isDark ? 'bg-white/5 border border-white/5' : 'bg-gray-50 border border-gray-100'}`}>
+                                    <div key={item.cartItemId || item.id} className={`d-flex align-items-center p-3 rounded-3xl ${isDark ? 'bg-white/5 border border-white/5' : 'bg-gray-50 border border-gray-100'}`}>
                                         <div className="flex-grow-1">
                                             <span className={`fw-bold d-block ${isDark ? 'text-white' : 'text-gray-900'}`}>{item.nombre}</span>
                                             {item.opcionesSeleccionadas && item.opcionesSeleccionadas.length > 0 && (
@@ -243,7 +246,7 @@ const CarritoContent = ({
                                                 <div 
                                                     className={`p-2 rounded-circle d-flex align-items-center justify-content-center ${
                                                         tipoOrden === opt.id 
-                                                            ? `${accentBg} !text-white` // Fondo rojo o azul según tema
+                                                            ? `${accentBg} !text-white` // ROJO en modo claro
                                                             : (isDark ? 'bg-white/10 text-gray-400' : 'bg-gray-200 text-gray-600')
                                                     }`} 
                                                     style={{width: '40px', height: '40px'}}
@@ -275,15 +278,16 @@ const CarritoContent = ({
                         >
                             {direccionGuardada && (
                                 <button 
-                                    className={`btn w-100 mb-3 rounded-2xl py-2 d-flex align-items-center justify-content-center gap-2 border-2 fw-semibold ${isDark ? 'btn-outline-primary' : 'btn-outline-danger'}`} 
+                                    // CORRECCIÓN: Botón redondeado y contorno rojo en light
+                                    className={`btn w-100 mb-3 rounded-pill py-2 d-flex align-items-center justify-content-center gap-2 border-2 fw-semibold ${isDark ? 'btn-outline-primary' : 'btn-outline-danger'}`} 
                                     onClick={usarDireccionGuardada}
                                 >
                                     <MapPin size={16}/> Usar dirección guardada
                                 </button>
                             )}
                             
-                            {/* AUMENTADO BORDER RADIUS AQUI */}
-                            <div className="rounded-3xl overflow-hidden border border-white/10 shadow-md mb-3" style={{ height: '300px' }}> 
+                            {/* CORRECCIÓN: Contenedor del Mapa totalmente redondeado (rounded-3xl) */}
+                            <div className="rounded-3xl overflow-hidden border border-white/10 shadow-md mb-3" style={{ height: '300px', borderRadius: '24px' }}> 
                                 <MapSelector 
                                     onLocationSelect={handleLocationSelect} 
                                     initialAddress={direccion} 
@@ -292,11 +296,12 @@ const CarritoContent = ({
                             </div>
                             
                             <div className="form-group mb-3">
-                                <label className={`form-label small fw-bold ms-1 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                                <label className={`form-label small fw-bold ms-1 ${isDark ? 'text-gray-300' : 'text-red-700'}`}> {/* Texto rojo si no es dark */}
                                     Referencia de entrega
                                 </label>
-                                <div className={`d-flex align-items-center px-3 py-2 rounded-2xl border transition-all ${isDark ? 'bg-black/20 border-white/10' : 'bg-gray-50 border-gray-200'}`}>
-                                    <MapPin size={18} className="opacity-50 me-2"/>
+                                {/* CORRECCIÓN: Input con borde muy redondeado (rounded-3xl) y color de borde corregido */}
+                                <div className={`d-flex align-items-center px-3 py-3 rounded-3xl border transition-all ${isDark ? 'bg-black/20 border-white/10' : 'bg-white border-gray-200 focus-within:border-red-500'}`} style={{ borderRadius: '24px' }}>
+                                    <MapPin size={18} className={`${isDark ? 'opacity-50' : 'text-red-500'} me-2`}/>
                                     <input 
                                         type="text" 
                                         className="bg-transparent border-0 w-100 outline-none shadow-none"
@@ -308,7 +313,7 @@ const CarritoContent = ({
                                 </div>
                             </div>
                             
-                            <div className="d-flex align-items-center gap-2 p-3 rounded-2xl bg-opacity-10" style={{backgroundColor: isDark ? 'rgba(59,130,246,0.1)' : 'rgba(239, 68, 68, 0.1)'}}>
+                            <div className="d-flex align-items-center gap-2 p-3 rounded-3xl bg-opacity-10" style={{backgroundColor: isDark ? 'rgba(59,130,246,0.1)' : 'rgba(239, 68, 68, 0.1)', borderRadius: '20px'}}>
                                 <input 
                                     className="form-check-input mt-0" 
                                     type="checkbox" 
@@ -316,7 +321,7 @@ const CarritoContent = ({
                                     checked={guardarDireccion} 
                                     onChange={(e) => setGuardarDireccion(e.target.checked)} 
                                 />
-                                <label className={`form-check-label small cursor-pointer ${isDark ? 'text-white' : 'text-black'}`} htmlFor="guardarDireccionCheck">
+                                <label className={`form-check-label small cursor-pointer ${isDark ? 'text-white' : 'text-gray-800'}`} htmlFor="guardarDireccionCheck">
                                     Guardar esta dirección para futuros pedidos
                                 </label>
                             </div>
@@ -386,7 +391,7 @@ function ClientePage() {
     const textMain = isDark ? '#ffffff' : '#1f2937';
     const textMuted = isDark ? '#a1a1aa' : '#374151'; 
     
-    // Configuración dinámica para el Menú y Tickets
+    // Configuración dinámica para el Menú y Tickets (Asegurando ROJO en light mode)
     const accentColor = isDark ? 'text-blue-500' : 'text-red-600';
     const accentBorder = isDark ? '3px solid #2563eb' : '3px solid #dc2626';
     const accentGradient = isDark 
@@ -419,14 +424,14 @@ function ClientePage() {
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [clientSecret, setClientSecret] = useState('');
     const [paymentLoading, setPaymentLoading] = useState(false);
-     
+      
     const [direccionGuardada, setDireccionGuardada] = useState(null);
     const [guardarDireccion, setGuardarDireccion] = useState(false);
     const [referencia, setReferencia] = useState('');
-     
+      
     const [showCartModal, setShowCartModal] = useState(false);
     const [productoSeleccionadoParaModal, setProductoSeleccionadoParaModal] = useState(null);
-     
+      
     const [cartViewState, setCartViewState] = useState('cart'); 
 
     const totalFinal = subtotal + costoEnvio;
@@ -622,7 +627,7 @@ function ClientePage() {
 
     return (
         <div style={{ backgroundColor: bgBase, minHeight: '100vh', color: textMain, pointerEvents: (productoSeleccionadoParaModal || showPaymentModal || showCartModal) ? 'none' : 'auto' }}> 
-             
+              
             {/* TABS NAVEGACIÓN */}
             <div className={`sticky-top pt-3 pb-2 px-3 mb-4 shadow-sm z-50 ${isDark ? 'bg-black/80 border-b border-white/10 backdrop-blur-md' : 'bg-white/80 border-b border-gray-200 backdrop-blur-md'}`}>
                 <ul className="nav nav-pills nav-fill gap-2 container" style={{ maxWidth: '800px' }}>
@@ -818,7 +823,7 @@ function ClientePage() {
                     </motion.div>
                 )}
 
-                {/* --- PESTAÑA 3: RECOMPENSAS (AQUÍ ESTÁ EL NUEVO DISEÑO TIPO TICKET) --- */}
+                {/* --- PESTAÑA 3: RECOMPENSAS --- */}
                 {!loading && activeTab === 'recompensas' && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                         <div className="text-center mb-5">
@@ -977,20 +982,19 @@ function ClientePage() {
                 </div>
             )}
 
-            {/* MODAL PAGO (AQUÍ ESTÁ LA CORRECCIÓN DEL TEXTO INVISIBLE) */}
+            {/* MODAL PAGO */}
             {showPaymentModal && clientSecret && (
                 <div className="modal show fade d-block" style={{ backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 1080 }}>
                     <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="modal-dialog modal-dialog-centered">
                         <div className="modal-content border-0 shadow-2xl overflow-hidden" style={{ backgroundColor: cardBg, borderRadius: '32px', color: textMain }}>
                             
-                            {/* ENCABEZADO CORREGIDO: Blanco con texto negro en Light, Azul con texto blanco en Dark */}
                             <div className={`modal-header border-0 p-4 ${isDark ? 'bg-blue-600 text-white' : 'bg-white text-gray-900'}`}>
                                 <h5 className="modal-title fw-bold d-flex align-items-center gap-2">
                                     <DollarSign size={24}/> Pago Seguro
                                 </h5>
                                 <button 
                                     type="button" 
-                                    className={`btn-close ${isDark ? 'btn-close-white' : ''}`} // En light mode usa el botón por defecto (oscuro)
+                                    className={`btn-close ${isDark ? 'btn-close-white' : ''}`} 
                                     onClick={() => setShowPaymentModal(false)}
                                 ></button>
                             </div>
