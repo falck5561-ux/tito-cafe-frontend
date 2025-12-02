@@ -26,7 +26,8 @@ import {
     Star,
     ArrowLeft,
     ChevronRight,
-    X
+    X,
+    Ticket // Importamos el icono de Ticket
 } from 'lucide-react'; 
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
@@ -78,6 +79,14 @@ const CarritoContent = ({
     closeModal 
 }) => {
 
+    // --- VARIABLES DE ESTILO DINÁMICO (ROJO vs AZUL) ---
+    const accentColor = isDark ? 'text-blue-500' : 'text-red-600';
+    const accentBg = isDark ? 'bg-blue-500' : 'bg-red-600';
+    const accentBorder = isDark ? 'border-blue-500' : 'border-red-600';
+    const btnGradient = isDark 
+        ? 'linear-gradient(135deg, #2563eb 0%, #4f46e5 100%)' // Azul
+        : 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)'; // Rojo
+
     const irASiguiente = () => {
         if (tipoOrden === 'domicilio') {
             setViewState('address');
@@ -99,10 +108,14 @@ const CarritoContent = ({
         : "bg-white/80 backdrop-blur-md border-t border-gray-200";
 
     const cardSelectable = (selected) => `
-        cursor-pointer rounded-xl border p-3 transition-all duration-200 flex items-center gap-3 relative overflow-hidden
+        cursor-pointer rounded-2xl border p-3 transition-all duration-200 flex items-center gap-3 relative overflow-hidden
         ${selected 
-            ? (isDark ? 'border-blue-500 bg-blue-500/10 text-white shadow-[0_0_15px_rgba(59,130,246,0.3)]' : 'border-blue-500 bg-blue-50 text-blue-900 shadow-sm') 
-            : (isDark ? 'border-white/10 hover:border-white/30 bg-white/5' : 'border-gray-200 hover:border-gray-300 bg-white')
+            ? (isDark 
+                ? 'border-blue-500 bg-blue-500/10 text-white shadow-[0_0_15px_rgba(59,130,246,0.3)]' 
+                : 'border-red-600 bg-red-50 text-red-900 shadow-sm') // Rojo en modo claro
+            : (isDark 
+                ? 'border-white/10 hover:border-white/30 bg-white/5' 
+                : 'border-gray-200 hover:border-gray-300 bg-white')
         }
     `;
 
@@ -114,13 +127,13 @@ const CarritoContent = ({
                 {viewState === 'cart' ? (
                     <>
                         <h5 className={`m-0 fw-bold d-flex align-items-center gap-2 ${isDark ? 'text-white' : 'text-gray-800'}`}>
-                            <ShoppingCart size={20} className="text-blue-500"/> 
+                            <ShoppingCart size={20} className={accentColor}/> 
                             {isModal ? 'Tu Pedido' : 'Mi Pedido'}
                         </h5>
                         {isModal && (
                             <button 
                                 onClick={closeModal}
-                                className={`btn btn-sm p-1 rounded-circle ${isDark ? 'hover:bg-white/10 text-white' : 'hover:bg-gray-100 text-gray-600'}`}
+                                className={`btn btn-sm p-1 rounded-circle ${isDark ? 'hover:bg-white/10 text-white' : 'hover:bg-gray-200 text-gray-800'}`}
                             >
                                 <X size={20} />
                             </button>
@@ -163,15 +176,15 @@ const CarritoContent = ({
                                 )}
                                 
                                 {pedidoActual.map((item) => (
-                                    <div key={item.cartItemId || item.id} className={`d-flex align-items-center p-3 rounded-xl ${isDark ? 'bg-white/5 border border-white/5' : 'bg-gray-50 border border-gray-100'}`}>
+                                    <div key={item.cartItemId || item.id} className={`d-flex align-items-center p-3 rounded-2xl ${isDark ? 'bg-white/5 border border-white/5' : 'bg-gray-50 border border-gray-100'}`}>
                                         <div className="flex-grow-1">
                                             <span className={`fw-bold d-block ${isDark ? 'text-white' : 'text-gray-900'}`}>{item.nombre}</span>
                                             {item.opcionesSeleccionadas && item.opcionesSeleccionadas.length > 0 && (
-                                                <small className={`${isDark ? 'text-blue-300' : 'text-blue-600'} d-block mb-1`}>
+                                                <small className={`${isDark ? 'text-blue-300' : 'text-gray-500'} d-block mb-1`}>
                                                     {item.opcionesSeleccionadas.map(op => op.nombre).join(', ')}
                                                 </small>
                                             )}
-                                            <div className="fw-bold text-success">
+                                            <div className={`fw-bold ${accentColor}`}>
                                                 ${(item.cantidad * Number(item.precio)).toFixed(2)}
                                             </div>
                                         </div>
@@ -227,11 +240,10 @@ const CarritoContent = ({
                                                 className={cardSelectable(tipoOrden === opt.id)}
                                                 onClick={() => setTipoOrden(opt.id)}
                                             >
-                                                {/* ICONO: Forzamos el color blanco con !text-white */}
                                                 <div 
                                                     className={`p-2 rounded-circle d-flex align-items-center justify-content-center ${
                                                         tipoOrden === opt.id 
-                                                            ? 'bg-blue-500 !text-white' 
+                                                            ? `${accentBg} !text-white` // Fondo rojo o azul según tema
                                                             : (isDark ? 'bg-white/10 text-gray-400' : 'bg-gray-200 text-gray-600')
                                                     }`} 
                                                     style={{width: '40px', height: '40px'}}
@@ -244,7 +256,7 @@ const CarritoContent = ({
                                                 </div>
                                                 {tipoOrden === opt.id && (
                                                     <div className="ms-auto">
-                                                        <CheckCircle size={20} className="text-blue-500 fill-current"/>
+                                                        <CheckCircle size={20} className={`${accentColor} fill-current`}/>
                                                     </div>
                                                 )}
                                             </div>
@@ -263,14 +275,15 @@ const CarritoContent = ({
                         >
                             {direccionGuardada && (
                                 <button 
-                                    className="btn btn-outline-primary w-100 mb-3 rounded-xl py-2 d-flex align-items-center justify-content-center gap-2 border-2 fw-semibold" 
+                                    className={`btn w-100 mb-3 rounded-2xl py-2 d-flex align-items-center justify-content-center gap-2 border-2 fw-semibold ${isDark ? 'btn-outline-primary' : 'btn-outline-danger'}`} 
                                     onClick={usarDireccionGuardada}
                                 >
                                     <MapPin size={16}/> Usar dirección guardada
                                 </button>
                             )}
                             
-                            <div className="rounded-xl overflow-hidden border border-white/10 shadow-md mb-3" style={{ height: '300px' }}> 
+                            {/* AUMENTADO BORDER RADIUS AQUI */}
+                            <div className="rounded-3xl overflow-hidden border border-white/10 shadow-md mb-3" style={{ height: '300px' }}> 
                                 <MapSelector 
                                     onLocationSelect={handleLocationSelect} 
                                     initialAddress={direccion} 
@@ -282,7 +295,7 @@ const CarritoContent = ({
                                 <label className={`form-label small fw-bold ms-1 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
                                     Referencia de entrega
                                 </label>
-                                <div className={`d-flex align-items-center px-3 py-2 rounded-xl border transition-all ${isDark ? 'bg-black/20 border-white/10 focus-within:border-blue-500' : 'bg-gray-50 border-gray-200 focus-within:border-blue-500'}`}>
+                                <div className={`d-flex align-items-center px-3 py-2 rounded-2xl border transition-all ${isDark ? 'bg-black/20 border-white/10' : 'bg-gray-50 border-gray-200'}`}>
                                     <MapPin size={18} className="opacity-50 me-2"/>
                                     <input 
                                         type="text" 
@@ -295,7 +308,7 @@ const CarritoContent = ({
                                 </div>
                             </div>
                             
-                            <div className="d-flex align-items-center gap-2 p-3 rounded-xl bg-opacity-10" style={{backgroundColor: isDark ? 'rgba(59,130,246,0.1)' : '#eff6ff'}}>
+                            <div className="d-flex align-items-center gap-2 p-3 rounded-2xl bg-opacity-10" style={{backgroundColor: isDark ? 'rgba(59,130,246,0.1)' : 'rgba(239, 68, 68, 0.1)'}}>
                                 <input 
                                     className="form-check-input mt-0" 
                                     type="checkbox" 
@@ -329,10 +342,11 @@ const CarritoContent = ({
                 <div className="d-grid gap-2">
                     <button
                         className="btn btn-lg border-0 rounded-pill fw-bold text-white shadow-lg d-flex justify-content-center align-items-center gap-2 position-relative overflow-hidden"
-                        style={{ background: 'linear-gradient(135deg, #2563eb 0%, #4f46e5 100%)' }}
+                        style={{ background: btnGradient }}
                         onClick={viewState === 'cart' ? irASiguiente : handleProcederAlPago}
                         disabled={pedidoActual.length === 0 || paymentLoading || (viewState === 'address' && !direccion) || calculandoEnvio}
                     >
+                        {/* Efecto de brillo */}
                         <div className="position-absolute top-0 start-0 w-100 h-100 bg-white opacity-10" style={{ transform: 'skewX(-20deg) translateX(-150%)', animation: 'shine 3s infinite' }}></div>
                         
                         {paymentLoading ? (
@@ -371,7 +385,14 @@ function ClientePage() {
     const cardBg = isDark ? '#18181b' : '#ffffff'; 
     const textMain = isDark ? '#ffffff' : '#1f2937';
     const textMuted = isDark ? '#a1a1aa' : '#374151'; 
-     
+    
+    // Configuración dinámica para el Menú y Tickets
+    const accentColor = isDark ? 'text-blue-500' : 'text-red-600';
+    const accentBorder = isDark ? '3px solid #2563eb' : '3px solid #dc2626';
+    const accentGradient = isDark 
+        ? 'linear-gradient(135deg, #2563eb, #1e40af)' 
+        : 'linear-gradient(135deg, #ef4444, #b91c1c)'; // Rojo en light
+
     const {
         pedidoActual,
         subtotal,
@@ -615,10 +636,10 @@ function ClientePage() {
                                 className={`nav-link d-flex align-items-center justify-content-center gap-2 ${activeTab === tab.id ? 'active fw-bold shadow-md' : ''} ${isDark && activeTab !== tab.id ? 'text-gray-400 hover:text-white' : ''}`}
                                 onClick={() => setActiveTab(tab.id)}
                                 style={{ 
-                                    borderRadius: '12px', 
+                                    borderRadius: '16px', 
                                     transition: 'all 0.2s', 
-                                    backgroundColor: activeTab === tab.id ? (isDark ? '#2563eb' : 'white') : 'transparent', 
-                                    color: activeTab === tab.id ? (isDark ? 'white' : '#2563eb') : undefined 
+                                    backgroundColor: activeTab === tab.id ? (isDark ? '#2563eb' : '#dc2626') : 'transparent', // Rojo en light
+                                    color: activeTab === tab.id ? 'white' : undefined 
                                 }}
                             >
                                 {tab.icon} {tab.label}
@@ -636,27 +657,27 @@ function ClientePage() {
                 {!loading && activeTab === 'crear' && (
                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="row">
                         <div className="col-lg-8 mb-4">
-                            <h2 className={`fw-bold mb-4 px-3 border-start border-4 border-blue-500 ${isDark ? 'text-white' : 'text-gray-900'}`}>¿Qué se te antoja hoy?</h2>
+                            {/* Titulo con borde de color dinámico */}
+                            <h2 className={`fw-bold mb-4 px-3 border-start border-4 ${isDark ? 'border-blue-500' : 'border-red-600'} ${isDark ? 'text-white' : 'text-gray-900'}`}>¿Qué se te antoja hoy?</h2>
+                            
                             <div className="row g-3">
                                 {menuItems.map(item => (
                                     <div key={item.id} className="col-6 col-md-4">
                                         <motion.div 
                                             whileHover={{ y: -8, scale: 1.02 }}
-                                            // --- BORDES FORZADOS: ROJO (Luz), AZUL (Dark) ---
+                                            // Aumentado a rounded-3xl para quitar borde cuadrado
                                             className="card h-100 shadow-lg overflow-hidden position-relative"
                                             style={{ 
                                                 backgroundColor: cardBg, 
-                                                borderRadius: '24px', 
+                                                borderRadius: '32px', 
                                                 cursor: 'pointer',
-                                                border: item.en_oferta 
-                                                    ? (isDark ? '3px solid #2563eb' : '3px solid #dc2626') // Azul vs Rojo
-                                                    : 'none'
+                                                border: item.en_oferta ? accentBorder : 'none'
                                             }}
                                             onClick={() => setProductoSeleccionadoParaModal(item)}
                                         >
                                             <div className="card-body d-flex flex-column text-center p-3 md:p-4">
-                                                <div className={`mb-3 mb-md-4 d-flex align-items-center justify-content-center rounded-circle mx-auto shadow-sm ${isDark ? 'bg-white/5' : 'bg-blue-50'}`} style={{ width: '60px', height: '60px', md: {width: '80px', height: '80px'} }}>
-                                                    <Utensils size={28} className="text-blue-500 md:w-8 md:h-8" />
+                                                <div className={`mb-3 mb-md-4 d-flex align-items-center justify-content-center rounded-circle mx-auto shadow-sm ${isDark ? 'bg-white/5' : 'bg-gray-100'}`} style={{ width: '60px', height: '60px', md: {width: '80px', height: '80px'} }}>
+                                                    <Utensils size={28} className={isDark ? 'text-blue-500' : 'text-red-600'} />
                                                 </div>
                                                 
                                                 <h6 className={`card-title fw-bold mb-2 line-clamp-2 ${isDark ? 'text-white' : 'text-gray-900'}`} style={{fontSize: '1rem'}}>{item.nombre}</h6>
@@ -664,12 +685,11 @@ function ClientePage() {
                                                 <div className="mt-auto pt-2">
                                                     {item.en_oferta ? (
                                                         <div className="d-flex justify-content-center align-items-center gap-2 flex-wrap">
-                                                            {/* --- PRECIO ORIGINAL: ROJO (Luz), AZUL (Dark) --- */}
                                                             <small 
                                                                 className="text-decoration-line-through fw-bold" 
                                                                 style={{ 
                                                                     fontSize: '0.9rem',
-                                                                    color: isDark ? '#3b82f6' : '#dc2626' // #3b82f6 (blue-500), #dc2626 (red-600)
+                                                                    color: isDark ? '#3b82f6' : '#dc2626'
                                                                 }}
                                                             >
                                                                 ${Number(item.precio_original).toFixed(2)}
@@ -680,7 +700,7 @@ function ClientePage() {
                                                             </span>
                                                         </div>
                                                     ) : (
-                                                        <span className="fw-bold text-blue-500 fs-5">
+                                                        <span className={`fw-bold fs-5 ${accentColor}`}>
                                                             ${Number(item.precio).toFixed(2)}
                                                         </span>
                                                     )}
@@ -693,7 +713,7 @@ function ClientePage() {
                         </div>
 
                         <div className="col-lg-4 d-none d-lg-block">
-                            <div className="shadow-xl border border-white/5" style={{ position: 'sticky', top: '100px', height: 'calc(100vh - 120px)', backgroundColor: cardBg, borderRadius: '24px' }}>
+                            <div className="shadow-xl border border-white/5" style={{ position: 'sticky', top: '100px', height: 'calc(100vh - 120px)', backgroundColor: cardBg, borderRadius: '32px' }}>
                                 <CarritoContent
                                     isModal={false}
                                     pedidoActual={pedidoActual}
@@ -738,14 +758,14 @@ function ClientePage() {
                         ) : (
                             <div className="d-flex flex-column gap-3">
                                 {misPedidos.map(p => (
-                                    <div key={p.id} className="card border-0 shadow-sm transition-transform hover:-translate-y-1" style={{ backgroundColor: cardBg, borderRadius: '16px', overflow: 'hidden' }}>
+                                    <div key={p.id} className="card border-0 shadow-sm transition-transform hover:-translate-y-1" style={{ backgroundColor: cardBg, borderRadius: '24px', overflow: 'hidden' }}>
                                         <div 
                                             className="card-header border-0 d-flex justify-content-between align-items-center p-4 bg-transparent cursor-pointer" 
                                             onClick={() => setOrdenExpandida(ordenExpandida === p.id ? null : p.id)}
                                         >
                                             <div className="d-flex align-items-center gap-4">
                                                 <div className={`rounded-2xl p-3 shadow-sm ${isDark ? 'bg-white/5' : 'bg-blue-50'}`}>
-                                                    <Package size={24} className="text-blue-500"/>
+                                                    <Package size={24} className={isDark ? 'text-blue-500' : 'text-blue-600'}/>
                                                 </div>
                                                 <div>
                                                     <div className={`fw-bold fs-5 ${isDark ? 'text-white' : 'text-gray-900'}`}>Pedido #{p.id}</div>
@@ -798,21 +818,13 @@ function ClientePage() {
                     </motion.div>
                 )}
 
-                {/* --- PESTAÑA 3: RECOMPENSAS (DISEÑO MEJORADO) --- */}
+                {/* --- PESTAÑA 3: RECOMPENSAS (AQUÍ ESTÁ EL NUEVO DISEÑO TIPO TICKET) --- */}
                 {!loading && activeTab === 'recompensas' && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                         <div className="text-center mb-5">
-                            {/* ÍCONO HEADER: Cambia de color según el modo (Azul vs Rojo/Naranja) */}
                             <div 
                                 className="d-inline-block p-4 rounded-full mb-3 shadow-lg"
-                                style={{ 
-                                    background: isDark 
-                                        ? 'linear-gradient(to top right, #3b82f6, #2563eb)' 
-                                        : 'linear-gradient(to top right, #ef4444, #f97316)',
-                                    boxShadow: isDark 
-                                        ? '0 10px 15px -3px rgba(59, 130, 246, 0.3)' 
-                                        : '0 10px 15px -3px rgba(239, 68, 68, 0.3)'
-                                }}
+                                style={{ background: accentGradient }}
                             >
                                 <Gift size={40} className="text-white"/>
                             </div>
@@ -830,60 +842,44 @@ function ClientePage() {
                                 <div key={recompensa.id} className="col-md-8 col-lg-6">
                                     <motion.div 
                                         whileHover={{ scale: 1.02 }}
-                                        className="d-flex position-relative shadow-2xl"
+                                        className="d-flex position-relative shadow-lg"
                                         style={{ 
                                             background: isDark ? '#18181b' : 'white', 
-                                            // AQUI SE APLICA EL BORDE REDONDEADO FUERTE
-                                            borderRadius: '24px', 
+                                            borderRadius: '24px', // Borde redondeado, no cuadrado
                                             overflow: 'hidden',
-                                            // BORDE SUTIL: Azul en Dark, Rojo en Light
-                                            border: isDark ? '1px solid rgba(59, 130, 246, 0.2)' : '1px solid rgba(239, 68, 68, 0.2)',
-                                            boxShadow: isDark ? 'none' : '0 10px 25px -5px rgba(0, 0, 0, 0.1)'
+                                            minHeight: '140px'
                                         }}
                                     >
-                                        {/* BARRA LATERAL (STUB) - COLOR VARIABLE */}
+                                        {/* PARTE IZQUIERDA: ICONO */}
                                         <div 
-                                            className="d-flex flex-column align-items-center justify-content-center p-4 text-white position-relative" 
+                                            className="d-flex align-items-center justify-content-center text-white" 
                                             style={{ 
-                                                width: '130px', 
-                                                // LOGICA DE COLOR: Dark = Gradiente Azul, Light = Gradiente Rojo Intenso
-                                                background: isDark 
-                                                    ? 'linear-gradient(135deg, #2563eb, #1e40af)' 
-                                                    : 'linear-gradient(135deg, #dc2626, #991b1b)'
+                                                width: '110px', 
+                                                background: accentGradient 
                                             }}
                                         >
-                                            <img 
-                                                src="premio.png" 
-                                                alt="Premio" 
-                                                className="position-relative z-10 drop-shadow-md"
-                                                style={{ width: '65px', height: '65px', objectFit: 'contain' }}
-                                            />
+                                            <Ticket size={40} className="text-white opacity-90"/>
                                         </div>
                                         
-                                        {/* LINEA PUNTEADA DE SEPARACION Y CORTES CIRCULARES */}
-                                        <div className="position-relative d-flex align-items-center">
-                                            {/* Linea punteada */}
-                                            <div style={{ width: '1px', height: '80%', borderLeft: `2px dashed ${isDark ? '#3f3f46' : '#e5e7eb'}` }}></div>
+                                        {/* DIVISOR Y "MORDIDAS" (Bites) para efecto ticket */}
+                                        <div className="position-relative d-flex align-items-center" style={{ width: '0px' }}>
+                                            {/* Linea punteada vertical */}
+                                            <div style={{ position: 'absolute', left: '-1px', height: '80%', borderLeft: `2px dashed ${isDark ? '#52525b' : '#d1d5db'}` }}></div>
                                             
-                                            {/* Circulo corte superior */}
-                                            <div style={{ position: 'absolute', top: '-15px', left: '-10px', width: '20px', height: '20px', borderRadius: '50%', background: bgBase }}></div>
+                                            {/* Circulo mordida superior */}
+                                            <div style={{ position: 'absolute', top: '-12px', left: '-12px', width: '24px', height: '24px', borderRadius: '50%', background: bgBase }}></div>
                                             
-                                            {/* Circulo corte inferior */}
-                                            <div style={{ position: 'absolute', bottom: '-15px', left: '-10px', width: '20px', height: '20px', borderRadius: '50%', background: bgBase }}></div>
+                                            {/* Circulo mordida inferior */}
+                                            <div style={{ position: 'absolute', bottom: '-12px', left: '-12px', width: '24px', height: '24px', borderRadius: '50%', background: bgBase }}></div>
                                         </div>
 
-                                        {/* CONTENIDO DEL CUPÓN */}
-                                        <div className="p-4 flex-grow-1 d-flex flex-column justify-content-center">
+                                        {/* PARTE DERECHA: TEXTO */}
+                                        <div className="p-4 flex-grow-1 d-flex flex-column justify-content-center ps-5">
                                             <h5 className={`fw-bold mb-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>{recompensa.nombre}</h5>
-                                            <p className="small mb-3" style={{ color: textMuted }}>Canjéalo en tu próximo pedido.</p>
+                                            <p className="small mb-2" style={{ color: textMuted }}>Gratis por tus 20 compras.</p>
                                             
-                                            {/* BADGE: Azul en Dark, Rojo en Light */}
                                             <span 
-                                                className={`rounded-pill px-3 py-1 fw-bold small align-self-start border ${
-                                                    isDark 
-                                                        ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' 
-                                                        : 'bg-red-500/10 border-red-500/20 text-red-600'
-                                                }`}
+                                                className={`badge rounded-pill align-self-start px-3 py-2 ${isDark ? 'bg-blue-500/20 text-blue-300' : 'bg-red-100 text-red-600'}`}
                                             >
                                                 Activo
                                             </span>
@@ -896,6 +892,7 @@ function ClientePage() {
                 )}
             </div>
 
+            {/* BOTÓN FLOTANTE MÓVIL */}
             {activeTab === 'crear' && pedidoActual.length > 0 && (
                 <div 
                     className="position-fixed bottom-0 end-0 m-4 d-lg-none" 
@@ -911,7 +908,7 @@ function ClientePage() {
                         style={{ 
                             width: '64px', 
                             height: '64px', 
-                            background: 'linear-gradient(135deg, #2563eb 0%, #4f46e5 100%)',
+                            background: accentGradient,
                             color: 'white'
                         }}
                     >
@@ -926,6 +923,7 @@ function ClientePage() {
                 </div>
             )}
 
+            {/* MODAL CARRITO */}
             {showCartModal && (
                 <div className="modal show fade d-block" style={{ backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 1060 }}>
                     <motion.div 
@@ -933,7 +931,7 @@ function ClientePage() {
                         animate={{ scale: 1, opacity: 1 }} 
                         className="modal-dialog modal-dialog-centered mx-3" 
                     >
-                        <div className="modal-content border-0 shadow-2xl rounded-3xl overflow-hidden" style={{ backgroundColor: cardBg, color: textMain, maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}>
+                        <div className="modal-content border-0 shadow-2xl rounded-3xl overflow-hidden" style={{ backgroundColor: cardBg, borderRadius: '32px', color: textMain, maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}>
                             <CarritoContent
                                 isModal={true}
                                 closeModal={() => { setShowCartModal(false); setCartViewState('cart'); }} 
@@ -967,6 +965,7 @@ function ClientePage() {
                 </div>
             )}
 
+            {/* MODAL DETALLE PRODUCTO */}
             {productoSeleccionadoParaModal && (
                 <div style={{ pointerEvents: 'auto', zIndex: 1070 }}>
                     <ProductDetailModal
@@ -978,18 +977,26 @@ function ClientePage() {
                 </div>
             )}
 
+            {/* MODAL PAGO (AQUÍ ESTÁ LA CORRECCIÓN DEL TEXTO INVISIBLE) */}
             {showPaymentModal && clientSecret && (
                 <div className="modal show fade d-block" style={{ backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 1080 }}>
                     <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="modal-dialog modal-dialog-centered">
-                        <div className="modal-content border-0 shadow-2xl overflow-hidden" style={{ backgroundColor: cardBg, borderRadius: '24px', color: textMain }}>
-                            <div className="modal-header border-0 bg-blue-600 text-white p-4">
+                        <div className="modal-content border-0 shadow-2xl overflow-hidden" style={{ backgroundColor: cardBg, borderRadius: '32px', color: textMain }}>
+                            
+                            {/* ENCABEZADO CORREGIDO: Blanco con texto negro en Light, Azul con texto blanco en Dark */}
+                            <div className={`modal-header border-0 p-4 ${isDark ? 'bg-blue-600 text-white' : 'bg-white text-gray-900'}`}>
                                 <h5 className="modal-title fw-bold d-flex align-items-center gap-2">
                                     <DollarSign size={24}/> Pago Seguro
                                 </h5>
-                                <button type="button" className="btn-close btn-close-white" onClick={() => setShowPaymentModal(false)}></button>
+                                <button 
+                                    type="button" 
+                                    className={`btn-close ${isDark ? 'btn-close-white' : ''}`} // En light mode usa el botón por defecto (oscuro)
+                                    onClick={() => setShowPaymentModal(false)}
+                                ></button>
                             </div>
+
                             <div className="modal-body p-4">
-                                <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: isDark ? 'night' : 'stripe', variables: { colorPrimary: '#2563eb', borderRadius: '12px' } } }}>
+                                <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: isDark ? 'night' : 'stripe', variables: { colorPrimary: isDark ? '#2563eb' : '#dc2626', borderRadius: '16px' } } }}>
                                     <CheckoutForm 
                                         handleSuccess={handleSuccessfulPayment} 
                                         total={totalFinal}
