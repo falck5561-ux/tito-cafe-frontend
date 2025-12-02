@@ -643,7 +643,6 @@ function ClientePage() {
                                         <motion.div 
                                             whileHover={{ y: -8, scale: 1.02 }}
                                             // --- BORDES FORZADOS: ROJO (Luz), AZUL (Dark) ---
-                                            // Usamos style={{ border: ... }} para garantizar prioridad
                                             className="card h-100 shadow-lg overflow-hidden position-relative"
                                             style={{ 
                                                 backgroundColor: cardBg, 
@@ -799,17 +798,17 @@ function ClientePage() {
                     </motion.div>
                 )}
 
-                {/* --- PESTAÑA 3: RECOMPENSAS (MEJORADA) --- */}
+                {/* --- PESTAÑA 3: RECOMPENSAS (MEJORADA Y CORREGIDA) --- */}
                 {!loading && activeTab === 'recompensas' && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                         <div className="text-center mb-5">
-                            {/* El ícono del encabezado también cambia de color según el modo */}
+                            {/* ÍCONO HEADER: Cambia de color según el modo (Azul vs Rojo/Naranja) */}
                             <div 
                                 className="d-inline-block p-4 rounded-full mb-3 shadow-lg"
                                 style={{ 
                                     background: isDark 
-                                        ? 'linear-gradient(to top right, #3b82f6, #2563eb)' // Azul
-                                        : 'linear-gradient(to top right, #ef4444, #f97316)', // Rojo/Naranja
+                                        ? 'linear-gradient(to top right, #3b82f6, #2563eb)' 
+                                        : 'linear-gradient(to top right, #ef4444, #f97316)',
                                     boxShadow: isDark 
                                         ? '0 10px 15px -3px rgba(59, 130, 246, 0.3)' 
                                         : '0 10px 15px -3px rgba(239, 68, 68, 0.3)'
@@ -834,23 +833,22 @@ function ClientePage() {
                                         className="d-flex position-relative overflow-hidden shadow-2xl rounded-3xl"
                                         style={{ 
                                             background: isDark ? '#18181b' : 'white', 
-                                            // Borde sutil: Azul en Dark, Rojo sutil en Light
+                                            // BORDE SUTIL: Azul en Dark, Rojo en Light
                                             border: isDark ? '1px solid rgba(59, 130, 246, 0.2)' : '1px solid rgba(239, 68, 68, 0.2)',
                                             boxShadow: isDark ? 'none' : '0 10px 25px -5px rgba(0, 0, 0, 0.1)'
                                         }}
                                     >
-                                        {/* BARRA LATERAL: LÓGICA DE COLOR (AZUL vs ROJO) */}
+                                        {/* BARRA LATERAL (TICKET STUB): Cambia Azul vs Rojo */}
                                         <div 
                                             className="d-flex flex-column align-items-center justify-content-center p-4 text-white position-relative overflow-hidden" 
                                             style={{ 
                                                 width: '130px', 
-                                                // AQUÍ ESTÁ EL CAMBIO PRINCIPAL DE COLOR
+                                                // AQUÍ ESTÁ EL CAMBIO CLAVE DE COLOR
                                                 background: isDark 
-                                                    ? 'linear-gradient(135deg, #2563eb, #1e40af)' // Azul vibrante a oscuro
-                                                    : 'linear-gradient(135deg, #ef4444, #b91c1c)'  // Rojo vibrante a oscuro
+                                                    ? 'linear-gradient(135deg, #2563eb, #1e40af)' // Azul
+                                                    : 'linear-gradient(135deg, #ef4444, #b91c1c)'  // Rojo
                                             }}
                                         >
-                                            {/* Patrón de fondo sutil */}
                                             <div className="position-absolute top-0 start-0 w-100 h-100 opacity-20" style={{ backgroundImage: 'radial-gradient(circle, white 2px, transparent 2.5px)', backgroundSize: '10px 10px' }}></div>
                                             
                                             {/* --- IMAGEN PREMIO.PNG --- */}
@@ -864,7 +862,6 @@ function ClientePage() {
                                             <span className="fw-bold small position-relative z-10 tracking-widest">GIFT</span>
                                         </div>
                                         
-                                        {/* Separador tipo "Cupón" */}
                                         <div className="position-relative d-flex align-items-center">
                                             <div style={{ width: '1px', height: '80%', borderLeft: '2px dashed #ccc' }}></div>
                                             <div style={{ position: 'absolute', top: '-12px', left: '-10px', width: '20px', height: '20px', borderRadius: '50%', background: bgBase }}></div>
@@ -874,8 +871,6 @@ function ClientePage() {
                                         <div className="p-4 flex-grow-1 d-flex flex-column justify-content-center">
                                             <h5 className={`fw-bold mb-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>{recompensa.nombre}</h5>
                                             <p className="small mb-3" style={{ color: textMuted }}>Canjéalo en tu próximo pedido.</p>
-                                            
-                                            {/* Badge de estado: Cambia de color según el modo también para combinar */}
                                             <span 
                                                 className={`rounded-pill px-3 py-1 fw-bold small align-self-start border ${
                                                     isDark 
@@ -892,6 +887,7 @@ function ClientePage() {
                         </div>
                     </motion.div>
                 )}
+            </div>
 
             {activeTab === 'crear' && pedidoActual.length > 0 && (
                 <div 
