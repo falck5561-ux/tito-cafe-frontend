@@ -6,20 +6,23 @@ import {
 } from 'lucide-react';
 import apiClient from '../services/api';
 import toast from 'react-hot-toast';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../context/ThemeContext'; 
 
 // --- SUB-COMPONENTE: Tarjeta de Grupo de Opciones ---
 function GrupoOpcionesCard({ grupo, onOptionAdded, onOptionDeleted, onGroupDeleted, isDark }) {
   const [nombreOpcion, setNombreOpcion] = useState('');
   const [precioOpcion, setPrecioOpcion] = useState('');
 
-  // --- ESTILOS DE LA TARJETA ---
-  // En dark mode, usamos un fondo negro semitransparente para que se vea elegante
-  const cardBg = isDark ? 'bg-black bg-opacity-40 border-secondary border-opacity-25' : 'bg-white border-gray-200 shadow-sm';
-  const headerBg = isDark ? 'bg-white bg-opacity-5 border-bottom border-secondary border-opacity-25' : 'bg-gray-50 border-bottom border-gray-200';
+  // ESTILOS SUAVES (No negro fuerte)
+  const cardBg = isDark ? 'bg-secondary bg-opacity-10 border-secondary border-opacity-25' : 'bg-white border-gray-200 shadow-sm';
+  const headerBorder = isDark ? 'border-secondary border-opacity-25' : 'border-gray-100';
   const textColor = isDark ? 'text-white' : 'text-dark';
   const subTextColor = isDark ? 'text-white-50' : 'text-muted';
-  const badgeBg = isDark ? 'bg-dark border-secondary border-opacity-50' : 'bg-gray-100 border-gray-300 text-dark';
+  
+  // Badge (Pildoras de opciones)
+  const badgeBg = isDark ? 'bg-dark border-secondary border-opacity-50' : 'bg-gray-100 border-gray-200 text-dark';
+  
+  // Inputs internos
   const inputBg = isDark ? 'bg-dark text-white border-secondary border-opacity-50' : 'bg-white text-dark border-gray-300';
 
   const handleAddOption = async () => {
@@ -61,7 +64,7 @@ function GrupoOpcionesCard({ grupo, onOptionAdded, onOptionDeleted, onGroupDelet
   return (
     <div className={`rounded-3 border mb-3 overflow-hidden ${cardBg}`}>
       {/* Header de la Tarjeta */}
-      <div className={`d-flex justify-content-between align-items-center p-3 ${headerBg}`}>
+      <div className={`d-flex justify-content-between align-items-center p-3 border-bottom ${headerBorder}`}>
         <div>
           <h6 className={`m-0 fw-bold ${textColor} d-flex align-items-center gap-2`}>
             <Layers size={16} className="text-info"/> {grupo.nombre}
@@ -127,19 +130,23 @@ export default function ProductModal({ show, handleClose, handleSave, productoAc
   const { theme } = useTheme(); 
   const isDark = theme === 'dark';
 
-  // --- VARIABLES DE TEMA GENERAL ---
-  const modalBg = isDark ? '#18181b' : '#ffffff';
-  const textColor = isDark ? '#ffffff' : '#212529';
+  // --- PALETA DE COLORES (Gris Suave, no Negro Puro) ---
+  const modalBg = isDark ? '#212529' : '#ffffff'; // Gris Bootstrap Dark estándar
+  const textColor = isDark ? '#f8f9fa' : '#212529';
   const subTextColor = isDark ? 'text-white-50' : 'text-muted';
   const borderColor = isDark ? 'border-secondary border-opacity-25' : 'border-gray-200';
   
-  // Clases CSS dinámicas
-  const inputBaseClass = `form-control ${isDark ? 'bg-dark text-white border-secondary border-opacity-50' : 'bg-light text-dark border-gray-300'} focus-ring focus-ring-primary`;
+  // Inputs
+  const inputBaseClass = `form-control ${isDark ? 'bg-dark text-white border-secondary' : 'bg-light text-dark border-gray-300'} focus-ring focus-ring-primary`;
   const labelClass = `form-label ${subTextColor} small fw-bold text-uppercase ls-1`;
-  const sidePanelBg = isDark ? 'bg-black bg-opacity-25' : 'bg-gray-50';
+  
+  // Paneles Laterales
+  const sidePanelBg = isDark ? 'bg-dark bg-opacity-50' : 'bg-gray-50';
 
-  // CORRECCIÓN: Fondo del contenedor de opciones (Evita el gris feo 'bg-dark')
-  const optionsContainerBg = isDark ? 'bg-black bg-opacity-20' : 'bg-white';
+  // --- AQUÍ ESTÁ EL ARREGLO DEL BLOQUE BLANCO ---
+  // Si es dark, usamos un fondo transparente o muy sutil, NO blanco.
+  const optionsContainerBg = isDark ? 'bg-transparent' : 'bg-white';
+  const optionsBorderClass = isDark ? 'border-secondary border-opacity-25' : 'border-gray-200';
 
   const initialState = {
     nombre: '', descripcion: '', precio: '', stock: '', categoria: '',
@@ -155,7 +162,6 @@ export default function ProductModal({ show, handleClose, handleSave, productoAc
   const [nombreGrupo, setNombreGrupo] = useState('');
   const [tipoSeleccion, setTipoSeleccion] = useState('unico');
 
-  // --- EFECTOS ---
   useEffect(() => {
     if (show) {
       if (productoActual) {
@@ -196,7 +202,6 @@ export default function ProductModal({ show, handleClose, handleSave, productoAc
     return () => { document.body.style.overflow = 'auto'; };
   }, [productoActual, show]);
 
-  // --- HANDLERS ---
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
@@ -248,19 +253,18 @@ export default function ProductModal({ show, handleClose, handleSave, productoAc
 
   return (
     <AnimatePresence>
-      <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(5px)', zIndex: 1055 }}>
+      <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', zIndex: 1055 }}>
         
-        {/* --- CSS PARA ADAPTAR EL SCROLL --- */}
         <style>
           {`
             .custom-scroll::-webkit-scrollbar { width: 8px; }
-            .custom-scroll::-webkit-scrollbar-track { background: ${isDark ? '#18181b' : '#f8f9fa'}; }
+            .custom-scroll::-webkit-scrollbar-track { background: ${isDark ? '#212529' : '#f8f9fa'}; }
             .custom-scroll::-webkit-scrollbar-thumb {
-              background-color: ${isDark ? '#3f3f46' : '#dee2e6'}; 
+              background-color: ${isDark ? '#495057' : '#dee2e6'}; 
               border-radius: 4px;
             }
             .custom-scroll::-webkit-scrollbar-thumb:hover {
-              background-color: ${isDark ? '#52525b' : '#ced4da'}; 
+              background-color: ${isDark ? '#6c757d' : '#ced4da'}; 
             }
           `}
         </style>
@@ -271,8 +275,7 @@ export default function ProductModal({ show, handleClose, handleSave, productoAc
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           className="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable"
         >
-          {/* CONTENEDOR PRINCIPAL */}
-          <div className="modal-content border-0 shadow-lg overflow-hidden" style={{ backgroundColor: modalBg, color: textColor, borderRadius: '20px' }}>
+          <div className="modal-content border-0 shadow-lg overflow-hidden" style={{ backgroundColor: modalBg, color: textColor, borderRadius: '16px' }}>
             
             {/* Header */}
             <div className={`modal-header border-bottom ${borderColor} px-4 py-3 position-relative`} style={{ backgroundColor: modalBg }}>
@@ -281,7 +284,6 @@ export default function ProductModal({ show, handleClose, handleSave, productoAc
                 {formData.id ? 'Editar Producto' : 'Crear Nuevo Producto'}
               </h5>
               
-              {/* BOTÓN CERRAR EN LA ESQUINA DERECHA */}
               <button 
                 onClick={handleClose} 
                 className={`btn btn-link position-absolute top-50 end-0 translate-middle-y me-3 rounded-circle p-2 ${isDark ? 'text-white-50 hover-text-white' : 'text-muted hover-text-dark'}`}
@@ -296,7 +298,7 @@ export default function ProductModal({ show, handleClose, handleSave, productoAc
                 <div className="container-fluid p-0">
                   <div className="row g-0">
                     
-                    {/* COLUMNA IZQUIERDA: Imagen y Resumen */}
+                    {/* COLUMNA IZQUIERDA */}
                     <div className={`col-lg-4 border-end ${borderColor} ${sidePanelBg} p-4`}>
                       <div className={`ratio ratio-1x1 rounded-4 border ${borderColor} mb-4 overflow-hidden d-flex align-items-center justify-content-center ${isDark ? 'bg-dark' : 'bg-white'}`}>
                         {previewImage ? (
@@ -345,7 +347,7 @@ export default function ProductModal({ show, handleClose, handleSave, productoAc
                       </div>
                     </div>
 
-                    {/* COLUMNA DERECHA: Formulario */}
+                    {/* COLUMNA DERECHA */}
                     <div className="col-lg-8 p-4 custom-scroll" style={{maxHeight: '80vh', overflowY: 'auto'}}>
                       
                       <h6 className="text-primary text-uppercase fw-bold mb-3 small ls-1"><Package size={14} className="me-1"/> Información Básica</h6>
@@ -414,8 +416,8 @@ export default function ProductModal({ show, handleClose, handleSave, productoAc
                         </button>
                       </div>
 
-                      {/* --- SECCIÓN DE TOPPINGS ARREGLADA --- */}
-                      <div className={`rounded-4 p-3 border ${borderColor} ${optionsContainerBg}`}>
+                      {/* --- SECCIÓN OPCIONES & TOPPINGS (ARREGLADA) --- */}
+                      <div className={`rounded-4 p-3 border ${optionsBorderClass} ${optionsContainerBg}`}>
                          <div className="d-flex justify-content-between align-items-center mb-3">
                             <div className="form-check form-switch m-0">
                                <input 
@@ -432,7 +434,7 @@ export default function ProductModal({ show, handleClose, handleSave, productoAc
 
                          {gestionarOpciones && formData.id && (
                            <div className="animate-fade-in">
-                             <div className={`d-flex gap-2 mb-3 p-2 rounded-3 ${isDark ? 'bg-black bg-opacity-25' : 'bg-gray-100'}`}>
+                             <div className={`d-flex gap-2 mb-3 p-2 rounded-3 ${isDark ? 'bg-secondary bg-opacity-10' : 'bg-gray-100'}`}>
                                 <input type="text" className={`${inputBaseClass} form-control-sm`} placeholder="Nuevo Grupo (ej. Salsas)" value={nombreGrupo} onChange={e => setNombreGrupo(e.target.value)} />
                                 <select className={`${inputBaseClass} form-control-sm w-auto`} value={tipoSeleccion} onChange={e => setTipoSeleccion(e.target.value)}>
                                    <option value="unico">Único</option>
@@ -471,7 +473,7 @@ export default function ProductModal({ show, handleClose, handleSave, productoAc
 
                 <div className={`modal-footer border-top ${borderColor} py-3`} style={{ backgroundColor: modalBg }}>
                    <button type="button" className={`btn btn-link ${textColor} text-decoration-none me-auto`} onClick={handleClose}>Cancelar</button>
-                   <button type="submit" className="btn btn-primary px-4 fw-bold rounded-pill d-flex align-items-center gap-2 shadow-lg">
+                   <button type="submit" className="btn btn-primary px-4 fw-bold rounded-pill d-flex align-items-center gap-2 shadow-sm">
                       <Save size={18}/> Guardar Producto
                    </button>
                 </div>
