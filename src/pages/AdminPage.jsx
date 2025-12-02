@@ -262,7 +262,6 @@ function AdminPage() {
                         <td><span className={`badge ${p.stock < 5 ? 'bg-danger' : 'bg-success bg-opacity-75'}`}>{p.stock} unid.</span></td>
                         <td>{p.en_oferta ? <span className="badge bg-warning text-dark">Oferta {p.descuento_porcentaje}%</span> : <span className="badge bg-secondary">Regular</span>}</td>
                         <td className="text-end pe-3">
-                          {/* CORRECCIÓN BOTÓN NEGRO: Uso de colores fuertes para iconos circulares */}
                           <button className={`btn btn-sm ${isDark ? 'text-warning' : 'text-primary'}`} style={{ backgroundColor: 'transparent' }} title="Editar" onClick={() => handleOpenProductModal(p)}><Edit size={18}/></button>
                           <button className={`btn btn-sm ${isDark ? 'text-danger' : 'text-danger'}`} style={{ backgroundColor: 'transparent' }} title="Eliminar" onClick={() => handleDeleteProducto(p)}><Trash2 size={18}/></button>
                         </td>
@@ -301,10 +300,10 @@ function AdminPage() {
                         <td><span className={`badge ${p.estado === 'Pendiente' ? 'bg-warning text-dark' : 'bg-success'}`}>{p.estado}</span></td>
                         <td className="text-center">
                           <div className="d-flex justify-content-center flex-wrap gap-2">
-                            {/* Botón Ver (con icono) */}
+                            {/* Botón Ver */}
                             <button className="btn btn-sm btn-outline-primary d-flex align-items-center gap-1 px-3 rounded-pill" onClick={() => handleShowDetails(p)}><Eye size={14}/> Ver</button>
                             
-                            {/* Botones de Workflow (CORRECCIÓN FUNCIONAL COMPLETA) */}
+                            {/* Botones de Workflow */}
                             {p.estado !== 'Completado' && p.estado !== 'Entregado' && (
                                 <>
                                     <button className="btn btn-sm btn-outline-warning d-flex align-items-center gap-1 px-3 rounded-pill" onClick={() => handleUpdateStatus(p.id, 'En Preparacion')}><Layers size={14}/> Prep</button>
@@ -314,8 +313,13 @@ function AdminPage() {
                                       <button className="btn btn-sm btn-outline-info d-flex align-items-center gap-1 px-3 rounded-pill" onClick={() => handleUpdateStatus(p.id, 'En Camino')}><Truck size={14}/> Envío</button>
                                     )}
 
-                                    {/* Botón Listo para Recoger (Visible en modo oscuro) */}
-                                    <button className={`btn btn-sm ${isDark ? 'btn-outline-light text-white' : 'btn-outline-secondary' } d-flex align-items-center gap-1 px-3 rounded-pill`} onClick={() => handleUpdateStatus(p.id, 'Listo para Recoger')}><CheckCircle size={14}/> Listo</button>
+                                    {/* --- AQUÍ ESTÁ EL CAMBIO IMPORTANTE: CORRECCIÓN DEL BOTÓN LISTO --- */}
+                                    <button 
+                                      className={`btn btn-sm d-flex align-items-center gap-1 px-3 rounded-pill ${isDark ? 'btn-outline-info' : 'btn-outline-secondary'}`} 
+                                      onClick={() => handleUpdateStatus(p.id, 'Listo para Recoger')}
+                                    >
+                                      <CheckCircle size={14}/> Listo
+                                    </button>
                                     
                                     {/* Botón Finalizar */}
                                     <button className="btn btn-sm btn-success d-flex align-items-center gap-1 px-3 rounded-pill" onClick={() => handleUpdateStatus(p.id, 'Completado')}><CheckCircle size={14}/> Fin</button>
@@ -362,13 +366,12 @@ function AdminPage() {
           </div>
         )}
 
-        {/* VISTA REPORTES (ESTILO CORREGIDO) */}
+        {/* VISTA REPORTES */}
         {!loading && !error && activeTab === 'reporteGeneral' && (
            <div className="d-flex flex-column gap-4">
               <div className={cardClass} style={{ backgroundColor: cardBgColor }}>
                   <div className="card-body p-4">
                     <h4 className="fw-bold mb-4">Resumen de Ventas</h4>
-                    {/* Contenedor del gráfico con mejor contraste */}
                     <div style={{ backgroundColor: isDark ? '#2a2a2a' : '#f0f0f0', padding: '15px', borderRadius: '8px' }}>
                         {reportData.length > 0 ? <SalesReportChart reportData={reportData} /> : <p className="text-center text-muted py-5">No hay datos suficientes para graficar.</p>}
                     </div>
