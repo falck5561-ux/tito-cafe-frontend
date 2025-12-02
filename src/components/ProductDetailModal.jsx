@@ -55,29 +55,28 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
         .then(data => {
           const tieneOpciones = data.grupos_opciones && data.grupos_opciones.length > 0;
 
-          // LOGICA DE PRECIO BASE:
-          // Determinamos si usamos el precio de la base de datos o el precio que venía del menú (oferta)
+          // LOGICA DE CORRECCIÓN DE PRECIO:
+          // Determinamos si usamos el precio de la base de datos o el precio de oferta (que viene en 'product')
           let precioBaseCorrecto = Number(data.precio);
           
-          // Si el producto en el menú (prop 'product') tenía un precio menor al de la BD, usamos ese (es la oferta)
+          // 1. Si el producto que pasamos por prop (del menú) es más barato, es porque tiene descuento aplicado.
           if (product.precio && Number(product.precio) < precioBaseCorrecto) {
              precioBaseCorrecto = Number(product.precio);
           }
-          // O si la data de la BD dice explícitamente que hay oferta y trae el precio oferta
+          // 2. O si la base de datos dice explícitamente que hay oferta y trae el precio rebajado
           else if (data.en_oferta && data.precio_oferta) {
              precioBaseCorrecto = Number(data.precio_oferta);
           }
 
-          // Inyectamos el precio correcto al objeto data para usarlo después
+          // Creamos el objeto final con el precio corregido para que todo el componente lo use
           const productoConPrecioCorregido = {
               ...data,
               precio: precioBaseCorrecto,
-              // Guardamos el original para mostrar tachado si aplica
-              precio_original: data.precio 
+              precio_original: data.precio // Guardamos el original para mostrar tachado
           };
 
           if (tieneOpciones) {
-            // CASO 1: SÍ tiene opciones -> Guardamos en estado y mostramos modal
+            // CASO 1: SÍ tiene opciones -> Guardamos en estado
             setFullProduct(productoConPrecioCorregido); 
             setLoadingToppings(false); 
           } else {
@@ -94,11 +93,11 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
   }, [product, onAddToCart, onClose]);
 
   
-  // --- 2. EFECTO PARA CALCULAR EL PRECIO TOTAL (CORREGIDO) ---
+  // --- 2. EFECTO PARA CALCULAR EL PRECIO TOTAL ---
   useEffect(() => {
     if (!fullProduct) return;
 
-    // Aquí fullProduct.precio ya viene corregido desde el useEffect anterior
+    // Aquí fullProduct.precio ya es el precio con descuento (gracias a la corrección arriba)
     const basePrice = Number(fullProduct.precio);
     let optionsPrice = 0;
     
@@ -274,7 +273,7 @@ function ProductDetailModal({ product, onClose, onAddToCart }) {
             <div>
               <span className="fs-3 fw-bold">${totalPrice.toFixed(2)}</span>
               
-              {/* Mostramos el precio original tachado si el precio actual es menor */}
+              {/* Mostrar precio original tachado si hay descuento */}
               {Number(fullProduct.precio_original) > Number(fullProduct.precio) && (
                 <span className="text-muted text-decoration-line-through ms-2">${Number(fullProduct.precio_original).toFixed(2)}</span>
               )}
