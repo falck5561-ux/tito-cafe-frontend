@@ -33,17 +33,19 @@ import {
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
-// --- Configuración de Notificaciones ---
-const notify = (type, message) => {
+const notify = (type, message, toastId = null) => {
+    // Si pasamos un ID, le decimos a la librería que no duplique el mensaje
+    const options = toastId ? { id: toastId } : {};
+
     switch (type) {
         case 'success': 
-            toast.success(message); 
+            toast.success(message, options); 
             break;
         case 'error': 
-            toast.error(message); 
+            toast.error(message, options); 
             break;
         default: 
-            toast(message); 
+            toast(message, options); 
             break;
     }
 };
@@ -720,7 +722,8 @@ const estandarizar = (item) => {
                 console.error("Error guardando dirección:", e); 
             } 
         }
-        notify('success', '¡Pedido realizado con éxito!'); 
+        // El tercer parámetro es el ID único. Si se intenta llamar de nuevo, no creará otro toast.
+        notify('success', '¡Pedido realizado con éxito!', 'pedido-exito-unico');
         limpiarPedido(); // Limpiamos solo el carrito
         setCostoEnvio(0); 
         setDireccion(null); 
@@ -1015,33 +1018,54 @@ const estandarizar = (item) => {
                 )}
             </div>
 
-            {/* BOTÓN FLOTANTE MÓVIL */}
+            
+            {/* BOTÓN FLOTANTE MÓVIL - PREMIUM CIRCULAR CON GLOW */}
             {activeTab === 'crear' && pedidoActual.length > 0 && (
                 <div 
                     className="position-fixed bottom-0 end-0 m-4 d-lg-none" 
                     style={{ zIndex: 1050 }}
                 >
                     <motion.button 
-                        whileHover={{ scale: 1.1 }}
+                        whileHover={{ scale: 1.1, y: -5 }}
                         whileTap={{ scale: 0.9 }}
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        className="btn rounded-circle shadow-lg d-flex align-items-center justify-content-center position-relative border border-white/20"
+                        initial={{ scale: 0, rotate: 180 }}
+                        animate={{ scale: 1, rotate: 0 }}
+                        transition={{ type: "spring", stiffness: 260, damping: 20 }}
+                        className="btn rounded-circle d-flex align-items-center justify-content-center shadow-lg"
                         onClick={() => setShowCartModal(true)}
                         style={{ 
-                            width: '64px', 
-                            height: '64px', 
+                            width: '68px', 
+                            height: '68px', 
                             background: accentGradient,
-                            color: 'white'
+                            color: 'white',
+                            border: '2px solid rgba(255,255,255,0.25)', // Anillo sutil interior
+                            // Sombra de resplandor (Glow) del color del tema
+                            boxShadow: isDark 
+                                ? '0 10px 30px -5px rgba(37, 99, 235, 0.6)' 
+                                : '0 10px 30px -5px rgba(220, 38, 38, 0.6)'
                         }}
                     >
-                        <ShoppingCart size={28} />
-                        <span 
-                            className="position-absolute top-0 end-0 badge rounded-pill bg-danger border border-white shadow-sm"
-                            style={{ transform: 'translate(10%, -10%)' }}
+                        <ShoppingCart size={28} strokeWidth={2.5} />
+                        
+                        {/* Badge Minimalista Blanco */}
+                        <motion.span 
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            className="position-absolute d-flex align-items-center justify-content-center fw-bold"
+                            style={{ 
+                                top: '0px', 
+                                right: '0px',
+                                width: '26px',
+                                height: '26px',
+                                borderRadius: '50%',
+                                background: '#ffffff',
+                                color: isDark ? '#2563eb' : '#dc2626', // Texto del color del tema
+                                fontSize: '0.9rem',
+                                boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
+                            }}
                         >
                             {pedidoActual.reduce((acc, el) => acc + el.cantidad, 0)}
-                        </span>
+                        </motion.span>
                     </motion.button>
                 </div>
             )}
