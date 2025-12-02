@@ -485,28 +485,29 @@ function ClientePage() {
                     apiClient.get('/usuarios/mi-direccion')
                 ]);
                 
-                // --- CORRECCIÓN DE PRECIOS: LÓGICA DE ESTANDARIZACIÓN SIMPLIFICADA ---
-                const estandarizar = (item) => {
-                    const precioFinal = Number(item.precio);
-                    let precioOriginal = precioFinal;
-                    // Ajustar el precio original solo si hay descuento/oferta
-                    if (item.en_oferta && item.descuento_porcentaje > 0) {
-                        // Revertir el cálculo del descuento para obtener el precio original antes de la oferta
-                        precioOriginal = precioFinal / (1 - item.descuento_porcentaje / 100);
-                    } else if (item.precio_base) {
-                        // Si no hay descuento, pero hay un precio base (para mostrar tachado si aplica)
-                        precioOriginal = Number(item.precio_base);
-                    }
+                
+const estandarizar = (item) => {
+    // 1. El precio que viene de la BD ($32.00) es el PRECIO ORIGINAL
+    const precioBase = Number(item.precio); 
+    
+    let precioFinal = precioBase;
+    let precioOriginal = precioBase;
 
-                    return { 
-                        ...item, 
-                        precio: precioFinal, 
-                        // Aseguramos que el precio original sea mayor o igual al precio final si se muestra
-                        precio_original: precioOriginal > precioFinal ? precioOriginal : precioFinal, 
-                        nombre: item.nombre || item.titulo,
-                        en_oferta: item.en_oferta && precioOriginal > precioFinal
-                    };
-                };
+    // 2. Si tiene oferta, calculamos el precio final aplicando el descuento
+    if (item.en_oferta && item.descuento_porcentaje > 0) {
+        // Ejemplo: 32.00 * (1 - 0.22) = 24.96
+        precioFinal = precioBase * (1 - item.descuento_porcentaje / 100);
+        precioOriginal = precioBase; // Mantenemos 32.00 como original para tachar
+    }
+
+    return { 
+        ...item, 
+        precio: precioFinal, // Precio que pagará el cliente
+        precio_original: precioOriginal, // Precio para mostrar tachado
+        nombre: item.nombre || item.titulo,
+        en_oferta: item.en_oferta && precioOriginal > precioFinal
+    };
+};
                 
                 setMenuItems([
                     ...productosRes.data.map(estandarizar), 
