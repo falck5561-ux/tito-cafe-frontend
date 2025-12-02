@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  X, Save, Image as ImageIcon, DollarSign, Package, Tag, Percent, 
-  Type, Layers, Plus, Trash2, CheckCircle, AlertCircle 
+  X, Save, Image as ImageIcon, DollarSign, Package, Tag, 
+  Type, Layers, Plus, Trash2 
 } from 'lucide-react';
 import apiClient from '../services/api';
 import toast from 'react-hot-toast';
 
-// --- SUB-COMPONENTE: Tarjeta de Grupo de Opciones (Estilizado) ---
+// --- SUB-COMPONENTE: Tarjeta de Grupo de Opciones ---
 function GrupoOpcionesCard({ grupo, onOptionAdded, onOptionDeleted, onGroupDeleted }) {
   const [nombreOpcion, setNombreOpcion] = useState('');
   const [precioOpcion, setPrecioOpcion] = useState('');
@@ -50,8 +50,7 @@ function GrupoOpcionesCard({ grupo, onOptionAdded, onOptionDeleted, onGroupDelet
 
   return (
     <div className="rounded-3 border border-secondary border-opacity-25 bg-black bg-opacity-25 mb-3 overflow-hidden">
-      {/* Header del Grupo */}
-      <div className="d-flex justify-content-between align-items-center p-3 border-bottom border-secondary border-opacity-25 bg-white bg-opacity-10">
+      <div className="d-flex justify-content-between align-items-center p-3 border-bottom border-secondary border-opacity-25 bg-white bg-opacity-5">
         <div>
           <h6 className="m-0 fw-bold text-white d-flex align-items-center gap-2">
             <Layers size={16} className="text-info"/> {grupo.nombre}
@@ -66,7 +65,6 @@ function GrupoOpcionesCard({ grupo, onOptionAdded, onOptionDeleted, onGroupDelet
       </div>
 
       <div className="p-3">
-        {/* Lista de Opciones */}
         <div className="d-flex flex-wrap gap-2 mb-3">
           {grupo.opciones && grupo.opciones.length > 0 ? (
             grupo.opciones.map(op => (
@@ -87,7 +85,6 @@ function GrupoOpcionesCard({ grupo, onOptionAdded, onOptionDeleted, onGroupDelet
           )}
         </div>
 
-        {/* Formulario Añadir Opción Compacto */}
         <div className="input-group input-group-sm">
           <input
             type="text"
@@ -115,7 +112,6 @@ function GrupoOpcionesCard({ grupo, onOptionAdded, onOptionDeleted, onGroupDelet
 
 // --- COMPONENTE PRINCIPAL ---
 export default function ProductModal({ show, handleClose, handleSave, productoActual }) {
-  // Estado inicial
   const initialState = {
     nombre: '',
     descripcion: '',
@@ -130,14 +126,12 @@ export default function ProductModal({ show, handleClose, handleSave, productoAc
   const [formData, setFormData] = useState(initialState);
   const [previewImage, setPreviewImage] = useState('');
   
-  // Estados para Toppings
   const [grupos, setGrupos] = useState([]);
   const [loadingGrupos, setLoadingGrupos] = useState(false);
   const [gestionarOpciones, setGestionarOpciones] = useState(false);
   const [nombreGrupo, setNombreGrupo] = useState('');
   const [tipoSeleccion, setTipoSeleccion] = useState('unico');
 
-  // Cargar datos al abrir
   useEffect(() => {
     if (show) {
       if (productoActual) {
@@ -155,11 +149,9 @@ export default function ProductModal({ show, handleClose, handleSave, productoAc
           descuento_porcentaje: productoActual.descuento_porcentaje || 0
         });
         
-        // Preview de la primera imagen
         const img = Array.isArray(productoActual.imagenes) ? productoActual.imagenes[0] : productoActual.imagen_url;
         setPreviewImage(img || '');
 
-        // Cargar grupos
         if (productoActual.grupos_opciones?.length > 0) {
           setGrupos(productoActual.grupos_opciones);
           setGestionarOpciones(true);
@@ -183,14 +175,9 @@ export default function ProductModal({ show, handleClose, handleSave, productoAc
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
-    
-    // Actualizar preview si cambia la primera imagen
-    if (name === 'imagen_url_0') { // Truco para inputs dinámicos si fuera necesario
-       setPreviewImage(value);
-    }
+    if (name === 'imagen_url_0') setPreviewImage(value);
   };
 
-  // Manejo de imágenes (Array)
   const handleImageChange = (index, value) => {
     const newImages = [...formData.imagenes];
     newImages[index] = value;
@@ -207,7 +194,6 @@ export default function ProductModal({ show, handleClose, handleSave, productoAc
     if (index === 0) setPreviewImage(newImages[0] || '');
   };
 
-  // Submit principal
   const handleSubmit = (e) => {
     e.preventDefault();
     const cleanData = {
@@ -217,7 +203,6 @@ export default function ProductModal({ show, handleClose, handleSave, productoAc
     handleSave(cleanData);
   };
 
-  // --- Lógica de Grupos (Toppings) ---
   const handleAddGroup = async () => {
     if (!formData.id) return toast.error('Guarda el producto antes de añadir grupos.');
     if (!nombreGrupo.trim()) return toast.error('Nombre de grupo requerido');
@@ -231,20 +216,35 @@ export default function ProductModal({ show, handleClose, handleSave, productoAc
     } catch (e) { toast.error('Error al crear grupo'); }
   };
 
-  // Callbacks para actualizar estado local de grupos
   const handleOptionAdded = (gid, op) => setGrupos(gs => gs.map(g => g.id === gid ? { ...g, opciones: [...g.opciones, op] } : g));
   const handleOptionDeleted = (gid, oid) => setGrupos(gs => gs.map(g => g.id === gid ? { ...g, opciones: g.opciones.filter(o => o.id !== oid) } : g));
   const handleGroupDeleted = (gid) => setGrupos(gs => gs.filter(g => g.id !== gid));
 
-  // --- ESTILOS CONSTANTES ---
   const inputBaseClass = "form-control bg-dark text-white border-secondary focus-ring focus-ring-primary";
   const labelClass = "form-label text-secondary small fw-bold text-uppercase ls-1";
+
+  // --- ESTILOS DE SCROLLBAR ---
+  const scrollbarStyles = {
+    scrollbarWidth: 'thin',
+    scrollbarColor: '#444 #18181b'
+  };
 
   if (!show) return null;
 
   return (
     <AnimatePresence>
       <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', zIndex: 1055 }}>
+        
+        {/* Estilos inline para Webkit Scrollbar (Chrome/Edge) */}
+        <style>
+          {`
+            .custom-scroll::-webkit-scrollbar { width: 8px; }
+            .custom-scroll::-webkit-scrollbar-track { background: #18181b; }
+            .custom-scroll::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
+            .custom-scroll::-webkit-scrollbar-thumb:hover { background: #555; }
+          `}
+        </style>
+
         <motion.div 
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -253,8 +253,8 @@ export default function ProductModal({ show, handleClose, handleSave, productoAc
         >
           <div className="modal-content border-0 shadow-2xl overflow-hidden" style={{ backgroundColor: '#18181b', color: '#fff', borderRadius: '24px' }}>
             
-            {/* Header */}
-            <div className="modal-header border-bottom border-secondary border-opacity-25 px-4 py-3 bg-white bg-opacity-5">
+            {/* Header: CORREGIDO - Eliminamos bg-white */}
+            <div className="modal-header border-bottom border-secondary border-opacity-25 px-4 py-3" style={{backgroundColor: 'rgba(255,255,255,0.02)'}}>
               <h5 className="modal-title fw-bold d-flex align-items-center gap-2">
                 {formData.id ? <EditIcon /> : <PlusIcon />} 
                 {formData.id ? 'Editar Producto' : 'Crear Nuevo Producto'}
@@ -269,10 +269,8 @@ export default function ProductModal({ show, handleClose, handleSave, productoAc
                 <div className="container-fluid p-0">
                   <div className="row g-0">
                     
-                    {/* COLUMNA IZQUIERDA: Imagen y Datos Clave */}
+                    {/* COLUMNA IZQUIERDA */}
                     <div className="col-lg-4 bg-black bg-opacity-25 border-end border-secondary border-opacity-25 p-4">
-                      
-                      {/* Preview Imagen */}
                       <div className="ratio ratio-1x1 bg-dark rounded-4 border border-secondary border-dashed mb-4 position-relative overflow-hidden group-hover">
                         {previewImage ? (
                           <img src={previewImage} alt="Preview" className="w-100 h-100 object-fit-cover" onError={(e) => e.target.src = 'https://via.placeholder.com/300?text=Error+Imagen'} />
@@ -284,7 +282,6 @@ export default function ProductModal({ show, handleClose, handleSave, productoAc
                         )}
                       </div>
 
-                      {/* Configuración de Oferta */}
                       <div className={`p-3 rounded-4 border mb-3 transition-all ${formData.en_oferta ? 'border-warning bg-warning bg-opacity-10' : 'border-secondary border-opacity-25 bg-dark'}`}>
                          <div className="form-check form-switch mb-2">
                             <input 
@@ -305,7 +302,6 @@ export default function ProductModal({ show, handleClose, handleSave, productoAc
                          )}
                       </div>
 
-                      {/* Stock y Precio Rapid View */}
                       <div className="row g-2">
                         <div className="col-6">
                            <div className="p-2 bg-dark rounded-3 border border-secondary border-opacity-25 text-center">
@@ -320,13 +316,11 @@ export default function ProductModal({ show, handleClose, handleSave, productoAc
                            </div>
                         </div>
                       </div>
-
                     </div>
 
-                    {/* COLUMNA DERECHA: Formulario Detallado */}
-                    <div className="col-lg-8 p-4" style={{maxHeight: '80vh', overflowY: 'auto'}}>
+                    {/* COLUMNA DERECHA: Con SCROLL OSCURO */}
+                    <div className="col-lg-8 p-4 custom-scroll" style={{maxHeight: '80vh', overflowY: 'auto', ...scrollbarStyles}}>
                       
-                      {/* 1. Detalles Principales */}
                       <h6 className="text-primary text-uppercase fw-bold mb-3 small ls-1"><Package size={14} className="me-1"/> Información Básica</h6>
                       
                       <div className="row g-3 mb-4">
@@ -367,7 +361,6 @@ export default function ProductModal({ show, handleClose, handleSave, productoAc
                         </div>
                       </div>
 
-                      {/* 2. Imágenes */}
                       <h6 className="text-primary text-uppercase fw-bold mb-3 small ls-1 border-top border-secondary border-opacity-25 pt-3">
                         <ImageIcon size={14} className="me-1"/> Galería de Imágenes
                       </h6>
@@ -394,7 +387,6 @@ export default function ProductModal({ show, handleClose, handleSave, productoAc
                         </button>
                       </div>
 
-                      {/* 3. Gestión de Opciones (Toppings) */}
                       <div className="rounded-4 bg-dark border border-secondary border-opacity-25 p-3">
                          <div className="d-flex justify-content-between align-items-center mb-3">
                             <div className="form-check form-switch m-0">
@@ -412,7 +404,6 @@ export default function ProductModal({ show, handleClose, handleSave, productoAc
 
                          {gestionarOpciones && formData.id && (
                            <div className="animate-fade-in">
-                             {/* Formulario Nuevo Grupo */}
                              <div className="d-flex gap-2 mb-3 bg-black bg-opacity-25 p-2 rounded-3">
                                 <input type="text" className={`${inputBaseClass} form-control-sm`} placeholder="Nuevo Grupo (ej. Salsas)" value={nombreGrupo} onChange={e => setNombreGrupo(e.target.value)} />
                                 <select className={`${inputBaseClass} form-control-sm w-auto`} value={tipoSeleccion} onChange={e => setTipoSeleccion(e.target.value)}>
@@ -422,7 +413,6 @@ export default function ProductModal({ show, handleClose, handleSave, productoAc
                                 <button type="button" onClick={handleAddGroup} className="btn btn-sm btn-success text-nowrap">Crear</button>
                              </div>
 
-                             {/* Lista de Grupos */}
                              {loadingGrupos ? (
                                <div className="text-center py-3"><div className="spinner-border spinner-border-sm text-light"/></div>
                              ) : (
@@ -444,15 +434,11 @@ export default function ProductModal({ show, handleClose, handleSave, productoAc
                            </div>
                          )}
                       </div>
-
-                      {/* Espaciador final */}
                       <div style={{height: '60px'}}></div>
-
                     </div>
                   </div>
                 </div>
 
-                {/* Footer Flotante dentro de la columna derecha o general */}
                 <div className="modal-footer border-top border-secondary border-opacity-25 bg-dark py-3">
                    <button type="button" className="btn btn-link text-white text-decoration-none me-auto" onClick={handleClose}>Cancelar</button>
                    <button type="submit" className="btn btn-primary px-4 fw-bold rounded-pill d-flex align-items-center gap-2 shadow-lg">
@@ -469,6 +455,5 @@ export default function ProductModal({ show, handleClose, handleSave, productoAc
   );
 }
 
-// Iconos Auxiliares
 const EditIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-warning"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>;
 const PlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-success"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>;
