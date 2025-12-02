@@ -6,20 +6,21 @@ import {
 } from 'lucide-react';
 import apiClient from '../services/api';
 import toast from 'react-hot-toast';
-import { useTheme } from '../context/ThemeContext'; // Asegúrate de que esta ruta sea correcta según tu estructura
+import { useTheme } from '../context/ThemeContext';
 
 // --- SUB-COMPONENTE: Tarjeta de Grupo de Opciones ---
 function GrupoOpcionesCard({ grupo, onOptionAdded, onOptionDeleted, onGroupDeleted, isDark }) {
   const [nombreOpcion, setNombreOpcion] = useState('');
   const [precioOpcion, setPrecioOpcion] = useState('');
 
-  // --- ESTILOS DINÁMICOS DE LA TARJETA ---
-  const cardBg = isDark ? 'bg-black bg-opacity-25 border-secondary border-opacity-25' : 'bg-white border-gray-200 shadow-sm';
-  const headerBg = isDark ? 'bg-white bg-opacity-5 border-secondary border-opacity-25' : 'bg-gray-50 border-gray-200';
+  // --- ESTILOS DE LA TARJETA ---
+  // En dark mode, usamos un fondo negro semitransparente para que se vea elegante
+  const cardBg = isDark ? 'bg-black bg-opacity-40 border-secondary border-opacity-25' : 'bg-white border-gray-200 shadow-sm';
+  const headerBg = isDark ? 'bg-white bg-opacity-5 border-bottom border-secondary border-opacity-25' : 'bg-gray-50 border-bottom border-gray-200';
   const textColor = isDark ? 'text-white' : 'text-dark';
   const subTextColor = isDark ? 'text-white-50' : 'text-muted';
   const badgeBg = isDark ? 'bg-dark border-secondary border-opacity-50' : 'bg-gray-100 border-gray-300 text-dark';
-  const inputBg = isDark ? 'bg-dark text-white border-secondary' : 'bg-white text-dark border-gray-300';
+  const inputBg = isDark ? 'bg-dark text-white border-secondary border-opacity-50' : 'bg-white text-dark border-gray-300';
 
   const handleAddOption = async () => {
     if (!nombreOpcion.trim()) return toast.error('Nombre requerido');
@@ -60,7 +61,7 @@ function GrupoOpcionesCard({ grupo, onOptionAdded, onOptionDeleted, onGroupDelet
   return (
     <div className={`rounded-3 border mb-3 overflow-hidden ${cardBg}`}>
       {/* Header de la Tarjeta */}
-      <div className={`d-flex justify-content-between align-items-center p-3 border-bottom ${headerBg}`}>
+      <div className={`d-flex justify-content-between align-items-center p-3 ${headerBg}`}>
         <div>
           <h6 className={`m-0 fw-bold ${textColor} d-flex align-items-center gap-2`}>
             <Layers size={16} className="text-info"/> {grupo.nombre}
@@ -123,7 +124,7 @@ function GrupoOpcionesCard({ grupo, onOptionAdded, onOptionDeleted, onGroupDelet
 
 // --- COMPONENTE PRINCIPAL ---
 export default function ProductModal({ show, handleClose, handleSave, productoActual }) {
-  const { theme } = useTheme(); // Hook para saber si es dark o light
+  const { theme } = useTheme(); 
   const isDark = theme === 'dark';
 
   // --- VARIABLES DE TEMA GENERAL ---
@@ -133,9 +134,12 @@ export default function ProductModal({ show, handleClose, handleSave, productoAc
   const borderColor = isDark ? 'border-secondary border-opacity-25' : 'border-gray-200';
   
   // Clases CSS dinámicas
-  const inputBaseClass = `form-control ${isDark ? 'bg-dark text-white border-secondary' : 'bg-light text-dark border-gray-300'} focus-ring focus-ring-primary`;
+  const inputBaseClass = `form-control ${isDark ? 'bg-dark text-white border-secondary border-opacity-50' : 'bg-light text-dark border-gray-300'} focus-ring focus-ring-primary`;
   const labelClass = `form-label ${subTextColor} small fw-bold text-uppercase ls-1`;
   const sidePanelBg = isDark ? 'bg-black bg-opacity-25' : 'bg-gray-50';
+
+  // CORRECCIÓN: Fondo del contenedor de opciones (Evita el gris feo 'bg-dark')
+  const optionsContainerBg = isDark ? 'bg-black bg-opacity-20' : 'bg-white';
 
   const initialState = {
     nombre: '', descripcion: '', precio: '', stock: '', categoria: '',
@@ -246,7 +250,7 @@ export default function ProductModal({ show, handleClose, handleSave, productoAc
     <AnimatePresence>
       <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(5px)', zIndex: 1055 }}>
         
-        {/* --- CSS PARA ELIMINAR LA BARRA BLANCA Y ADAPTAR EL SCROLL --- */}
+        {/* --- CSS PARA ADAPTAR EL SCROLL --- */}
         <style>
           {`
             .custom-scroll::-webkit-scrollbar { width: 8px; }
@@ -270,14 +274,14 @@ export default function ProductModal({ show, handleClose, handleSave, productoAc
           {/* CONTENEDOR PRINCIPAL */}
           <div className="modal-content border-0 shadow-lg overflow-hidden" style={{ backgroundColor: modalBg, color: textColor, borderRadius: '20px' }}>
             
-            {/* Header: Fondo dinámico y Botón Cerrar en la esquina correcta */}
+            {/* Header */}
             <div className={`modal-header border-bottom ${borderColor} px-4 py-3 position-relative`} style={{ backgroundColor: modalBg }}>
               <h5 className="modal-title fw-bold d-flex align-items-center gap-2">
                 {formData.id ? <EditIcon /> : <PlusIcon />} 
                 {formData.id ? 'Editar Producto' : 'Crear Nuevo Producto'}
               </h5>
               
-              {/* BOTÓN CERRAR CORREGIDO DE POSICIÓN */}
+              {/* BOTÓN CERRAR EN LA ESQUINA DERECHA */}
               <button 
                 onClick={handleClose} 
                 className={`btn btn-link position-absolute top-50 end-0 translate-middle-y me-3 rounded-circle p-2 ${isDark ? 'text-white-50 hover-text-white' : 'text-muted hover-text-dark'}`}
@@ -410,7 +414,8 @@ export default function ProductModal({ show, handleClose, handleSave, productoAc
                         </button>
                       </div>
 
-                      <div className={`rounded-4 p-3 border ${borderColor} ${isDark ? 'bg-dark' : 'bg-white'}`}>
+                      {/* --- SECCIÓN DE TOPPINGS ARREGLADA --- */}
+                      <div className={`rounded-4 p-3 border ${borderColor} ${optionsContainerBg}`}>
                          <div className="d-flex justify-content-between align-items-center mb-3">
                             <div className="form-check form-switch m-0">
                                <input 
