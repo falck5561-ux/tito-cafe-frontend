@@ -98,7 +98,7 @@ const CarritoContent = ({
         ? "bg-black/40 backdrop-blur-md border-t border-white/10" 
         : "bg-white/80 backdrop-blur-md border-t border-gray-200";
 
-    // --- CORRECCIÓN 1: Estilos de Selección de Entrega ---
+    // Estilos de Selección de Entrega
     const cardSelectable = (selected) => `
         cursor-pointer rounded-xl border p-3 transition-all duration-200 flex items-center gap-3 relative overflow-hidden
         ${selected 
@@ -228,11 +228,11 @@ const CarritoContent = ({
                                                 className={cardSelectable(tipoOrden === opt.id)}
                                                 onClick={() => setTipoOrden(opt.id)}
                                             >
-                                                {/* CORRECCIÓN ICONO: text-white explícito cuando está seleccionado */}
+                                                {/* ICONO: Forzamos el color blanco con !text-white */}
                                                 <div 
                                                     className={`p-2 rounded-circle d-flex align-items-center justify-content-center ${
                                                         tipoOrden === opt.id 
-                                                            ? 'bg-blue-500 text-white' // Aquí forzamos el blanco
+                                                            ? 'bg-blue-500 !text-white' 
                                                             : (isDark ? 'bg-white/10 text-gray-400' : 'bg-gray-200 text-gray-600')
                                                     }`} 
                                                     style={{width: '40px', height: '40px'}}
@@ -643,10 +643,10 @@ function ClientePage() {
                                     <div key={item.id} className="col-6 col-md-4">
                                         <motion.div 
                                             whileHover={{ y: -8, scale: 1.02 }}
-                                            // --- CORRECCIÓN 3: Borde ROJO en luz, AZUL en dark si hay oferta ---
+                                            // --- BORDES FUERTES Y VISIBLES (border-4) ---
                                             className={`card h-100 shadow-lg overflow-hidden position-relative ${
                                                 item.en_oferta 
-                                                    ? (isDark ? 'border border-2 border-blue-500' : 'border border-2 border-red-500') 
+                                                    ? (isDark ? 'border border-4 border-blue-600' : 'border border-4 border-red-600') 
                                                     : 'border-0'
                                             }`}
                                             style={{ backgroundColor: cardBg, borderRadius: '24px', cursor: 'pointer' }}
@@ -662,10 +662,13 @@ function ClientePage() {
                                                 <div className="mt-auto pt-2">
                                                     {item.en_oferta ? (
                                                         <div className="d-flex justify-content-center align-items-center gap-2 flex-wrap">
-                                                            {/* --- CORRECCIÓN 4: Precio tachado: ROJO en luz, AZUL en dark --- */}
+                                                            {/* --- PRECIO ORIGINAL AZUL (DARK) y ROJO (LUZ) --- */}
                                                             <small 
-                                                                className={`text-decoration-line-through fw-bold ${isDark ? 'text-blue-400' : 'text-danger'}`} 
-                                                                style={{fontSize: '0.9rem'}}
+                                                                className="text-decoration-line-through fw-bold" 
+                                                                style={{ 
+                                                                    fontSize: '0.9rem',
+                                                                    color: isDark ? '#3b82f6' : '#dc2626' // #3b82f6 es azul puro, #dc2626 es rojo puro
+                                                                }}
                                                             >
                                                                 ${Number(item.precio_original).toFixed(2)}
                                                             </small>
@@ -793,7 +796,7 @@ function ClientePage() {
                     </motion.div>
                 )}
 
-                {/* --- PESTAÑA 3: RECOMPENSAS (DISEÑO TICKET) --- */}
+                {/* --- PESTAÑA 3: RECOMPENSAS (CON IMAGEN premio.png) --- */}
                 {!loading && activeTab === 'recompensas' && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                         <div className="text-center mb-5">
@@ -806,7 +809,6 @@ function ClientePage() {
                         
                         <div className="row g-4 justify-content-center">
                             {misRecompensas.length === 0 ? (
-                                // --- CORRECCIÓN 2: Estilos Empty State en Modo Luz (sin opacidad excesiva) ---
                                 <div className={`col-12 text-center py-5 rounded-4 border border-dashed ${isDark ? 'border-secondary text-white opacity-50' : 'border-gray-300 text-gray-500'}`}>
                                     <Star size={40} className={`mb-2 ${isDark ? 'text-white' : 'text-yellow-500'}`}/>
                                     <p className="fw-bold">Completa 20 pedidos para desbloquear.</p>
@@ -823,7 +825,15 @@ function ClientePage() {
                                     >
                                         <div className="d-flex flex-column align-items-center justify-content-center p-4 text-white position-relative overflow-hidden" style={{ width: '130px', background: 'linear-gradient(135deg, #fbbf24, #d97706)' }}>
                                             <div className="position-absolute top-0 start-0 w-100 h-100 opacity-20" style={{ backgroundImage: 'radial-gradient(circle, white 2px, transparent 2.5px)', backgroundSize: '10px 10px' }}></div>
-                                            <Gift size={32} className="mb-2 position-relative z-10"/>
+                                            
+                                            {/* --- IMAGEN PREMIO REEMPLAZADA --- */}
+                                            <img 
+                                                src="premio.png" 
+                                                alt="Premio" 
+                                                className="mb-2 position-relative z-10"
+                                                style={{ width: '40px', height: '40px', objectFit: 'contain' }}
+                                            />
+                                            
                                             <span className="fw-bold small position-relative z-10 tracking-widest">GIFT</span>
                                         </div>
                                         
