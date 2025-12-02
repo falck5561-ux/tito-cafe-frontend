@@ -80,10 +80,8 @@ const CarritoContent = ({
 }) => {
 
     // --- VARIABLES DE ESTILO DINÁMICO (ROJO vs AZUL) ---
-    // CORRECCIÓN: Aseguramos que el color sea ROJO intenso en modo claro
     const accentColor = isDark ? 'text-blue-500' : 'text-red-600';
     const accentBg = isDark ? 'bg-blue-500' : 'bg-red-600';
-    const accentBorder = isDark ? 'border-blue-500' : 'border-red-600';
     
     // Gradiente del botón principal
     const btnGradient = isDark 
@@ -246,7 +244,7 @@ const CarritoContent = ({
                                                 <div 
                                                     className={`p-2 rounded-circle d-flex align-items-center justify-content-center ${
                                                         tipoOrden === opt.id 
-                                                            ? `${accentBg} !text-white` // ROJO en modo claro
+                                                            ? `${accentBg} !text-white`
                                                             : (isDark ? 'bg-white/10 text-gray-400' : 'bg-gray-200 text-gray-600')
                                                     }`} 
                                                     style={{width: '40px', height: '40px'}}
@@ -278,7 +276,6 @@ const CarritoContent = ({
                         >
                             {direccionGuardada && (
                                 <button 
-                                    // CORRECCIÓN: Botón redondeado y contorno rojo en light
                                     className={`btn w-100 mb-3 rounded-pill py-2 d-flex align-items-center justify-content-center gap-2 border-2 fw-semibold ${isDark ? 'btn-outline-primary' : 'btn-outline-danger'}`} 
                                     onClick={usarDireccionGuardada}
                                 >
@@ -286,7 +283,6 @@ const CarritoContent = ({
                                 </button>
                             )}
                             
-                            {/* CORRECCIÓN: Contenedor del Mapa totalmente redondeado (rounded-3xl) */}
                             <div className="rounded-3xl overflow-hidden border border-white/10 shadow-md mb-3" style={{ height: '300px', borderRadius: '24px' }}> 
                                 <MapSelector 
                                     onLocationSelect={handleLocationSelect} 
@@ -296,10 +292,9 @@ const CarritoContent = ({
                             </div>
                             
                             <div className="form-group mb-3">
-                                <label className={`form-label small fw-bold ms-1 ${isDark ? 'text-gray-300' : 'text-red-700'}`}> {/* Texto rojo si no es dark */}
+                                <label className={`form-label small fw-bold ms-1 ${isDark ? 'text-gray-300' : 'text-red-700'}`}>
                                     Referencia de entrega
                                 </label>
-                                {/* CORRECCIÓN: Input con borde muy redondeado (rounded-3xl) y color de borde corregido */}
                                 <div className={`d-flex align-items-center px-3 py-3 rounded-3xl border transition-all ${isDark ? 'bg-black/20 border-white/10' : 'bg-white border-gray-200 focus-within:border-red-500'}`} style={{ borderRadius: '24px' }}>
                                     <MapPin size={18} className={`${isDark ? 'opacity-50' : 'text-red-500'} me-2`}/>
                                     <input 
@@ -391,12 +386,12 @@ function ClientePage() {
     const textMain = isDark ? '#ffffff' : '#1f2937';
     const textMuted = isDark ? '#a1a1aa' : '#374151'; 
     
-    // Configuración dinámica para el Menú y Tickets (Asegurando ROJO en light mode)
+    // Configuración dinámica para el Menú y Tickets
     const accentColor = isDark ? 'text-blue-500' : 'text-red-600';
     const accentBorder = isDark ? '3px solid #2563eb' : '3px solid #dc2626';
     const accentGradient = isDark 
         ? 'linear-gradient(135deg, #2563eb, #1e40af)' 
-        : 'linear-gradient(135deg, #ef4444, #b91c1c)'; // Rojo en light
+        : 'linear-gradient(135deg, #ef4444, #b91c1c)';
 
     const {
         pedidoActual,
@@ -628,7 +623,7 @@ function ClientePage() {
     return (
         <div style={{ backgroundColor: bgBase, minHeight: '100vh', color: textMain, pointerEvents: (productoSeleccionadoParaModal || showPaymentModal || showCartModal) ? 'none' : 'auto' }}> 
               
-            {/* TABS NAVEGACIÓN */}
+            {/* TABS NAVEGACIÓN - CORRECCIÓN APLICADA AQUÍ */}
             <div className={`sticky-top pt-3 pb-2 px-3 mb-4 shadow-sm z-50 ${isDark ? 'bg-black/80 border-b border-white/10 backdrop-blur-md' : 'bg-white/80 border-b border-gray-200 backdrop-blur-md'}`}>
                 <ul className="nav nav-pills nav-fill gap-2 container" style={{ maxWidth: '800px' }}>
                     {[
@@ -638,13 +633,14 @@ function ClientePage() {
                     ].map(tab => (
                         <li className="nav-item" key={tab.id}>
                             <button 
-                                className={`nav-link d-flex align-items-center justify-content-center gap-2 ${activeTab === tab.id ? 'active fw-bold shadow-md' : ''} ${isDark && activeTab !== tab.id ? 'text-gray-400 hover:text-white' : ''}`}
+                                className={`nav-link d-flex align-items-center justify-content-center gap-2 ${activeTab === tab.id ? 'active fw-bold shadow-md' : ''} ${isDark ? (activeTab !== tab.id ? 'text-gray-400 hover:text-white' : '') : ''}`}
                                 onClick={() => setActiveTab(tab.id)}
                                 style={{ 
                                     borderRadius: '16px', 
                                     transition: 'all 0.2s', 
-                                    backgroundColor: activeTab === tab.id ? (isDark ? '#2563eb' : '#dc2626') : 'transparent', // Rojo en light
-                                    color: activeTab === tab.id ? 'white' : undefined 
+                                    backgroundColor: activeTab === tab.id ? (isDark ? '#2563eb' : '#dc2626') : 'transparent', // Rojo si activo y light
+                                    // AQUÍ ESTÁ EL CAMBIO: Si no es dark y no está activo, se fuerza el rojo (#dc2626)
+                                    color: activeTab === tab.id ? 'white' : (isDark ? '#9ca3af' : '#dc2626') 
                                 }}
                             >
                                 {tab.icon} {tab.label}
@@ -670,7 +666,6 @@ function ClientePage() {
                                     <div key={item.id} className="col-6 col-md-4">
                                         <motion.div 
                                             whileHover={{ y: -8, scale: 1.02 }}
-                                            // Aumentado a rounded-3xl para quitar borde cuadrado
                                             className="card h-100 shadow-lg overflow-hidden position-relative"
                                             style={{ 
                                                 backgroundColor: cardBg, 
@@ -850,7 +845,7 @@ function ClientePage() {
                                         className="d-flex position-relative shadow-lg"
                                         style={{ 
                                             background: isDark ? '#18181b' : 'white', 
-                                            borderRadius: '24px', // Borde redondeado, no cuadrado
+                                            borderRadius: '24px', 
                                             overflow: 'hidden',
                                             minHeight: '140px'
                                         }}
@@ -868,13 +863,8 @@ function ClientePage() {
                                         
                                         {/* DIVISOR Y "MORDIDAS" (Bites) para efecto ticket */}
                                         <div className="position-relative d-flex align-items-center" style={{ width: '0px' }}>
-                                            {/* Linea punteada vertical */}
                                             <div style={{ position: 'absolute', left: '-1px', height: '80%', borderLeft: `2px dashed ${isDark ? '#52525b' : '#d1d5db'}` }}></div>
-                                            
-                                            {/* Circulo mordida superior */}
                                             <div style={{ position: 'absolute', top: '-12px', left: '-12px', width: '24px', height: '24px', borderRadius: '50%', background: bgBase }}></div>
-                                            
-                                            {/* Circulo mordida inferior */}
                                             <div style={{ position: 'absolute', bottom: '-12px', left: '-12px', width: '24px', height: '24px', borderRadius: '50%', background: bgBase }}></div>
                                         </div>
 
