@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'; // <--- Se añade useState y useEffect
+import React, { useState, useEffect } from 'react'; 
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import 'bootstrap/dist/js/bootstrap.bundle.min';
@@ -6,7 +6,7 @@ import 'bootstrap/dist/js/bootstrap.bundle.min';
 // Importación de Componentes
 import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
-import DinoGame from './components/DinoGame'; // <--- Se importa el componente del juego
+import DinoGame from './components/DinoGame'; 
 
 // Importación de las Páginas
 import HomePage from './pages/HomePage';
@@ -17,6 +17,7 @@ import PosPage from './pages/PosPage';
 import ClientePage from './pages/ClientePage';
 import CanjearPage from './pages/CanjearPage';
 import CombosPage from './pages/CombosPage';
+import NosotrosPage from './pages/NosotrosPage'; // <--- 1. AGREGAR ESTE IMPORT
 
 // --- Hook para detectar si el usuario está desconectado ---
 const useOfflineStatus = () => {
@@ -40,7 +41,7 @@ const useOfflineStatus = () => {
 
 
 function App() {
-  const isOffline = useOfflineStatus(); // Se utiliza el hook
+  const isOffline = useOfflineStatus(); 
 
   return (
     <BrowserRouter>
@@ -58,6 +59,9 @@ function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/combos" element={<CombosPage />} />
+            
+            {/* <--- 2. AGREGAR ESTA RUTA PÚBLICA */}
+            <Route path="/nosotros" element={<NosotrosPage />} /> 
 
             {/* --- Rutas Protegidas --- */}
             <Route 
