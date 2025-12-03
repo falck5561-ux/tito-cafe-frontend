@@ -1,13 +1,21 @@
-import React, { useContext } from 'react';
+import React from 'react'; // Eliminé useContext porque ya no se usa directamente
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ShoppingBag, CheckCircle } from 'lucide-react';
-import { CartContext } from '../context/CartContext';
+// 1. CAMBIO IMPORTANTE: Importamos el hook useCart en lugar del Contexto crudo
+import { useCart } from '../context/CartContext'; 
 import { useTheme } from '../context/ThemeContext';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 function ComboDetailModal({ combo, onClose }) {
-    const { agregarAlCarrito } = useContext(CartContext);
+    // 2. CAMBIO IMPORTANTE: Usamos el hook useCart()
+    // NOTA: Si tu función se llama 'agregarProductoAPedido' en lugar de 'agregarAlCarrito',
+    // cambia el nombre aquí abajo. He puesto ambas por seguridad.
+    const context = useCart();
+    
+    // Detectamos cuál nombre usa tu contexto (algunos usan agregarAlCarrito, otros agregarProductoAPedido)
+    const agregarAlCarrito = context.agregarAlCarrito || context.agregarProductoAPedido;
+
     const { theme } = useTheme();
     const navigate = useNavigate();
     const isDark = theme === 'dark';
@@ -15,7 +23,30 @@ function ComboDetailModal({ combo, onClose }) {
     if (!combo) return null;
 
     const handleAddToOrder = () => {
-        agregarAlCarrito(combo);
+        if (!agregarAlCarrito) {
+            console.error("Error: No se encontró la función para agregar al carrito en useCart()");
+            toast.error("Error interno al agregar al carrito");
+            return;
+        }
+
+        // Preparamos el objeto tal como lo espera el carrito
+        // Aseguramos que tenga precio_final calculado si es oferta
+        const precioOriginal = parseFloat(combo.precio);
+        const esOferta = combo.en_oferta || combo.oferta_activa;
+        const precioFinal = esOferta 
+            ? precioOriginal * (1 - (combo.descuento_porcentaje || 0) / 100) 
+            : precioOriginal;
+
+        const itemParaCarrito = {
+            ...combo,
+            precio: precioFinal,
+            id: combo.id,
+            nombre: combo.nombre || combo.titulo,
+            imagen: combo.imagen_url || (combo.imagenes && combo.imagenes[0])
+        };
+
+        agregarAlCarrito(itemParaCarrito);
+
         toast.custom((t) => (
             <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}>
               <div className="flex-1 w-0 p-4">
@@ -32,8 +63,6 @@ function ComboDetailModal({ combo, onClose }) {
             </div>
         ));
         onClose();
-        // Opcional: Redirigir al checkout o dejar que sigan comprando
-        // navigate('/hacer-un-pedido'); 
     };
 
     return (
@@ -44,7 +73,7 @@ function ComboDetailModal({ combo, onClose }) {
                 style={{
                     position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
                     backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 1050,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', p: 3
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem'
                 }}
                 onClick={onClose}
             >
@@ -54,7 +83,7 @@ function ComboDetailModal({ combo, onClose }) {
                     exit={{ scale: 0.9, opacity: 0, y: 50 }}
                     onClick={(e) => e.stopPropagation()}
                     className={`modal-content rounded-4 overflow-hidden shadow-lg ${isDark ? 'bg-dark text-white' : 'bg-white text-dark'}`}
-                    style={{ maxWidth: '900px', width: '95%', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}
+                    style={{ maxWidth: '900px', width: '100%', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}
                 >
                     <div className="position-relative h-100 d-flex flex-column flex-lg-row">
                         {/* Botón Cerrar */}
