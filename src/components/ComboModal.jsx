@@ -101,8 +101,16 @@ function ComboModal({ show, handleClose, handleSave, comboActual }) {
             descripcion: formData.descripcion,
             precio: parseFloat(formData.precio),
             descuento_porcentaje: parseFloat(formData.descuento_porcentaje) || 0,
+            
+            // --- CORRECCIÓN PARA EL BACKEND ---
+            // Enviamos los nombres EXACTOS que tu servidor espera recibir
+            oferta_activa: formData.oferta_activa, 
+            activa: formData.activa,
+            
+            // Enviamos también los nombres viejos por seguridad
             en_oferta: formData.oferta_activa,
             esta_activo: formData.activa,
+
             imagen_url: (formData.imagenes.filter(url => url && url.trim() !== '')[0] || null),
             imagenes: formData.imagenes.filter(url => url && url.trim() !== '')
         };
