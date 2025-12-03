@@ -28,7 +28,8 @@ import {
     ChevronRight,
     X,
     Ticket,
-    Phone 
+    Phone,
+    Trash2
 } from 'lucide-react'; 
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
@@ -230,12 +231,13 @@ const CarritoContent = ({
                                                 </button>
                                             </div>
                                             <button 
-                                                className="btn btn-link p-0 text-danger text-decoration-none small" 
-                                                style={{fontSize: '0.8rem'}} 
-                                                onClick={() => eliminarProducto(item.cartItemId || item.id)}
-                                            >
-                                                Eliminar
-                                            </button>
+    className={`btn btn-sm mt-1 border-0 rounded-circle d-flex align-items-center justify-content-center transition-all ${isDark ? 'text-red-400 hover:bg-red-900/30' : 'text-red-500 hover:bg-red-50'}`}
+    style={{ width: '32px', height: '32px' }}
+    onClick={() => eliminarProducto(item.cartItemId || item.id)}
+    title="Eliminar producto"
+>
+    <Trash2 size={18} />
+</button>
                                         </div>
                                     </div>
                                 ))}
@@ -770,6 +772,10 @@ const estandarizar = (item) => {
                     width: 0 !important;
                     height: 0 !important;
                     position: absolute !important;
+                }
+                /* ESTO ARREGLA EL BUSCADOR DE MAPS */
+                .pac-container {
+                    z-index: 20000 !important;
                 }
             `}</style>
               
