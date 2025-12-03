@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Eye, Tag, ArrowRight } from 'lucide-react'; 
-import { useTheme } from '../context/ThemeContext'; // Importamos el hook de tema
+import { Tag, ArrowRight } from 'lucide-react'; 
+import { useTheme } from '../context/ThemeContext';
 
 function ComboCard({ combo, onClick }) { 
   const { theme } = useTheme();
@@ -9,7 +9,6 @@ function ComboCard({ combo, onClick }) {
 
   // --- LÓGICA DE PRECIOS ---
   const precioOriginal = parseFloat(combo.precio || 0);
-  // Si hay descuento calculado o directo
   const descuentoPorcentaje = parseFloat(combo.descuento_porcentaje || 0);
   const tieneDescuento = (combo.en_oferta || combo.oferta_activa) && descuentoPorcentaje > 0;
   
@@ -17,25 +16,30 @@ function ComboCard({ combo, onClick }) {
       ? precioOriginal * (1 - (descuentoPorcentaje / 100)) 
       : precioOriginal;
 
+  // Placeholder inteligente según modo
   const imageUrl = combo.imagen_url || `https://placehold.co/400x300/${isDark ? '1a1a1a' : 'f0f0f0'}/${isDark ? 'ffffff' : '000000'}?text=${combo.nombre}`;
 
-  // --- ESTILOS DINÁMICOS (ROJO vs AZUL) ---
-  // Modo Dark (Picante) -> Rojo
-  // Modo Light (Fresco) -> Azul
-  const cardBorderColor = isDark ? '#ff4d4d' : '#00bfff'; 
+  // --- CORRECCIÓN DE COLORES ---
+  // 1. Bordes Invertidos: Dark = Azul, Light = Rojo (ajustable si el light debe ser otro)
+  const cardBorderColor = isDark ? '#00bfff' : '#ff4d4d'; 
+  
+  // 2. Efecto Glow suave del color del borde
   const glowEffect = isDark 
-      ? '0 0 15px rgba(255, 77, 77, 0.4)' // Brillo Rojo
-      : '0 0 15px rgba(0, 191, 255, 0.4)'; // Brillo Azul
+      ? '0 0 15px rgba(0, 191, 255, 0.3)' // Azul en dark
+      : '0 0 10px rgba(255, 77, 77, 0.2)'; // Rojo en light
   
   const bgColor = isDark ? '#1a1a1a' : '#ffffff';
   const textColor = isDark ? '#ffffff' : '#212529';
+  
+  // 3. PRECIO VERDE (Siempre verde, estilo Matrix/Tito)
+  const priceColor = '#00e676'; 
 
   return (
     <motion.div 
       className="col"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -8, scale: 1.02 }} // Efecto "Pop" al pasar el mouse
+      whileHover={{ y: -8, scale: 1.02 }} 
       transition={{ type: 'spring', stiffness: 300 }}
     >
       <div 
@@ -46,8 +50,7 @@ function ComboCard({ combo, onClick }) {
             backgroundColor: bgColor, 
             color: textColor,
             borderRadius: '20px',
-            // AQUÍ ESTÁ EL BORDE DE COLOR Y EL BRILLO QUE PEDISTE
-            border: `2px solid ${cardBorderColor}`,
+            border: `2px solid ${cardBorderColor}`, // Borde del color del tema
             boxShadow: glowEffect
         }}
       >
@@ -57,17 +60,17 @@ function ComboCard({ combo, onClick }) {
                 src={imageUrl} 
                 alt={combo.nombre} 
                 className="w-100 h-100 object-fit-cover"
-                whileHover={{ scale: 1.1 }} // Zoom interno
+                whileHover={{ scale: 1.1 }} 
                 transition={{ duration: 0.5 }}
             />
             
-            {/* Badge de Descuento */}
+            {/* Badge de Descuento (Usa el color del borde para combinar) */}
             {tieneDescuento && (
                 <div 
                     className="position-absolute top-0 end-0 m-2 px-2 py-1 rounded-3 fw-bold shadow-sm d-flex align-items-center gap-1"
                     style={{ 
                         fontSize: '0.8rem', 
-                        backgroundColor: cardBorderColor, // El badge combina con el borde
+                        backgroundColor: cardBorderColor, 
                         color: '#fff'
                     }}
                 >
@@ -76,16 +79,13 @@ function ComboCard({ combo, onClick }) {
             )}
         </div>
 
-        {/* --- CUERPO (SIN DESCRIPCIÓN) --- */}
+        {/* --- CUERPO --- */}
         <div className="card-body d-flex flex-column p-3">
-            {/* Título Centrado y Grande */}
             <h5 className="card-title fw-bold text-center mb-3 text-truncate" style={{ fontSize: '1.2rem' }}>
                 {combo.nombre || 'Combo Especial'}
             </h5>
             
-            {/* La descripción ha sido ELIMINADA de aquí como pediste */}
-            
-            {/* --- FOOTER: PRECIO Y BOTÓN --- */}
+            {/* --- FOOTER --- */}
             <div className="d-flex align-items-center justify-content-between mt-auto pt-2 border-top" style={{ borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }}>
                 
                 {/* Precios */}
@@ -95,19 +95,20 @@ function ComboCard({ combo, onClick }) {
                             ${precioOriginal.toFixed(2)}
                         </small>
                     )}
-                    <span className="fw-bold fs-5" style={{ color: cardBorderColor }}> 
+                    {/* AQUÍ ESTÁ EL CAMBIO: Precio siempre VERDE */}
+                    <span className="fw-bold fs-5" style={{ color: priceColor }}> 
                         ${precioMostrar.toFixed(2)}
                     </span>
                 </div>
 
-                {/* Botón Pequeño "Ver" */}
+                {/* Botón Ver (Combina con el borde) */}
                 <button 
                     className="btn btn-sm rounded-pill px-3 fw-bold d-flex align-items-center gap-1"
                     style={{ 
                         backgroundColor: cardBorderColor, 
                         color: '#fff', 
                         border: 'none',
-                        boxShadow: `0 4px 6px -1px ${isDark ? 'rgba(255,77,77,0.3)' : 'rgba(0,191,255,0.3)'}`
+                        boxShadow: `0 4px 6px -1px ${isDark ? 'rgba(0,191,255,0.3)' : 'rgba(255,77,77,0.3)'}`
                     }}
                 >
                     Ver <ArrowRight size={14} />
