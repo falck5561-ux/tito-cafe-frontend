@@ -41,12 +41,21 @@ function ComboDetailModal({ combo, onClose }) {
         navigate('/hacer-un-pedido');
     };
 
-    // --- COLORES EXACTOS DE TITO PIKULITO ---
-    const modalBg = '#1f1f1f'; // Gris oscuro casi negro
-    const textColor = '#ffffff';
-    const priceColor = '#2ecc71'; // Verde brillante
-    const buttonColor = '#3498db'; // Azul (como en tu video)
-    const borderColor = '#333333';
+    // --- COLORES DINÁMICOS (TITO PIKULITO / MOJADITO) ---
+    // Dark Mode: Fondo Gris Oscuro, Texto Blanco, Botón Azul
+    // Light Mode: Fondo Blanco, Texto Oscuro, Botón Rojo
+    
+    const modalBg = isDark ? '#1f1f1f' : '#ffffff';
+    const textColor = isDark ? '#ffffff' : '#212529';
+    const subTextColor = isDark ? '#a0a0a0' : '#6c757d';
+    const borderColor = isDark ? '#333333' : '#e9ecef';
+    
+    // Verde siempre para el precio final (es un estándar visual de oferta)
+    // O puedes usar azul en light mode si prefieres: isDark ? '#2ecc71' : '#0d6efd';
+    const priceColor = '#2ecc71'; 
+    
+    // AQUÍ ESTÁ EL CAMBIO QUE PEDISTE:
+    const buttonColor = isDark ? '#3498db' : '#dc3545'; // Azul en Dark, Rojo en Light
 
     return (
         <AnimatePresence>
@@ -55,7 +64,7 @@ function ComboDetailModal({ combo, onClose }) {
                 className="modal-overlay"
                 style={{
                     position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                    backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 1060,
+                    backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 1060,
                     backdropFilter: 'blur(4px)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '15px'
                 }}
@@ -68,7 +77,7 @@ function ComboDetailModal({ combo, onClose }) {
                     onClick={(e) => e.stopPropagation()}
                     className="modal-content overflow-hidden shadow-lg"
                     style={{ 
-                        maxWidth: '450px', // Ancho controlado (tipo móvil/tablet pequeña)
+                        maxWidth: '450px', 
                         width: '100%', 
                         backgroundColor: modalBg, 
                         color: textColor,
@@ -76,10 +85,10 @@ function ComboDetailModal({ combo, onClose }) {
                         border: `1px solid ${borderColor}`,
                         display: 'flex',
                         flexDirection: 'column',
-                        maxHeight: '85vh' // Evita que se salga de la pantalla en móviles
+                        maxHeight: '85vh'
                     }}
                 >
-                    {/* --- 1. IMAGEN SUPERIOR (Scrollable si es necesario) --- */}
+                    {/* --- 1. IMAGEN SUPERIOR --- */}
                     <div style={{ overflowY: 'auto', flexGrow: 1 }}>
                         <div className="position-relative">
                             <img 
@@ -92,8 +101,14 @@ function ComboDetailModal({ combo, onClose }) {
                             {/* Botón Cerrar (X) */}
                             <button 
                                 onClick={onClose}
-                                className="position-absolute top-0 end-0 m-3 btn btn-dark rounded-circle p-0 d-flex align-items-center justify-content-center shadow"
-                                style={{ width: '30px', height: '30px', backgroundColor: 'rgba(0,0,0,0.6)', border: 'none', color: '#fff' }}
+                                className="position-absolute top-0 end-0 m-3 btn rounded-circle p-0 d-flex align-items-center justify-content-center shadow"
+                                style={{ 
+                                    width: '30px', 
+                                    height: '30px', 
+                                    backgroundColor: isDark ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.8)', 
+                                    border: 'none', 
+                                    color: isDark ? '#fff' : '#000' 
+                                }}
                             >
                                 <X size={18} />
                             </button>
@@ -101,23 +116,23 @@ function ComboDetailModal({ combo, onClose }) {
 
                         {/* --- 2. CUERPO DEL MODAL --- */}
                         <div className="p-4">
-                            <h3 className="fw-bold mb-2 text-white">{combo.nombre || combo.titulo}</h3>
+                            <h3 className="fw-bold mb-2" style={{ color: textColor }}>{combo.nombre || combo.titulo}</h3>
                             
                             {/* Descripción */}
-                            <p className="text-secondary small mb-3" style={{ lineHeight: '1.5' }}>
+                            <p className="small mb-3" style={{ lineHeight: '1.5', color: subTextColor }}>
                                 {combo.descripcion || 'Combo especial de la casa.'}
                             </p>
                         </div>
                     </div>
 
-                    {/* --- 3. FOOTER FIJO (Igual a Tito Pikulito) --- */}
-                    <div className="p-3 border-top border-secondary border-opacity-25" style={{ backgroundColor: '#252525' }}>
+                    {/* --- 3. FOOTER FIJO --- */}
+                    <div className="p-3 border-top" style={{ backgroundColor: isDark ? '#252525' : '#f8f9fa', borderColor: borderColor }}>
                         <div className="d-flex align-items-center justify-content-between">
                             
                             {/* Precio a la izquierda */}
                             <div className="d-flex flex-column lh-1">
                                 {tieneDescuento && (
-                                    <small className="text-decoration-line-through text-secondary mb-1" style={{ fontSize: '0.8rem' }}>
+                                    <small className="text-decoration-line-through mb-1" style={{ fontSize: '0.8rem', color: subTextColor }}>
                                         ${precioOriginal.toFixed(2)}
                                     </small>
                                 )}
