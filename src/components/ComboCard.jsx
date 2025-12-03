@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Tag, ArrowRight } from 'lucide-react'; 
+import { ArrowRight } from 'lucide-react'; 
 import { useTheme } from '../context/ThemeContext';
 
 function ComboCard({ combo, onClick }) { 
@@ -16,23 +16,23 @@ function ComboCard({ combo, onClick }) {
       ? precioOriginal * (1 - (descuentoPorcentaje / 100)) 
       : precioOriginal;
 
-  // Placeholder inteligente según modo
   const imageUrl = combo.imagen_url || `https://placehold.co/400x300/${isDark ? '1a1a1a' : 'f0f0f0'}/${isDark ? 'ffffff' : '000000'}?text=${combo.nombre}`;
 
-  // --- CORRECCIÓN DE COLORES ---
-  // 1. Bordes Invertidos: Dark = Azul, Light = Rojo (ajustable si el light debe ser otro)
-  const cardBorderColor = isDark ? '#00bfff' : '#ff4d4d'; 
+  // --- COLORES CORREGIDOS ---
+  // Azul más fuerte (Royal Blue) para que resalte
+  const strongBlue = '#0055ff'; 
+  const strongRed = '#ff3333';
+
+  // En Dark mode usamos el Azul Fuerte, en Light el Rojo (o inviértelo si prefieres)
+  const cardBorderColor = isDark ? strongBlue : strongRed; 
   
-  // 2. Efecto Glow suave del color del borde
   const glowEffect = isDark 
-      ? '0 0 15px rgba(0, 191, 255, 0.3)' // Azul en dark
-      : '0 0 10px rgba(255, 77, 77, 0.2)'; // Rojo en light
+      ? `0 0 15px ${strongBlue}40` // Brillo azulado
+      : `0 0 10px ${strongRed}40`; // Brillo rojizo
   
   const bgColor = isDark ? '#1a1a1a' : '#ffffff';
   const textColor = isDark ? '#ffffff' : '#212529';
-  
-  // 3. PRECIO VERDE (Siempre verde, estilo Matrix/Tito)
-  const priceColor = '#00e676'; 
+  const priceColor = '#00e676'; // Verde Neón para el precio
 
   return (
     <motion.div 
@@ -50,12 +50,13 @@ function ComboCard({ combo, onClick }) {
             backgroundColor: bgColor, 
             color: textColor,
             borderRadius: '20px',
-            border: `2px solid ${cardBorderColor}`, // Borde del color del tema
-            boxShadow: glowEffect
+            border: `2px solid ${cardBorderColor}`,
+            boxShadow: glowEffect,
+            position: 'relative' // Necesario para posicionar el círculo
         }}
       >
         {/* --- IMAGEN --- */}
-        <div className="position-relative overflow-hidden" style={{ height: '200px' }}>
+        <div className="overflow-hidden" style={{ height: '200px' }}>
             <motion.img 
                 src={imageUrl} 
                 alt={combo.nombre} 
@@ -63,21 +64,27 @@ function ComboCard({ combo, onClick }) {
                 whileHover={{ scale: 1.1 }} 
                 transition={{ duration: 0.5 }}
             />
-            
-            {/* Badge de Descuento (Usa el color del borde para combinar) */}
-            {tieneDescuento && (
-                <div 
-                    className="position-absolute top-0 end-0 m-2 px-2 py-1 rounded-3 fw-bold shadow-sm d-flex align-items-center gap-1"
-                    style={{ 
-                        fontSize: '0.8rem', 
-                        backgroundColor: cardBorderColor, 
-                        color: '#fff'
-                    }}
-                >
-                    <Tag size={12} /> -{descuentoPorcentaje.toFixed(0)}%
-                </div>
-            )}
         </div>
+
+        {/* --- BADGE CIRCULAR (¡CORREGIDO!) --- */}
+        {tieneDescuento && (
+            <div 
+                className="position-absolute shadow d-flex align-items-center justify-content-center fw-bold text-white"
+                style={{ 
+                    top: '15px',
+                    right: '15px',
+                    width: '50px',   // Ancho fijo
+                    height: '50px',  // Alto igual al ancho para hacerlo circular
+                    borderRadius: '50%', // Esto lo hace un círculo perfecto
+                    fontSize: '0.9rem', 
+                    backgroundColor: cardBorderColor, // Usa el mismo color fuerte del borde
+                    zIndex: 10,
+                    lineHeight: 1
+                }}
+            >
+                -{descuentoPorcentaje.toFixed(0)}%
+            </div>
+        )}
 
         {/* --- CUERPO --- */}
         <div className="card-body d-flex flex-column p-3">
@@ -95,20 +102,19 @@ function ComboCard({ combo, onClick }) {
                             ${precioOriginal.toFixed(2)}
                         </small>
                     )}
-                    {/* AQUÍ ESTÁ EL CAMBIO: Precio siempre VERDE */}
                     <span className="fw-bold fs-5" style={{ color: priceColor }}> 
                         ${precioMostrar.toFixed(2)}
                     </span>
                 </div>
 
-                {/* Botón Ver (Combina con el borde) */}
+                {/* Botón Ver */}
                 <button 
                     className="btn btn-sm rounded-pill px-3 fw-bold d-flex align-items-center gap-1"
                     style={{ 
                         backgroundColor: cardBorderColor, 
                         color: '#fff', 
                         border: 'none',
-                        boxShadow: `0 4px 6px -1px ${isDark ? 'rgba(0,191,255,0.3)' : 'rgba(255,77,77,0.3)'}`
+                        boxShadow: `0 4px 10px ${cardBorderColor}60` // Sombra del color del botón
                     }}
                 >
                     Ver <ArrowRight size={14} />
