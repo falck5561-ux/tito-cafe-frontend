@@ -1,78 +1,101 @@
-// Archivo: src/components/ComboCard.jsx
-
-import React, { useContext } from 'react'; // 1. Importa useContext
+import React from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom'; // 2. Importa useNavigate para la redirección
-import { CartContext } from '../context/CartContext'; // 3. Importa tu contexto del carrito (asegúrate de que la ruta sea correcta)
+import { Eye, Tag, ArrowRight } from 'lucide-react'; 
 
-function ComboCard({ combo }) {
-  const navigate = useNavigate(); // 4. Inicializa el hook de navegación
-  const { agregarAlCarrito } = useContext(CartContext); // 5. Obtiene la función para agregar al carrito desde el contexto
+function ComboCard({ combo, onClick }) { 
 
-  // --- LÓGICA DE PRECIOS Y DESCUENTOS (sin cambios) ---
+  // --- LÓGICA DE PRECIOS ---
   const precioOriginal = parseFloat(combo.precio || 0);
   const precioFinal = parseFloat(combo.precio_final || precioOriginal);
-  const tieneDescuento = precioOriginal > precioFinal;
-  let descuento = 0;
-  if (tieneDescuento && precioOriginal > 0) {
-    descuento = ((precioOriginal - precioFinal) / precioOriginal) * 100;
-  }
-  const imageUrl = combo.imagen_url || `https://placehold.co/400x300/2a2a2a/f5f5f5?text=${combo.nombre}`;
+  // Calculamos descuento si viene del backend o lo deducimos
+  const descuentoPorcentaje = combo.descuento_porcentaje || 0;
+  const tieneDescuento = (combo.en_oferta || combo.oferta_activa) && descuentoPorcentaje > 0;
+  
+  // Si hay descuento, recalculamos el precio final visual
+  const precioMostrar = tieneDescuento 
+      ? precioOriginal * (1 - (descuentoPorcentaje / 100)) 
+      : precioOriginal;
 
-  // --- NUEVA FUNCIÓN PARA EL BOTÓN ---
-  const handleBuyClick = (e) => {
-    // 6. ¡CLAVE! Detiene la propagación para evitar dobles notificaciones
-    e.stopPropagation();
-
-    // 7. Agrega el combo al carrito
-    agregarAlCarrito(combo);
-
-    // (Opcional) Aquí puedes llamar a una función para mostrar una notificación si la tienes
-    // mostrarNotificacion(`${combo.nombre} agregado al carrito!`);
-
-    // 8. Redirige al usuario a la página de su pedido
-    navigate('/hacer-un-pedido'); // Asegúrate de que esta sea la ruta correcta
-  };
-
-  const cardVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: { y: 0, opacity: 1 }
-  };
+  const imageUrl = combo.imagen_url || `https://placehold.co/400x300/1a1a1a/ffffff?text=${combo.nombre}`;
 
   return (
     <motion.div 
       className="col"
-      variants={cardVariants}
-      initial="hidden"
-      animate="visible"
-      transition={{ duration: 0.4 }}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -5 }} // Efecto de flotar al pasar el mouse
+      transition={{ duration: 0.3 }}
     >
-      <div className="product-card">
-        <div className="card-image-container">
-          <img src={imageUrl} alt={combo.nombre} />
-          {tieneDescuento && (
-            <span className="discount-badge">-{descuento.toFixed(0)}%</span>
-          )}
+      <div 
+        className="card h-100 shadow-lg border-0 overflow-hidden" 
+        onClick={() => onClick(combo)} 
+        style={{ 
+            cursor: 'pointer', 
+            backgroundColor: '#1e1e1e', // Fondo oscuro Tito Spot
+            borderRadius: '16px',
+            color: '#fff'
+        }}
+      >
+        {/* --- IMAGEN --- */}
+        <div className="position-relative overflow-hidden" style={{ height: '220px' }}>
+            <motion.img 
+                src={imageUrl} 
+                alt={combo.nombre} 
+                className="w-100 h-100 object-fit-cover"
+                whileHover={{ scale: 1.05 }} // Zoom suave en la imagen
+                transition={{ duration: 0.4 }}
+            />
+            
+            {/* Badge de Descuento */}
+            {tieneDescuento && (
+                <div className="position-absolute top-0 end-0 m-3 badge bg-primary shadow-sm px-3 py-2 rounded-pill fw-bold d-flex align-items-center gap-1">
+                    <Tag size={12} /> -{descuentoPorcentaje}%
+                </div>
+            )}
+
+            {/* Overlay sutil oscuro abajo para que el texto resalte si decides poner texto encima */}
+            <div className="position-absolute bottom-0 start-0 w-100" 
+                 style={{ height: '40px', background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)' }}>
+            </div>
         </div>
 
-        <div className="card-body">
-          <h3 className="card-title">{combo.nombre || 'Nombre no disponible'}</h3>
-          
-          <div className="card-price">
-            {tieneDescuento ? (
-              <>
-                <span className="original-price">${precioOriginal.toFixed(2)}</span>
-                <span className="discounted-price">${precioFinal.toFixed(2)}</span>
-              </>
-            ) : (
-              <span className="discounted-price">${precioFinal.toFixed(2)}</span>
-            )}
-          </div>
-          
-          {/* 9. Asigna la nueva función al evento onClick del botón */}
-          <button className="btn-buy" onClick={handleBuyClick}>
-            ¡Lo Quiero!
-          </button>
+        {/* --- CUERPO DE LA CARTA --- */}
+        <div className="card-body d-flex flex-column p-4">
+            {/* Título */}
+            <h5 className="card-title fw-bold mb-2 text-truncate" style={{ fontSize: '1.1rem' }}>
+                {combo.nombre || 'Combo Especial'}
+            </h5>
+            
+            {/* Descripción corta (opcional, si existe) */}
+            <p className="card-text text-secondary small mb-4 flex-grow-1" style={{ lineHeight: '1.4', fontSize: '0.85rem' }}>
+                {combo.descripcion ? 
+                    (combo.descripcion.length > 50 ? combo.descripcion.substring(0, 50) + '...' : combo.descripcion) 
+                    : 'Deliciosa combinación preparada para ti.'}
+            </p>
+            
+            {/* --- FOOTER: PRECIO Y BOTÓN --- */}
+            <div className="d-flex align-items-end justify-content-between mt-auto pt-3 border-top border-secondary border-opacity-25">
+                
+                {/* Sección de Precio */}
+                <div className="d-flex flex-column">
+                    {tieneDescuento && (
+                        <small className="text-decoration-line-through text-secondary" style={{ fontSize: '0.75rem' }}>
+                            ${precioOriginal.toFixed(2)}
+                        </small>
+                    )}
+                    <span className="fw-bold fs-4" style={{ color: '#00e676' }}> {/* Verde estilo Matrix/Neon */}
+                        ${precioMostrar.toFixed(2)}
+                    </span>
+                </div>
+
+                {/* Botón visual (solo estético, toda la carta es clickeable) */}
+                <button 
+                    className="btn btn-sm btn-outline-light rounded-pill px-3 d-flex align-items-center gap-1"
+                    style={{ borderColor: 'rgba(255,255,255,0.2)' }}
+                >
+                    Ver <ArrowRight size={14} />
+                </button>
+            </div>
         </div>
       </div>
     </motion.div>
