@@ -151,8 +151,27 @@ function AdminPage() {
   const handleOpenComboModal = (c = null) => { setComboActual(c); setShowComboModal(true); };
   const handleCloseComboModal = () => { setShowComboModal(false); setComboActual(null); };
   const handleSaveCombo = async (c) => {
-    try { c.id ? await apiClient.put(`/combos/${c.id}`, c) : await apiClient.post('/combos', c); toast.success("Combo guardado."); fetchData(); handleCloseComboModal(); } catch (err) { toast.error(err.response?.data?.msg || "Error."); }
-  };
+  try {
+    if (c.id) {
+      // 1. Enviamos el cambio al servidor
+      await apiClient.put(`/combos/${c.id}`, c);
+      
+      // 2. ACTUALIZAMOS LA LISTA VISUALMENTE AL INSTANTE (Sin esperar recarga)
+      setCombos(prevCombos => prevCombos.map(combo => 
+        combo.id === c.id ? { ...combo, ...c } : combo
+      ));
+    } else {
+      // Si es nuevo, creamos y recargamos todo normal
+      await apiClient.post('/combos', c);
+      fetchData();
+    }
+
+    toast.success("Combo guardado.");
+    handleCloseComboModal();
+  } catch (err) {
+    toast.error(err.response?.data?.msg || "Error al guardar.");
+  }
+};
   const handleDeleteCombo = (c) => {
     setConfirmTitle('Desactivar Combo'); setConfirmMessage(`¿Desactivar "${c.nombre}"?`);
     setConfirmAction(() => async () => { try { await apiClient.patch(`/combos/${c.id}/desactivar`); toast.success("Combo desactivado."); fetchData(); } catch (err) { toast.error("Error."); } setShowConfirmModal(false); });
