@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ShoppingBag, Tag, ChevronRight } from 'lucide-react'; // Iconos extra para estética
+import { X, ShoppingBag, Tag, ChevronRight, Star } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useTheme } from '../context/ThemeContext';
 import { useNavigate } from 'react-router-dom';
@@ -10,56 +10,56 @@ function ComboDetailModal({ combo, onClose }) {
     const context = useCart();
     // Compatibilidad por si tu hook se llama diferente
     const agregarAlCarrito = context.agregarAlCarrito || context.agregarProductoAPedido;
-
     const { theme } = useTheme();
     const isDark = theme === 'dark';
+    const navigate = useNavigate();
 
     if (!combo) return null;
 
-    // --- 1. LÓGICA DE PRECIOS CORRECTA ---
+    // --- 1. LÓGICA DE PRECIOS Y DESCUENTOS ---
     const precioOriginal = parseFloat(combo.precio);
-    const tieneDescuento = (combo.en_oferta || combo.oferta_activa) && combo.descuento_porcentaje > 0;
+    const descuentoPorcentaje = parseFloat(combo.descuento_porcentaje || 0);
+    // Verificamos si realmente tiene descuento activo
+    const tieneDescuento = (combo.en_oferta || combo.oferta_activa) && descuentoPorcentaje > 0;
     
-    // Calculamos el precio final REAL
+    // Calculamos el precio final matemático
     const precioFinal = tieneDescuento 
-        ? precioOriginal * (1 - (combo.descuento_porcentaje / 100)) 
+        ? precioOriginal * (1 - (descuentoPorcentaje / 100)) 
         : precioOriginal;
 
+    // --- 2. FUNCIÓN DE AGREGAR Y REDIRIGIR ---
     const handleAddToOrder = () => {
         if (!agregarAlCarrito) return;
 
         const itemParaCarrito = {
             ...combo,
-            precio: precioFinal, // ¡Importante! Guardamos el precio con descuento
+            precio: precioFinal, // Guardamos el precio ya rebajado
+            precio_regular: precioOriginal, // Guardamos referencia del original
             id: combo.id,
             nombre: combo.nombre || combo.titulo,
-            imagen: combo.imagen_url || (combo.imagenes && combo.imagenes[0])
+            imagen: combo.imagen_url || (combo.imagenes && combo.imagenes[0]),
+            tipo: 'combo'
         };
 
         agregarAlCarrito(itemParaCarrito);
-
-        toast.custom((t) => (
-            <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}>
-              <div className="flex-1 w-0 p-4">
-                <div className="flex items-start">
-                  <div className="flex-shrink-0 pt-0.5">
-                    <img className="h-10 w-10 rounded-full object-cover" src={itemParaCarrito.imagen} alt="" />
-                  </div>
-                  <div className="ml-3 flex-1">
-                    <p className="text-sm font-medium text-gray-900">¡Agregado!</p>
-                    <p className="mt-1 text-sm text-gray-500">{itemParaCarrito.nombre} añadido por ${precioFinal.toFixed(2)}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-        ));
+        
+        // Notificación rápida
+        toast.success(`¡${itemParaCarrito.nombre} agregado!`);
+        
+        // Cerrar modal
         onClose();
+
+        // --- 3. REDIRECCIÓN (LO QUE FALTABA) ---
+        // Te lleva a la pantalla de pedido inmediatamente
+        navigate('/hacer-un-pedido');
     };
 
-    // Estilos dinámicos según el tema
-    const bgColor = isDark ? '#1e1e1e' : '#ffffff';
+    // --- ESTILOS VISUALES ---
+    // Colores basados en el tema para que no se vea "parche"
+    const bgColor = isDark ? '#1a1a1a' : '#ffffff';
     const textColor = isDark ? '#f8f9fa' : '#212529';
-    const mutedColor = isDark ? '#adb5bd' : '#6c757d';
+    const subTextColor = isDark ? '#a0a0a0' : '#6c757d';
+    const cardBorder = isDark ? '1px solid #333' : '1px solid #eee';
 
     return (
         <AnimatePresence>
@@ -68,107 +68,110 @@ function ComboDetailModal({ combo, onClose }) {
                 className="modal-overlay"
                 style={{
                     position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                    backgroundColor: 'rgba(0,0,0,0.75)', zIndex: 1050, // Fondo más oscuro para resaltar
-                    backdropFilter: 'blur(5px)', // Efecto borroso de fondo
+                    backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 1050,
+                    backdropFilter: 'blur(8px)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem'
                 }}
                 onClick={onClose}
             >
                 <motion.div 
-                    initial={{ scale: 0.95, opacity: 0, y: 30 }} 
+                    initial={{ scale: 0.9, opacity: 0, y: 50 }} 
                     animate={{ scale: 1, opacity: 1, y: 0 }} 
-                    exit={{ scale: 0.95, opacity: 0, y: 30 }}
+                    exit={{ scale: 0.9, opacity: 0, y: 50 }}
                     transition={{ type: "spring", damping: 25, stiffness: 300 }}
                     onClick={(e) => e.stopPropagation()}
-                    className="modal-content overflow-hidden shadow-lg"
+                    className="modal-content shadow-lg"
                     style={{ 
-                        maxWidth: '850px', 
+                        maxWidth: '900px', 
                         width: '100%', 
                         backgroundColor: bgColor, 
                         color: textColor,
-                        borderRadius: '24px', // Bordes más redondeados
-                        display: 'flex', flexDirection: 'column' 
+                        borderRadius: '24px',
+                        overflow: 'hidden',
+                        border: cardBorder
                     }}
                 >
                     <div className="row g-0">
-                        {/* --- COLUMNA IZQUIERDA: IMAGEN --- */}
-                        <div className="col-md-6 position-relative" style={{ minHeight: '350px' }}>
+                        {/* --- COLUMNA IZQUIERDA: IMAGEN GRANDE --- */}
+                        <div className="col-lg-6 position-relative bg-black" style={{ minHeight: '350px' }}>
                             <img 
-                                src={combo.imagen_url || 'https://via.placeholder.com/600x600'} 
+                                src={combo.imagen_url || 'https://via.placeholder.com/600x600?text=Combo'} 
                                 alt={combo.nombre} 
-                                className="w-100 h-100 object-fit-cover"
+                                className="w-100 h-100 object-fit-cover opacity-90"
                             />
-                            {/* Botón Cerrar (Móvil) */}
-                            <button 
-                                onClick={onClose}
-                                className="d-md-none position-absolute top-0 end-0 m-3 btn btn-light rounded-circle shadow-sm p-2"
-                                style={{ zIndex: 10 }}
-                            >
-                                <X size={20} color="#000"/>
+                            
+                            {/* Overlay degradado para que se vea premium */}
+                            <div className="position-absolute bottom-0 start-0 w-100 p-3" 
+                                 style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)' }}>
+                            </div>
+
+                            {/* Badge de Descuento (Estilo Tito Spot) */}
+                            {tieneDescuento && (
+                                <div className="position-absolute top-0 start-0 m-3 px-3 py-1 bg-danger text-white rounded-pill fw-bold shadow d-flex align-items-center gap-1">
+                                    <Tag size={16} fill="white" /> -{descuentoPorcentaje.toFixed(0)}%
+                                </div>
+                            )}
+
+                            {/* Botón Cerrar Flotante (Móvil) */}
+                            <button onClick={onClose} className="d-lg-none position-absolute top-0 end-0 m-3 btn btn-light rounded-circle shadow p-2">
+                                <X size={20} />
                             </button>
                         </div>
 
-                        {/* --- COLUMNA DERECHA: INFORMACIÓN --- */}
-                        <div className="col-md-6 p-4 p-lg-5 d-flex flex-column justify-content-between">
+                        {/* --- COLUMNA DERECHA: DATOS --- */}
+                        <div className="col-lg-6 p-4 p-lg-5 d-flex flex-column">
                             
-                            {/* Header: Título y Botón Cerrar Desktop */}
-                            <div>
-                                <div className="d-flex justify-content-between align-items-start mb-2">
-                                    {tieneDescuento && (
-                                        <span className="badge bg-danger rounded-pill px-3 py-2 mb-2 shadow-sm d-flex align-items-center gap-1">
-                                            <Tag size={14} /> -{combo.descuento_porcentaje}% OFF
-                                        </span>
-                                    )}
-                                    <button 
-                                        onClick={onClose}
-                                        className="d-none d-md-block btn btn-link p-0 text-decoration-none"
-                                        style={{ color: mutedColor }}
-                                    >
-                                        <X size={28} />
-                                    </button>
+                            {/* Header Desktop */}
+                            <div className="d-flex justify-content-between align-items-start">
+                                <div className="d-flex align-items-center gap-2 mb-2 text-warning">
+                                    <Star size={18} fill="currentColor" />
+                                    <small className="fw-bold text-uppercase ls-1">Combo Especial</small>
                                 </div>
-
-                                <h2 className="fw-bold mb-3 display-6 lh-1">{combo.nombre || combo.titulo}</h2>
-                                
-                                <p className="lead fs-6 mb-4" style={{ color: mutedColor, lineHeight: '1.6' }}>
-                                    {combo.descripcion || 'Una deliciosa combinación seleccionada especialmente para ti.'}
-                                </p>
+                                <button onClick={onClose} className="d-none d-lg-block btn btn-link text-muted p-0">
+                                    <X size={28} />
+                                </button>
                             </div>
 
-                            {/* Footer: Precios y Botón de Acción */}
-                            <div className="mt-4 pt-4 border-top" style={{ borderColor: isDark ? '#333' : '#eee' }}>
-                                <div className="d-flex justify-content-between align-items-center mb-4">
-                                    <div className="d-flex flex-column">
-                                        <small className="text-uppercase fw-bold" style={{ fontSize: '0.75rem', color: mutedColor, letterSpacing: '1px' }}>Precio Total</small>
-                                        <div className="d-flex align-items-baseline gap-2">
-                                            {/* PRECIO FINAL GRANDE */}
-                                            <span className="fw-bold" style={{ fontSize: '2rem', color: isDark ? '#fff' : '#212529' }}>
+                            <h2 className="fw-bold display-6 mb-3">{combo.nombre || combo.titulo}</h2>
+                            
+                            <p className="lead fs-6 mb-4 flex-grow-1" style={{ color: subTextColor, lineHeight: '1.6' }}>
+                                {combo.descripcion || 'Disfruta de esta increíble combinación de sabores preparada especialmente para ti.'}
+                            </p>
+
+                            {/* Sección de Precio */}
+                            <div className="mt-auto pt-4 border-top" style={{ borderColor: isDark ? '#333' : '#eee' }}>
+                                <div className="d-flex align-items-end justify-content-between mb-4">
+                                    <div>
+                                        <small className="text-uppercase fw-bold" style={{ fontSize: '0.7rem', color: subTextColor }}>Precio Final</small>
+                                        <div className="d-flex align-items-baseline gap-3">
+                                            {/* PRECIO FINAL */}
+                                            <span className="fw-bold display-5 text-primary">
                                                 ${precioFinal.toFixed(2)}
                                             </span>
                                             
-                                            {/* PRECIO ORIGINAL TACHADO (Si hay descuento) */}
+                                            {/* PRECIO ORIGINAL (TACHADO) */}
                                             {tieneDescuento && (
-                                                <span className="text-decoration-line-through fs-5" style={{ color: mutedColor }}>
-                                                    ${precioOriginal.toFixed(2)}
-                                                </span>
+                                                <div className="d-flex flex-column justify-content-center">
+                                                    <span className="text-decoration-line-through fs-5" style={{ color: subTextColor }}>
+                                                        ${precioOriginal.toFixed(2)}
+                                                    </span>
+                                                </div>
                                             )}
                                         </div>
                                     </div>
                                 </div>
 
+                                {/* Botón de Acción Grande */}
                                 <button 
                                     onClick={handleAddToOrder}
-                                    className="btn btn-primary w-100 py-3 rounded-pill fw-bold shadow-lg d-flex align-items-center justify-content-center gap-2"
-                                    style={{ fontSize: '1.1rem', transition: 'transform 0.2s' }}
-                                    onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.98)'}
-                                    onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                                    className="btn btn-primary w-100 py-3 rounded-pill fw-bold shadow-lg d-flex align-items-center justify-content-center gap-2 transform-active"
+                                    style={{ fontSize: '1.1rem' }}
                                 >
                                     <ShoppingBag size={22} /> 
-                                    <span>Agregar al Pedido</span>
+                                    Agregar al Pedido
                                     <ChevronRight size={20} className="ms-auto opacity-50"/>
                                 </button>
                             </div>
-
                         </div>
                     </div>
                 </motion.div>
